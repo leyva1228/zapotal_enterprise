@@ -15,3 +15,5 @@ dist/
 *.log
 .env
 graphify-out/
+staticfiles/
+.playwright-mcp/

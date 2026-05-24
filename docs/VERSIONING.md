@@ -33,24 +33,25 @@ Incrementa cuando:
 
 ## Versión Global del Proyecto
 
-Todo el ecosistema usa **la misma versión**:
+Todo el ecosistema usa **la misma versión** (actual: `1.0.1`):
 
-```
-ladp_core_django     0.1.0
-ladp_web_react       0.1.0
-ladp_ms_spring_boot  0.1.0
-ladp_app_kotlin      0.1.0
-```
+| Componente | Versión | Estado |
+|---|---|---|
+| zapotal_core_django | 1.0.1 | ✅ |
+| zapotal_web_react | 1.0.1 | ✅ |
+| zapotal_ms_spring_boot | — | 🔄 Pendiente |
+| zapotal_app_kotlin | — | 🔄 Pendiente |
 
 Esto garantiza sincronización entre componentes y facilita el soporte.
 
-## Cronología Esperada
+## Cronología
 
-1. **0.1.0** - Inicio del proyecto (estado actual)
-2. **0.2.0** - Implementación de login JWT
-3. **0.2.1** - Correcciones de bugs en autenticación
-4. **0.3.0** - Integración de microservicio de pagos
-5. **1.0.0** - Reestructuración de arquitectura y estabilidad general
+| Versión | Cambios | Fecha |
+|---|---|---|
+| 0.1.0 | Inicio del proyecto, arquitectura inicial | — |
+| 1.0.0 | React + Django funcionales, uvicorn, start.bat, README | 2026-05-24 |
+| 1.0.1 | Fix estáticos Django admin (WhiteNoise + collectstatic), ASGI config | 2026-05-24 |
+| 2.0.0 | 🔄 Próximo: Integración Spring Boot + Kotlin/Android | — |
 
 ## Gestión de Versiones
 
