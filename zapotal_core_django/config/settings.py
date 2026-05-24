@@ -58,7 +58,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'comunidad_zapotal_db',
+        'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'comunidad_zapotal_db',
         'HOST': 'db.sngncauhtzbjjpqxqyfw.supabase.co',
