@@ -1,0 +1,11 @@
+zapotal_venv/
+__pycache__/
+*.pyc
+node_modules/
+build/
+dist/
+.gradle/
+.idea/
+.vscode/
+*.log
+.env

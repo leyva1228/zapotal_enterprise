@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.comunidad_zapotal.comunidad_zapotal.ui.home.HomeFragment"
+        android:label="Home" />
+
+    <fragment
+        android:id="@+id/noticiasFragment"
+        android:name="com.comunidad_zapotal.comunidad_zapotal.ui.noticias.NoticiasFragment"
+        android:label="Noticias" />
+
+    <fragment
+        android:id="@+id/eventosFragment"
+        android:name="com.comunidad_zapotal.comunidad_zapotal.ui.eventos.EventosFragment"
+        android:label="Eventos" />
+
+    <fragment
+        android:id="@+id/autoridadesFragment"
+        android:name="com.comunidad_zapotal.comunidad_zapotal.ui.autoridades.AutoridadesFragment"
+        android:label="Autoridades" />
+
+    <fragment
+        android:id="@+id/perfilFragment"
+        android:name="com.comunidad_zapotal.comunidad_zapotal.ui.perfil.PerfilFragment"
+        android:label="Perfil" />
+
+</navigation>
