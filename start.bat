@@ -22,10 +22,10 @@ if not errorlevel 1 (
 if not exist "%ROOT%zapotal_venv\Scripts\activate" (
     echo Creando entorno virtual...
     python -m venv "%ROOT%zapotal_venv"
-)
-if not exist "%ROOT%zapotal_web_react\node_modules" (
-    echo Instalando dependencias de Python...
     call "%ROOT%zapotal_venv\Scripts\activate" && pip install -r "%ROOT%zapotal_core_django\requirements.txt"
+)
+
+if not exist "%ROOT%zapotal_web_react\node_modules" (
     echo Instalando dependencias de React...
     cd /d "%ROOT%zapotal_web_react" && npm install && cd /d "%ROOT%"
 )
@@ -34,7 +34,6 @@ echo Iniciando Django (uvicorn) en puerto %DJANGO_PORT%...
 start "Zapotal Django" cmd /c "cd /d %ROOT%zapotal_core_django && ..\zapotal_venv\Scripts\activate && uvicorn config.asgi:application --reload --host 0.0.0.0 --port %DJANGO_PORT%"
 
 echo Iniciando React en puerto %REACT_PORT%...
-set PORT=%REACT_PORT%
 start "Zapotal React" cmd /c "cd /d %ROOT%zapotal_web_react && set PORT=%REACT_PORT% && npm start"
 
 echo.
