@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:id="@+id/sort_az_eventos"
-        android:title="Título (A-Z)" />
-    <item
-        android:id="@+id/sort_fecha_eventos"
-        android:title="Fecha" />
-</menu>
