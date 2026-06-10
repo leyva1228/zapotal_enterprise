@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Comunidad Zapotal</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="ver_en_google_maps">¿Cómo llegar? Ver en Google Maps</string>
+    <string name="location_query">geo:0,0?q=Zapotal, San Ignacio, Cajamarca, Peru</string>
+
+    <!-- Auth Required BottomSheet -->
+    <string name="auth_required_title">Inicia sesión para continuar</string>
+    <string name="auth_required_description">Debes iniciar sesión para poder dar like, comentar y acceder a más funciones.</string>
+    <string name="auth_required_login">Iniciar sesión</string>
+    <string name="auth_required_register">Registrarse</string>
+    <string name="auth_required_cancel">Ahora no</string>
+</resources>

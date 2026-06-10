@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base Colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Brand Colors (Emerald/Teal) -->
+    <color name="emerald_main">#10B981</color> <!-- Color principal verde -->
+    <color name="emerald_dark">#065F46</color>
+    <color name="emerald_darker">#064E3B</color>
+    <color name="emerald_deep">#14532D</color>
+    <color name="emerald_light">#D1FAE5</color>
+    <color name="emerald_soft">#A7D7C5</color>
+    <color name="teal_light">#E0F2F1</color>
+    <color name="material_green">#4CAF50</color>
+
+    <!-- Dark Backgrounds & Cards -->
+    <color name="background_deep">#050505</color>
+    <color name="background_dark">#0F0F0F</color>
+    <color name="card_dark">#111111</color>
+    <color name="card_darker">#121212</color>
+    <color name="card_surface">#1E1E1E</color>
+    <color name="input_background">#1A1A1A</color>
+
+    <!-- Grays & Text -->
+    <color name="gray_text">#9CA3AF</color>
+    <color name="gray_slate">#4B5563</color>
+    <color name="gray_muted">#6B7280</color>
+
+    <!-- Utility & Transparencies -->
+    <color name="white_33">#33FFFFFF</color>
+    <color name="white_22">#22FFFFFF</color>
+    <color name="white_10">#1AFFFFFF</color>
+    <color name="overlay_dark">#B3000000</color>
+</resources>

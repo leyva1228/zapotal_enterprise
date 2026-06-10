@@ -17,3 +17,4 @@ dist/
 graphify-out/
 staticfiles/
 .playwright-mcp/
+.swarm
