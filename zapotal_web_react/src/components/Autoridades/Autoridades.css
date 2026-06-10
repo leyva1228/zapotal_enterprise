@@ -1,0 +1,262 @@
+.autoridades-section {
+  width: 100%;
+  min-height: 100vh;
+  padding: 140px 7% 70px;
+  background: #fafaf7;
+  position: relative;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+.autoridades-header {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.autoridades-decor {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  color: #1f6b38;
+  margin-bottom: 12px;
+}
+
+.autoridades-decor span {
+  width: 58px;
+  height: 1px;
+  background: #caa54a;
+}
+
+.autoridades-header h5 {
+  margin: 0 0 10px;
+  color: #124f2d;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.autoridades-header h2 {
+  margin: 0;
+  color: #1c1f27;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 46px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.autoridades-header p {
+  margin: 16px auto 0;
+  max-width: 850px;
+  color: #5f6670;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+/* GRID */
+.autoridades-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+}
+
+/* CARD */
+.autoridad-card {
+  background: rgba(255,255,255,0.96);
+  border-radius: 14px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 18px;
+  align-items: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.autoridad-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.12);
+}
+
+.autoridad-imagen img {
+  width: 150px;
+  height: 185px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+.autoridad-info {
+  padding-right: 8px;
+}
+
+.autoridad-cargo {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #edf4ef;
+  color: #124f2d;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.autoridad-info h3 {
+  margin: 0;
+  color: #173f26;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.autoridad-linea {
+  width: 45px;
+  height: 2px;
+  background: #caa54a;
+  margin: 13px 0;
+}
+
+.autoridad-info p {
+  margin: 0;
+  color: #4d5560;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* BANNER INFERIOR */
+.autoridades-banner {
+  position: relative;
+  z-index: 2;
+  margin: 36px auto 0;
+  width: 92%;
+  background: linear-gradient(135deg, #0f3f25, #165d35);
+  border-radius: 14px;
+  padding: 24px 34px;
+  display: grid;
+  grid-template-columns: auto 1.2fr 1px 1fr auto;
+  align-items: center;
+  gap: 28px;
+  color: white;
+  box-shadow: 0 12px 35px rgba(10, 67, 36, 0.22);
+}
+
+.banner-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 2px solid #d6b55a;
+  color: #d6b55a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+}
+
+.banner-text h4 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.banner-divider {
+  height: 58px;
+  background: rgba(255,255,255,0.28);
+}
+
+.autoridades-banner p {
+  margin: 0;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.5;
+}
+
+.banner-btn{
+  border:none;
+  border-radius:10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #12710572,
+      #0a910028
+    );
+
+  color:white;
+
+  padding:15px 24px;
+
+  font-weight:800;
+
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+
+  text-decoration:none;
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.banner-btn:hover{
+  transform:translateY(-2px);
+
+  box-shadow:
+    0 10px 25px rgba(198,155,61,.35);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .autoridades-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .autoridades-header h2 {
+    font-size: 38px;
+  }
+}
+
+@media (max-width: 800px) {
+  .autoridades-section {
+    padding: 110px 5% 60px;
+  }
+
+  .autoridades-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autoridad-card {
+    grid-template-columns: 130px 1fr;
+  }
+
+  .autoridad-imagen img {
+    width: 130px;
+    height: 165px;
+  }
+
+  .autoridades-banner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .banner-icon {
+    margin: auto;
+  }
+
+  .banner-divider {
+    width: 100%;
+    height: 1px;
+  }
+}

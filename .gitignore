@@ -47,3 +47,7 @@ dist/
 
 # Django
 staticfiles/
+
+
+_categorize_skills.py
+_extract_skills.py
