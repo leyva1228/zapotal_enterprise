@@ -1,20 +1,49 @@
+# Herramientas
+.swarm/
+.playwright-mcp/
+graphify-out/
+
+# Scripts temporales
+_categorize_skills.py
+_extract_skills.py
+
+# Reportes
+API_MIGRATION_MAP.md
+usage_skills.md
+
+# Bases de datos
+ruvector.db
+*.db
+*.sqlite
+*.sqlite3
+
 # Python virtual environments
 zapotal_venv/
 env/
 venv/
 .venv/
 
+# Python
 __pycache__/
 *.pyc
+
+# React / Node
 node_modules/
 build/
 dist/
+
+# Java / Kotlin
 .gradle/
+
+# IDEs
 .idea/
 .vscode/
+
+# Logs
 *.log
+
+# Variables de entorno
 .env
-graphify-out/
+
+# Django
 staticfiles/
-.playwright-mcp/
-.swarm
