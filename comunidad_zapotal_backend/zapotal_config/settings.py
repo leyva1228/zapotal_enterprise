@@ -204,6 +204,14 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
+# En DEBUG mode, forzar valores seguros para desarrollo (evita que
+# variables del .env con valores de produccion rompan el dev server).
+if DEBUG:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+
 # Logging
 LOGGING = {
     'version': 1,

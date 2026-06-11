@@ -81,6 +81,14 @@ if !errorlevel! neq 0 (
     exit /b 1
 )
 
+:: Crear superusuario si no existe
+echo   Verificando superusuario por defecto...
+python manage.py ensure_admin
+if !errorlevel! neq 0 (
+    echo [WARN] No se pudo crear/verificar superusuario (no critico).
+)
+echo.
+
 echo   Backend configurado correctamente.
 echo.
 

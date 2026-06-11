@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "../../api";
 import {
   FaEnvelope, FaLock, FaUser, FaShieldAlt,
   FaLeaf, FaUserPlus, FaEye, FaEyeSlash,
@@ -8,7 +8,6 @@ import {
 } from "react-icons/fa";
 import "./Login.css";
 
-const API_URL      = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1"; 
 const MAX_INTENTOS = 10;
 const BLOQUEO_MS   = 5 * 60 * 1000;
 const STORAGE_KEY  = "lp_intentos";
@@ -129,8 +128,8 @@ function Login() {
     setMsg({ text: "", type: "" });
 
     try {
-      const { data } = await axios.post(
-        `${API_URL}/login/`,
+      const { data } = await api.post(
+        `/login/`,
         { email: emailVal, password: passVal },
         { timeout: 10000 }
       );

@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
 import {
   FaSearch, FaSlidersH, FaCamera, FaVideo,
 } from "react-icons/fa";
 import { BsShare } from "react-icons/bs";
-import { extractList } from "../../api";
+import api, { extractList } from "../../api";
 import "./Noticias.css";
 
 /* Noticias del grid secundario (después del bloque hero+2) por página */
@@ -52,7 +51,7 @@ function Noticias() {
 
   useEffect(() => {
     setLoading(true);
-    axios.get("http://127.0.0.1:8000/api/v1/noticias/")
+    api.get("/noticias/")
       .then((res) => {
         const datos = extractList(res.data);
         setTimeout(() => { setNoticias(datos); setLoading(false); }, 800);

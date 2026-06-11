@@ -4,7 +4,7 @@ import {
   FaExclamationCircle,
   FaLightbulb,
 } from "react-icons/fa";
-import axios from "axios";
+import api from "../../api";
 
 import "./LibroReclamaciones.css";
 
@@ -38,8 +38,8 @@ function LibroReclamaciones() {
     setEstadoEnvio("");
 
     try {
-      await axios.post(
-        "http://127.0.0.1:8000/api/v1/libro-reclamaciones/",
+      await api.post(
+        "/libro-reclamaciones/",
         formulario
       );
 

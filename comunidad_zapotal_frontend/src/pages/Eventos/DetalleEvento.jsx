@@ -16,7 +16,6 @@ import api, { extractList } from "../../api";
 import "./DetalleEvento.css";
 
 // ========== CONSTANTES Y FUNCIONES COMPARTIDAS ==========
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1";
 const MAX_COMMENT_LENGTH = 500;
 const MIN_COMMENT_LENGTH = 3;
 const RATE_LIMIT_COMMENTS = 10;

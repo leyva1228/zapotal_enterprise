@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api";
 import {
   FaUser,
   FaEnvelope,
@@ -15,8 +15,6 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 import "./Registro.css";
-
-const API_URL = "http://127.0.0.1:8000/api/v1";
 
 /* ── Sanitiza entradas contra XSS básico ── */
 const sanitize = (v) => v.replace(/[<>"'`;]/g, "").trimStart();
@@ -111,7 +109,7 @@ function Registro() {
       payload.append("password",     form.password);
       payload.append("tipo_usuario", "COMUNERO");
 
-      await axios.post(`${API_URL}/usuarios/`, payload, {
+      await api.post(`/usuarios/`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: 10000,
       });

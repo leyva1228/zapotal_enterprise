@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../../api";
 import { FaEnvelope } from "react-icons/fa";
 import "./Contacto.css";
 
@@ -72,7 +72,7 @@ function Contacto() {
       // Guardamos el tiempo de inicio para forzar un mínimo de 800ms de carga
       const inicio = Date.now();
 
-      const respuesta = await axios.post("http://127.0.0.1:8000/api/v1/contacto/", datosFinales, {
+      const respuesta = await api.post("/contacto/", datosFinales, {
         headers: { "Content-Type": "application/json" },
       });
 

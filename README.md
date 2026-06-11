@@ -2,7 +2,7 @@
 
 Sistema de gestión comunal para la Comunidad Campesina Zapotal — plataforma integral con backend y frontend.
 
-## Versión actual: 1.1.2
+## Versión actual: 1.1.4
 
 ## Estructura
 

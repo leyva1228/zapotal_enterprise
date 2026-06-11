@@ -9,8 +9,6 @@ import {
 import api, { extractList } from "../api";
 import "./Navbar.css";
 
-const API = "http://127.0.0.1:8000/api/v1";
-
 function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
