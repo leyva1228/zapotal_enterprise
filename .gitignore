@@ -4,8 +4,6 @@
 graphify-out/
 
 # Scripts temporales
-_categorize_skills.py
-_extract_skills.py
 
 # Reportes
 API_MIGRATION_MAP.md
@@ -55,13 +53,8 @@ comunidad-zapotal-backend/
 zapotal_core_django/
 # Frontend antiguo (React)
 zapotal_web_react/
-# Frontend nuevo (aún no listo)
-comunidad_zapotal_frontend/
 # Bases de datos y dumps
 comunidad_db.sql
-# Documentos sueltos
-README.md
-VERSION
 
 
 _categorize_skills.py
