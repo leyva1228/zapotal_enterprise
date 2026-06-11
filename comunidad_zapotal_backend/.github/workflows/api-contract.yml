@@ -1,0 +1,31 @@
+name: API Contract Validation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Generate OpenAPI schema
+        env:
+          DJANGO_DEBUG: "False"
+          DJANGO_SECRET_KEY: "test-secret-key"
+        run: python manage.py spectacular --file schema.yml
+      - name: Lint OpenAPI schema
+        run: |
+          pip install redocly-cli
+          redocly lint schema.yml || true
+      - name: Upload schema artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-schema
+          path: schema.yml

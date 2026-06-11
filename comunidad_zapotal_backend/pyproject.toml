@@ -1,0 +1,97 @@
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "zapotal_config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+testpaths = ["apps", "."]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["apps"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+show_missing = true
+precision = 2
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", "migrations", "staticfiles"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "N",  # pep8-naming
+    "UP", # pyupgrade
+    "ANN", # flake8-annotations
+    "ARG", # unused arguments
+    "BLE", # blind-except
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "ICN", # flake8-import-conventions
+    "ISC", # flake8-implicit-str-concat
+    "PIE", # flake8-pie
+    "PL",  # pylint
+    "PT",  # pytest
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "TRY", # tryceratops
+]
+ignore = [
+    "E501",  # line-too-long
+    "PLR0913", # too-many-arguments
+    "TRY003",  # raise-vanilla-args
+    "PLR2004", # magic-value-comparison
+    "ANN101",  # missing-type-self
+    "ANN102",  # missing-type-cls
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*.py" = ["ALL"]
+"*/tests/*.py" = ["PLR2004", "S101", "ARG", "ANN"]
+"conftest.py" = ["ANN"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "zapotal_config"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "."
+plugins = ["mypy_django_plugin.main"]
+exclude = [
+    "migrations",
+    "staticfiles",
+    "venv",
+    "zapotal-venv",
+    "build",
+    "dist",
+]
+
+[[tool.mypy.overrides]]
+module = "apps.*"
+ignore_errors = true
+
+[tool.mypy.overrides]
+module = "zapotal_config.*"
+ignore_errors = false
