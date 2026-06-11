@@ -1,137 +1,117 @@
 @echo off
-title Zapotal Enterprise - Setup y Ejecucion
-chcp 65001 >nul
-setlocal enabledelayedexpansion
-
-echo ============================================
-echo    ZAPOTAL ENTERPRISE
-echo    Configuracion automatica del proyecto
-echo ============================================
+echo ================================================
+echo   ZAPOTAL ENTERPRISE - SETUP AUTOMATICO
+echo ================================================
 echo.
 
-:: Verificar Python
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Python no encontrado. Instala Python 3.11+.
-    pause
-    exit /b 1
-)
+REM =============================================
+REM 1. CREAR CARPETAS FALTANTES
+REM ================================================
+echo [1/6] Creando carpetas necesarias...
 
-:: Verificar Node.js
-node --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Node.js no encontrado. Instala Node.js 18+.
-    pause
-    exit /b 1
-)
+REM Backend: logs
+if not exist "comunidad_zapotal_backend\logs" mkdir "comunidad_zapotal_backend\logs"
 
-echo [PRERREQUISITO] Asegurate de tener MySQL corriendo en local
-echo                con la base de datos 'comunidad_zapotal_db' creada.
-echo                Revisa el archivo .env en comunidad_zapotal_backend\
-echo                con tus credenciales de MySQL.
-echo.
+REM Backend: media
+if not exist "comunidad_zapotal_backend\media" mkdir "comunidad_zapotal_backend\media"
 
-:: Crear .env desde .env.example si no existe
-if not exist "%~dp0comunidad_zapotal_backend\.env" (
-    echo   Creando .env del backend desde .env.example...
-    copy "%~dp0comunidad_zapotal_backend\.env.example" "%~dp0comunidad_zapotal_backend\.env" >nul
-) else (
-    echo   .env del backend ya existe.
-)
+REM Backend: staticfiles
+if not exist "comunidad_zapotal_backend\staticfiles" mkdir "comunidad_zapotal_backend\staticfiles"
 
-:: Generar DJANGO_SECRET_KEY si no existe o es placeholder
-call "%~dp0generate_secret_key.bat"
-echo.
+echo   - logs/ .... OK
+echo   - media/ ... OK
+echo   - staticfiles/ ... OK
 
-:: =============================================
-echo [PASO 1/4] Configurando BACKEND...
-cd /d "%~dp0comunidad_zapotal_backend"
-echo.
+REM =============================================
+REM 2. CONFIGURAR .ENV
+REM ================================================
+echo [2/6] Configurando archivos de entorno...
 
-:: Entorno virtual
-if not exist "zapotal_venv\Scripts\activate.bat" (
-    echo   Creando entorno virtual...
-    python -m venv zapotal_venv
-    if !errorlevel! neq 0 (
-        echo [ERROR] No se pudo crear el entorno virtual.
-        pause
-        exit /b 1
+REM Backend .env
+if not exist "comunidad_zapotal_backend\.env" (
+    if exist "comunidad_zapotal_backend\.env.example" (
+        copy "comunidad_zapotal_backend\.env.example" "comunidad_zapotal_backend\.env"
+        echo   - Backend .env creado desde .env.example
+    ) else (
+        echo   - WARNING: No se encontro .env.example del backend
     )
 ) else (
-    echo   Entorno virtual ya existe.
+    echo   - Backend .env ya existe, no se sobreescribe
 )
 
-:: Activar e instalar dependencias
-echo   Instalando dependencias...
+REM Frontend .env
+if not exist "comunidad_zapotal_frontend\.env" (
+    if exist "comunidad_zapotal_frontend\.env.example" (
+        copy "comunidad_zapotal_frontend\.env.example" "comunidad_zapotal_frontend\.env"
+        echo   - Frontend .env creado desde .env.example
+    ) else (
+        echo   - WARNING: No se encontro .env.example del frontend
+    )
+) else (
+    echo   - Frontend .env ya existe, no se sobreescribe
+)
+
+REM =============================================
+REM 3. VIRTUALENV Y DEPENDENCIAS DEL BACKEND
+REM ================================================
+echo [3/6] Instalando dependencias del backend...
+
+cd comunidad_zapotal_backend
+
+if not exist "zapotal_venv" (
+    echo   - Creando virtualenv...
+    python -m venv zapotal_venv
+)
+
+echo   - Activando virtualenv y instalando paquetes...
 call zapotal_venv\Scripts\activate.bat
-pip install -r requirements.txt
-if !errorlevel! neq 0 (
-    echo [ERROR] Fallo al instalar dependencias.
-    pause
-    exit /b 1
-)
+pip install -r requirements.txt --quiet
 
-:: Migraciones
-echo   Ejecutando migraciones...
+REM =============================================
+REM 4. MIGRACIONES
+REM ================================================
+echo [4/6] Ejecutando migraciones...
+
 python manage.py migrate
-if !errorlevel! neq 0 (
-    echo [ERROR] Fallo al ejecutar migraciones.
-    echo   Revisa que MySQL este corriendo y las credenciales en .env
-    pause
-    exit /b 1
-)
 
-:: Crear superusuario si no existe
-echo   Verificando superusuario por defecto...
-python manage.py ensure_admin
-if !errorlevel! neq 0 (
-    echo [WARN] No se pudo crear/verificar superusuario (no critico).
-)
+REM =============================================
+REM 5. SEED - Poblar base de datos
+REM ================================================
+echo [5/6] Poblando base de datos con datos de prueba...
+python manage.py seed --wipe
+
+cd ..
+
+REM =============================================
+REM 6. INSTALAR DEPENDENCIAS DEL FRONTEND
+REM ================================================
+echo [6/6] Instalando dependencias del frontend...
+
+cd comunidad_zapotal_frontend
+call npm install
+
 echo.
-
-echo   Backend configurado correctamente.
+echo ================================================
+echo   SETUP COMPLETADO EXITOSAMENTE
+echo ================================================
 echo.
-
-:: =============================================
-echo [PASO 2/4] Configurando FRONTEND...
-cd /d "%~dp0comunidad_zapotal_frontend"
+echo CREDENCIALES:
+echo   ADMIN:     admin@zapotal.com / Admin123456
+echo   COMUNERO:  comunero1@zapotal.com / Comunero123
 echo.
-
-echo   Instalando dependencias...
-npm install
-if %errorlevel% neq 0 (
-    echo [ERROR] Fallo npm install.
-    pause
-    exit /b 1
-)
-
-echo   Frontend configurado correctamente.
+echo PARA LEVANTAR:
+echo   Terminal 1 (Backend):
+echo     cd comunidad_zapotal_backend
+echo     .\zapotal_venv\Scripts\activate
+echo     python manage.py runserver 0.0.0.0:8000
 echo.
-
-:: =============================================
-echo [PASO 3/4] Iniciando servidor BACKEND...
-start "Zapotal Backend" cmd /k "title Zapotal Backend && cd /d "%~dp0comunidad_zapotal_backend" && call zapotal_venv\Scripts\activate.bat && python manage.py runserver"
-
-:: Pequena pausa para que el backend arranque
-timeout /t 3 /nobreak >nul
-
-:: =============================================
-:: Crear .env desde .env.example si no existe
-if not exist "%~dp0comunidad_zapotal_frontend\.env" (
-    echo   Creando .env del frontend desde .env.example...
-    copy "%~dp0comunidad_zapotal_frontend\.env.example" "%~dp0comunidad_zapotal_frontend\.env" >nul
-)
-
-echo [PASO 4/4] Iniciando servidor FRONTEND...
-start "Zapotal Frontend" cmd /k "title Zapotal Frontend && cd /d "%~dp0comunidad_zapotal_frontend" && npm run dev"
+echo   Terminal 2 (Frontend):
+echo     cd comunidad_zapotal_frontend
+echo     npx vite --host 0.0.0.0 --port 5173
 echo.
-
-echo ============================================
-echo   CONFIGURACION COMPLETADA
-echo ============================================
-echo   Backend:  http://127.0.0.1:8000
-echo   Frontend: http://localhost:5173
-echo ============================================
-echo.
-echo  Cierra esta ventana o espera 5 segundos...
-timeout /t 5 /nobreak >nul
+echo URLs:
+echo   Frontend:  http://localhost:5173
+echo   Backend:   http://localhost:8000
+echo   Admin:     http://localhost:8000/admin
+echo ================================================
+pause
