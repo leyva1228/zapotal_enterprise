@@ -31,6 +31,10 @@ echo                Revisa el archivo .env en comunidad_zapotal_backend\
 echo                con tus credenciales de MySQL.
 echo.
 
+:: Generar DJANGO_SECRET_KEY si no existe o es placeholder
+call "%~dp0generate_secret_key.bat"
+echo.
+
 :: =============================================
 echo [PASO 1/4] Configurando BACKEND...
 cd /d "%~dp0comunidad_zapotal_backend"
