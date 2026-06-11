@@ -190,23 +190,23 @@ class Command(BaseCommand):
         # ─── Usuarios ───
         self.stdout.write('  → Usuarios...')
         admin, _ = Usuario.objects.get_or_create(
-            email='admin@zapotal.pe',
+            email='admin@zapotal.com',
             defaults={'tipo_usuario': 'ADMIN', 'estado': 'ACTIVO',
                       'is_staff': True, 'is_superuser': True},
         )
-        if not admin.check_password('admin123'):
-            admin.set_password('admin123')
+        if not admin.check_password('Admin123456'):
+            admin.set_password('Admin123456')
             admin.save()
         usuarios_comunes = []
         for i, c in enumerate(comuneros):
             u, _ = Usuario.objects.get_or_create(
-                email=f'comunero{i+1}@zapotal.pe',
+                email=f'comunero{i+1}@zapotal.com',
                 defaults={'tipo_usuario': 'COMUNERO' if i < 5 else 'USUARIO',
                           'estado': 'ACTIVO',
                           'comunero': c if i < 5 else None},
             )
-            if not u.check_password('comunero123'):
-                u.set_password('comunero123')
+            if not u.check_password('Comunero123'):
+                u.set_password('Comunero123')
                 u.save()
             usuarios_comunes.append(u)
         self.stdout.write(f'    ✓ {len(usuarios_comunes) + 1} usuarios')
@@ -364,7 +364,7 @@ class Command(BaseCommand):
 
         # ─── Reacciones ───
         self.stdout.write('  → Reacciones...')
-        tipos_reaccion = [Reaccion.TipoReaccion.LIKE, Reaccion.TipoReaccion.LOVE, Reaccion.TipoReaccion.LIKE]
+        tipos_reaccion = [Reaccion.TipoReaccion.LIKE, Reaccion.TipoReaccion.DISLIKE, Reaccion.TipoReaccion.LIKE]
         reacciones_count = 0
         for i, noticia in enumerate(noticias[:6]):
             for j, autor in enumerate(usuarios_comunes[:3]):

@@ -52,12 +52,25 @@ python manage.py migrate
 # 7. Crear superusuario
 python manage.py createsuperuser
 
-# 8. Sembrar datos de prueba (opcional)
-python manage.py seed
+# 8. Sembrar datos de prueba
+python manage.py seed --wipe
 
 # 9. Correr servidor de desarrollo
-python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
 ```
+
+## Credenciales de Prueba
+
+| Rol | Email | Password |
+|-----|-------|----------|
+| **ADMIN** | admin@zapotal.com | Admin123456 |
+| **COMUNERO** | comunero1@zapotal.com | Comunero123 |
+| **COMUNERO** | comunero2@zapotal.com | Comunero123 |
+| **COMUNERO** | comunero3@zapotal.com | Comunero123 |
+| **USUARIO** | comunero6@zapotal.com | Comunero123 |
+| **USUARIO** | comunero7@zapotal.com | Comunero123 |
+
+> Se crean automaticamente ejecutando `python manage.py seed --wipe`
 
 ## Instalación (Producción)
 
