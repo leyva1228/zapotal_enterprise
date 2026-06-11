@@ -16,9 +16,8 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
+import api, { API_BASE_URL, extractList } from "../../api";
 import "./Perfil.css";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1";
 
 function Perfil() {
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario"));
@@ -56,7 +55,7 @@ function Perfil() {
 
     const cargarDatosUsuario = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/usuarios/${usuarioGuardado.id}/`);
+        const response = await api.get(`/usuarios/${usuarioGuardado.id}/`);
         const data = response.data;
         const usuarioActualizado = {
           ...usuarioGuardado,
@@ -154,8 +153,8 @@ function Perfil() {
       // Opción: Usar avatar predeterminado (eliminar foto)
       if (usarAvatarDefault) {
         // Enviar PATCH para eliminar la foto del backend
-        await axios.patch(
-          `${API_BASE_URL}/usuarios/${usuario.id}/`,
+        await api.patch(
+          `/usuarios/${usuario.id}/`,
           { foto_perfil: null },
           { headers: { "Content-Type": "application/json" } }
         );
@@ -181,8 +180,8 @@ function Perfil() {
       const formData = new FormData();
       formData.append("foto_perfil", archivoSeleccionado);
 
-      const response = await axios.patch(
-        `${API_BASE_URL}/usuarios/${usuario.id}/`,
+      const response = await api.patch(
+        `/usuarios/${usuario.id}/`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );

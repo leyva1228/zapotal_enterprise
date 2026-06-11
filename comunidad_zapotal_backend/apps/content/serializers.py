@@ -115,14 +115,16 @@ class EventoSerializer(serializers.ModelSerializer):
     """Serializer de eventos con nested de multimedia."""
     multimedia = MultimediaSerializer(many=True, read_only=True)
     imagen_url = serializers.SerializerMethodField()
+    fecha_evento = serializers.DateTimeField(source='fecha', read_only=True)
+    ubicacion = serializers.CharField(source='lugar', read_only=True)
 
     class Meta:
         model = Evento
         fields = [
-            'id', 'titulo', 'descripcion', 'fecha', 'lugar',
-            'imagen', 'imagen_url', 'multimedia',
+            'id', 'titulo', 'descripcion', 'fecha', 'fecha_evento',
+            'lugar', 'ubicacion', 'imagen', 'imagen_url', 'multimedia',
         ]
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'fecha_evento', 'ubicacion']
 
     def get_imagen_url(self, obj):
         request = self.context.get('request')

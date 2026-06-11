@@ -135,19 +135,15 @@ function Login() {
         { timeout: 10000 }
       );
 
-      // Verificar si el backend indica éxito
-      if (!data.ok) {
+      const ud = data.usuario;
+      if (!ud) {
         registrarFallo();
         return;
       }
 
-      const ud = data.usuario;
-      if (!ud) {
-        limpiarCampos();
-        return showMsg("Respuesta inesperada del servidor.");
-      }
+      const accessToken = data.access || data.token || null;
+      const refreshToken = data.refresh || null;
 
-      // Construir objeto usuario con los campos que vienen del backend
       const usuario = {
         id:           ud.id,
         email:        ud.email,
@@ -156,11 +152,12 @@ function Login() {
         tipo_usuario: ud.tipo_usuario || "COMUNERO",
         foto_perfil:  ud.foto_perfil_url || ud.foto_perfil || "",
         dni:          ud.dni          || null,
-        token:        data.token      || null,
+        token:        accessToken,
       };
 
       localStorage.setItem("usuario", JSON.stringify(usuario));
-      if (data.token) localStorage.setItem("token", data.token);
+      if (accessToken) localStorage.setItem("token", accessToken);
+      if (refreshToken) localStorage.setItem("refresh", refreshToken);
 
       if (!localStorage.getItem("usuario")) {
         limpiarCampos();

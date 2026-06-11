@@ -30,6 +30,9 @@ node_modules/
 build/
 dist/
 
+# Reportes de mejora (IA)
+improve/
+
 # Java / Kotlin
 .gradle/
 

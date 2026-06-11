@@ -13,6 +13,7 @@ import { MdAdminPanelSettings, MdVerified } from "react-icons/md";
 import { AiOutlineLike, AiFillLike, AiOutlineDislike, AiFillDislike } from "react-icons/ai";
 import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import { RiSendPlaneFill, RiShareForwardLine } from "react-icons/ri";
+import { extractList } from "../../api";
 import "./DetalleEvento.css";
 
 // ========== CONSTANTES Y FUNCIONES COMPARTIDAS ==========
@@ -306,7 +307,7 @@ function DetalleEvento() {
   const cargarReacciones = useCallback(() => {
     if (!eventoId) return Promise.resolve();
     return axios.get(`${API_BASE_URL}/reacciones/?evento=${eventoId}`)
-      .then(({ data }) => setReacciones(data)).catch(() => {});
+      .then(({ data }) => setReacciones(extractList(data))).catch(() => {});
   }, [eventoId]);
 
   const cargarReaccionesComentarios = useCallback(async (lista) => {
@@ -314,7 +315,7 @@ function DetalleEvento() {
     const resultados = await Promise.all(
       lista.map(com =>
         axios.get(`${API_BASE_URL}/reacciones/?comentario=${com.id}`)
-          .then(res => ({ id: com.id, data: res.data }))
+          .then(res => ({ id: com.id, data: extractList(res.data) }))
           .catch(() => ({ id: com.id, data: [] }))
       )
     );
@@ -327,7 +328,7 @@ function DetalleEvento() {
     if (!eventoId) return Promise.resolve();
     return axios.get(`${API_BASE_URL}/comentarios/?evento=${eventoId}`)
       .then(async ({ data }) => {
-        const visibles = data.filter(c => c.estado !== "ELIMINADO");
+        const visibles = extractList(data).filter(c => c.estado !== "ELIMINADO");
         setComentarios(visibles);
         await cargarReaccionesComentarios(visibles);
       }).catch(() => {});
@@ -380,7 +381,7 @@ function DetalleEvento() {
         await axios.post(`${API_BASE_URL}/reacciones/`, { tipo, usuario: usuarioId, evento: null, noticia: null, comentario: comentarioId });
       }
       const { data } = await axios.get(`${API_BASE_URL}/reacciones/?comentario=${comentarioId}`);
-      setReaccsComent(prev => ({ ...prev, [comentarioId]: data }));
+      setReaccsComent(prev => ({ ...prev, [comentarioId]: extractList(data) }));
     } catch {}
   };
 

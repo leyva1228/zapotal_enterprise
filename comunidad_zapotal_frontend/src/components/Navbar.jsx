@@ -6,6 +6,7 @@ import {
   FaBars, FaTimes, FaBell, FaSearch, FaInbox,
   FaNewspaper, FaCalendarAlt,
 } from "react-icons/fa";
+import api, { extractList } from "../api";
 import "./Navbar.css";
 
 const API = "http://127.0.0.1:8000/api/v1";
@@ -65,8 +66,8 @@ function Navbar() {
 
   useEffect(() => {
     if (!usuario) return;
-    axios.get(`${API}/notificaciones/?usuario_id=${usuario.id}`)
-      .then((r) => setNotificaciones(r.data))
+    api.get(`/notificaciones/?usuario_id=${usuario.id}`)
+      .then((r) => setNotificaciones(extractList(r.data)))
       .catch(() => {});
   }, [usuario]);
 
@@ -74,11 +75,11 @@ function Navbar() {
     const cargar = async () => {
       try {
         const [nR, eR] = await Promise.all([
-          axios.get(`${API}/noticias/`),
-          axios.get(`${API}/eventos/`),
+          api.get(`/noticias/`),
+          api.get(`/eventos/`),
         ]);
-        const noticias = Array.isArray(nR.data) ? nR.data : nR.data.results || [];
-        const eventos  = Array.isArray(eR.data) ? eR.data : eR.data.results || [];
+        const noticias = extractList(nR.data);
+        const eventos  = extractList(eR.data);
         const corte = new Date();
         corte.setDate(corte.getDate() - 3);
 

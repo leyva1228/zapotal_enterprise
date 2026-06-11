@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaLeaf } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { extractList } from "../../api";
 import "./Autoridades.css";
 
 function Autoridades() {
@@ -13,7 +14,7 @@ function Autoridades() {
     axios
       .get("http://127.0.0.1:8000/api/v1/autoridades/")
       .then((response) => {
-        setAutoridades(response.data.results || []);
+        setAutoridades(extractList(response.data));
         setLoading(false);
       })
       .catch((error) => {

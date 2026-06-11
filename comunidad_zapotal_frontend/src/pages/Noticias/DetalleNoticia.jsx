@@ -13,6 +13,7 @@ import { MdAdminPanelSettings, MdVerified } from "react-icons/md";
 import { AiOutlineLike, AiFillLike, AiOutlineDislike, AiFillDislike } from "react-icons/ai";
 import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import { RiSendPlaneFill, RiShareForwardLine } from "react-icons/ri";
+import { extractList } from "../../api";
 import "./DetalleNoticia.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1";
@@ -319,7 +320,7 @@ function DetalleNoticia() {
   const cargarReacciones = useCallback(() => {
     if (!noticiaId) return Promise.resolve();
     return axios.get(`${API_BASE_URL}/reacciones/?noticia=${noticiaId}`)
-      .then(({ data }) => setReacciones(data)).catch(() => {});
+      .then(({ data }) => setReacciones(extractList(data))).catch(() => {});
   }, [noticiaId]);
 
   const cargarReaccionesComentarios = useCallback(async (lista) => {
@@ -327,7 +328,7 @@ function DetalleNoticia() {
     const resultados = await Promise.all(
       lista.map(com =>
         axios.get(`${API_BASE_URL}/reacciones/?comentario=${com.id}`)
-          .then(res => ({ id: com.id, data: res.data }))
+          .then(res => ({ id: com.id, data: extractList(res.data) }))
           .catch(() => ({ id: com.id, data: [] }))
       )
     );
@@ -340,7 +341,7 @@ function DetalleNoticia() {
     if (!noticiaId) return Promise.resolve();
     return axios.get(`${API_BASE_URL}/comentarios/?noticia=${noticiaId}`)
       .then(async ({ data }) => {
-        const visibles = data.filter(c => c.estado !== "ELIMINADO");
+        const visibles = extractList(data).filter(c => c.estado !== "ELIMINADO");
         setComentarios(visibles);
         await cargarReaccionesComentarios(visibles);
       }).catch(() => {});
@@ -393,7 +394,7 @@ function DetalleNoticia() {
         await axios.post(`${API_BASE_URL}/reacciones/`, { tipo, usuario: usuarioId, noticia: null, evento: null, comentario: comentarioId });
       }
       const { data } = await axios.get(`${API_BASE_URL}/reacciones/?comentario=${comentarioId}`);
-      setReaccsComent(prev => ({ ...prev, [comentarioId]: data }));
+      setReaccsComent(prev => ({ ...prev, [comentarioId]: extractList(data) }));
     } catch {}
   };
 

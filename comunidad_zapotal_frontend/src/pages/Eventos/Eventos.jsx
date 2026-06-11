@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { extractList } from "../../api";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -45,9 +46,7 @@ function Eventos() {
     axios
       .get("http://127.0.0.1:8000/api/v1/eventos/")
       .then((respuesta) => {
-        const datos = Array.isArray(respuesta.data)
-          ? respuesta.data
-          : respuesta.data.results || [];
+        const datos = extractList(respuesta.data);
         setTimeout(() => {
           setEventos(datos);
           setMensaje("");
