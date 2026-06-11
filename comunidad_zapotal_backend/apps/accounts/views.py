@@ -34,9 +34,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     CRUD de usuarios del sistema.
 
     Permisos:
-    - list/retrieve: usuarios autenticados
+    - list: solo ADMIN
+    - retrieve: usuario autenticado (puede verse a sí mismo) o ADMIN
     - create: solo ADMIN
-    - update/destroy: solo ADMIN
+    - update/destroy: solo ADMIN (o self para PATCH parcial de su perfil)
     """
     queryset = Usuario.objects.select_related('comunero')
     serializer_class = UsuarioSerializer
@@ -55,7 +56,16 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_authenticated and getattr(user, 'tipo_usuario', None) == 'ADMIN':
             return qs
-        return qs.filter(id=user.id)
+        return qs.filter(id=user.id) if user.is_authenticated else qs.none()
+
+    def get_object(self):
+        """Permite a un usuario ver/editar su propio perfil sin ser ADMIN."""
+        obj = super().get_object()
+        user = self.request.user
+        if user.is_authenticated and (getattr(user, 'tipo_usuario', None) == 'ADMIN' or obj.id == user.id):
+            return obj
+        from rest_framework.exceptions import PermissionDenied
+        raise PermissionDenied('Solo puedes ver tu propio perfil.')
 
 
 @api_view(['POST'])

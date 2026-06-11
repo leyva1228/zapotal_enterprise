@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   FaArrowLeft, FaUserCircle, FaSignInAlt, FaUserPlus,
   FaTimes, FaReply, FaTrashAlt, FaUserCheck,
@@ -13,7 +12,7 @@ import { MdAdminPanelSettings, MdVerified } from "react-icons/md";
 import { AiOutlineLike, AiFillLike, AiOutlineDislike, AiFillDislike } from "react-icons/ai";
 import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import { RiSendPlaneFill, RiShareForwardLine } from "react-icons/ri";
-import { extractList } from "../../api";
+import api, { extractList } from "../../api";
 import "./DetalleEvento.css";
 
 // ========== CONSTANTES Y FUNCIONES COMPARTIDAS ==========
@@ -75,7 +74,7 @@ const Avatar = memo(({ foto, inicial, size = 40, bg = "#e0e0e0" }) => {
 });
 
 const ComentarioReacciones = memo(({ comentarioId, reaccionesLista, estaAuth, onReaccionar, onAbrirModal, usuarioActualId }) => {
-  const miReaccion   = reaccionesLista.find(r => r.usuario === usuarioActualId);
+  const miReaccion   = reaccionesLista.find(r => r.autor === usuarioActualId);
   const miTipo       = miReaccion?.tipo;
   const likeCount    = reaccionesLista.filter(r => r.tipo === "LIKE").length;
   const dislikeCount = reaccionesLista.filter(r => r.tipo === "DISLIKE").length;
@@ -270,7 +269,7 @@ function DetalleEvento() {
     if (!eventoId) return;
     (async () => {
       try {
-        const { data } = await axios.get(`${API_BASE_URL}/eventos/${eventoId}/`);
+        const { data } = await api.get(`/eventos/${eventoId}/`);
         setEvento(data);
       } catch (err) {
         setError(err.response?.status === 404 ? "El evento no existe o fue eliminado." : "No se pudo cargar el evento.");
@@ -287,7 +286,7 @@ function DetalleEvento() {
     const storage = estaAuth && usuarioId ? localStorage : sessionStorage;
     if (!storage?.getItem(claveLocal)) {
       const nuevasVistas = (evento.vistas || 0) + 1;
-      axios.patch(`${API_BASE_URL}/eventos/${eventoId}/`, { vistas: nuevasVistas })
+      api.patch(`/eventos/${eventoId}/`, { vistas: nuevasVistas })
         .then(() => {
           setEvento(prev => ({ ...prev, vistas: nuevasVistas }));
           storage.setItem(claveLocal, "true");
@@ -296,17 +295,20 @@ function DetalleEvento() {
     }
   }, [eventoId, evento, estaAuth, usuarioId]);
 
-  // Cargar eventos relacionados
+  // Cargar relacionados (placeholder: usar lista de eventos excluyendo el actual)
   useEffect(() => {
     if (!eventoId) return;
-    axios.get(`${API_BASE_URL}/eventos/${eventoId}/relacionados/`)
-      .then(res => setRelacionados(res.data))
+    api.get(`/eventos/`)
+      .then(({ data }) => {
+        const lista = extractList(data).filter(e => e.id !== eventoId).slice(0, 5);
+        setRelacionados(lista);
+      })
       .catch(() => setRelacionados([]));
   }, [eventoId]);
 
   const cargarReacciones = useCallback(() => {
     if (!eventoId) return Promise.resolve();
-    return axios.get(`${API_BASE_URL}/reacciones/?evento=${eventoId}`)
+    return api.get(`/reacciones/?evento=${eventoId}`)
       .then(({ data }) => setReacciones(extractList(data))).catch(() => {});
   }, [eventoId]);
 
@@ -314,7 +316,7 @@ function DetalleEvento() {
     if (!lista.length) return;
     const resultados = await Promise.all(
       lista.map(com =>
-        axios.get(`${API_BASE_URL}/reacciones/?comentario=${com.id}`)
+        api.get(`/reacciones/?comentario=${com.id}`)
           .then(res => ({ id: com.id, data: extractList(res.data) }))
           .catch(() => ({ id: com.id, data: [] }))
       )
@@ -326,9 +328,9 @@ function DetalleEvento() {
 
   const cargarComentarios = useCallback(() => {
     if (!eventoId) return Promise.resolve();
-    return axios.get(`${API_BASE_URL}/comentarios/?evento=${eventoId}`)
-      .then(async ({ data }) => {
-        const visibles = extractList(data).filter(c => c.estado !== "ELIMINADO");
+    return api.get(`/eventos/${eventoId}/comentarios/`)
+      .then(async (res) => {
+        const visibles = (Array.isArray(res.data) ? res.data : []).filter(c => c.estado !== "ELIMINADO");
         setComentarios(visibles);
         await cargarReaccionesComentarios(visibles);
       }).catch(() => {});
@@ -357,13 +359,16 @@ function DetalleEvento() {
     if (!hasPermission("reaccionar") || !estaAuth) { openModal("reaccion"); return; }
     try {
       if (tipo === null) {
-        const existente = reacciones.find(r => r.usuario === usuarioId);
-        if (existente) await axios.delete(`${API_BASE_URL}/reacciones/${existente.id}/`);
+        const existente = reacciones.find(r => r.autor === usuarioId);
+        if (existente) await api.delete(`/reacciones/${existente.id}/`);
       } else {
-        const anterior = reacciones.find(r => r.usuario === usuarioId);
-        if (anterior && anterior.tipo !== tipo) await axios.delete(`${API_BASE_URL}/reacciones/${anterior.id}/`);
-        if (!anterior || anterior.tipo !== tipo)
-          await axios.post(`${API_BASE_URL}/reacciones/`, { tipo, usuario: usuarioId, evento: eventoId, noticia: null, comentario: null });
+        const anterior = reacciones.find(r => r.autor === usuarioId);
+        if (anterior && anterior.tipo !== tipo) {
+          await api.delete(`/reacciones/${anterior.id}/`);
+        }
+        if (!anterior || anterior.tipo !== tipo) {
+          await api.post(`/reacciones/`, { tipo, evento: eventoId });
+        }
       }
       cargarReacciones();
     } catch {}
@@ -373,14 +378,18 @@ function DetalleEvento() {
     if (!hasPermission("reaccionar") || !estaAuth) { openModal("like"); return; }
     try {
       if (tipo === null) {
-        const existente = (reaccsComent[comentarioId] || []).find(r => r.usuario === usuarioId);
-        if (existente) await axios.delete(`${API_BASE_URL}/reacciones/${existente.id}/`);
+        const existente = (reaccsComent[comentarioId] || []).find(r => r.autor === usuarioId);
+        if (existente) await api.delete(`/reacciones/${existente.id}/`);
       } else {
-        const anterior = (reaccsComent[comentarioId] || []).find(r => r.usuario === usuarioId);
-        if (anterior && anterior.tipo !== tipo) await axios.delete(`${API_BASE_URL}/reacciones/${anterior.id}/`);
-        await axios.post(`${API_BASE_URL}/reacciones/`, { tipo, usuario: usuarioId, evento: null, noticia: null, comentario: comentarioId });
+        const anterior = (reaccsComent[comentarioId] || []).find(r => r.autor === usuarioId);
+        if (anterior && anterior.tipo !== tipo) {
+          await api.delete(`/reacciones/${anterior.id}/`);
+        }
+        if (!anterior || anterior.tipo !== tipo) {
+          await api.post(`/reacciones/`, { tipo, comentario: comentarioId });
+        }
       }
-      const { data } = await axios.get(`${API_BASE_URL}/reacciones/?comentario=${comentarioId}`);
+      const { data } = await api.get(`/reacciones/?comentario=${comentarioId}`);
       setReaccsComent(prev => ({ ...prev, [comentarioId]: extractList(data) }));
     } catch {}
   };
@@ -396,7 +405,13 @@ function DetalleEvento() {
     setIsSubmittingComment(true);
     setRateLimit(p => ({ ...p, count: p.count + 1 }));
     try {
-      await axios.post(`${API_BASE_URL}/comentarios/`, { contenido: texto, usuario: usuarioId, evento: eventoId, noticia: null, comentario_padre: null, estado: "APROBADO" });
+      await api.post(`/comentarios/`, {
+        contenido: texto,
+        noticia: null,
+        evento: eventoId,
+        respuesta_a: null,
+        estado: "PUBLICADO",
+      });
       setNuevo("");
       await cargarComentarios();
       if (comentariosScrollRef.current) comentariosScrollRef.current.scrollTop = comentariosScrollRef.current.scrollHeight;
@@ -414,7 +429,13 @@ function DetalleEvento() {
     setIsSubmittingReply(true);
     setRateLimit(p => ({ ...p, count: p.count + 1 }));
     try {
-      await axios.post(`${API_BASE_URL}/comentarios/`, { contenido: texto, usuario: usuarioId, evento: eventoId, noticia: null, comentario_padre: padreId, estado: "APROBADO" });
+      await api.post(`/comentarios/`, {
+        contenido: texto,
+        noticia: null,
+        evento: eventoId,
+        respuesta_a: padreId,
+        estado: "PUBLICADO",
+      });
       setTextoResp(""); setRespondiendoA(null);
       await cargarComentarios();
     } catch { alert("Error al enviar la respuesta."); }
@@ -425,7 +446,7 @@ function DetalleEvento() {
     if (usuarioId !== autorId && !esAdmin) { alert("Solo el autor o un administrador pueden eliminar."); return; }
     if (!window.confirm("¿Eliminar este comentario?")) return;
     try {
-      await axios.delete(`${API_BASE_URL}/comentarios/${cId}/`);
+      await api.delete(`/comentarios/${cId}/`);
       await cargarComentarios();
     } catch { alert("Error al eliminar el comentario."); }
   };
@@ -444,7 +465,7 @@ function DetalleEvento() {
     const v = validarComentario(texto);
     if (!v.valido) { alert(v.mensaje); return; }
     try {
-      await axios.patch(`${API_BASE_URL}/comentarios/${cId}/`, { contenido: texto });
+      await api.patch(`/comentarios/${cId}/`, { contenido: texto });
       cancelarEdicion(cId);
       await cargarComentarios();
     } catch { alert("Error al editar el comentario."); }
@@ -464,7 +485,7 @@ function DetalleEvento() {
 
   const obtenerComentariosOrdenados = useMemo(() => {
     if (!comentarios.length) return [];
-    const raices = comentarios.filter(c => !c.comentario_padre);
+    const raices = comentarios.filter(c => !c.respuesta_a);
     const ordenados = [...raices];
     if (ordenComentarios === "recientes")
       ordenados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
@@ -481,11 +502,11 @@ function DetalleEvento() {
     const princ  = obtenerComentariosOrdenados;
     const likes  = reacciones.filter(r => r.tipo === "LIKE").length;
     const dislikes = reacciones.filter(r => r.tipo === "DISLIKE").length;
-    const userReact = reacciones.find(r => r.usuario === usuarioId);
+    const userReact = reacciones.find(r => r.autor === usuarioId);
     return { imagenes: imgs, videos: vids, principales: princ, totalLikes: likes, totalDislikes: dislikes, userReaccion: userReact?.tipo || null };
   }, [evento, reacciones, comentarios, usuarioId, obtenerComentariosOrdenados]);
 
-  const getRespuestas = useCallback((cId) => comentarios.filter(c => c.comentario_padre === cId), [comentarios]);
+  const getRespuestas = useCallback((cId) => comentarios.filter(c => c.respuesta_a === cId), [comentarios]);
 
   const organizadorNombre = evento?.usuario?.nombre_completo || evento?.usuario_nombre || "Comunidad Campesina";
   const organizadorFoto   = evento?.usuario?.foto_perfil_url || evento?.usuario_foto || null;
@@ -518,11 +539,11 @@ function DetalleEvento() {
   const capacidad = evento.cupo_maximo || evento.capacidad || null;
 
   const renderComentario = (c, esRespuesta = false) => {
-    const nombre         = c.usuario_nombre || c.usuario_data?.nombre_completo || "Usuario";
-    const foto           = c.usuario_foto   || c.usuario_data?.foto_perfil_url  || null;
+    const nombre         = c.autor_nombre || c.autor?.email || c.usuario_nombre || c.usuario_data?.nombre_completo || "Usuario";
+    const foto           = c.autor_foto   || c.usuario_foto  || c.usuario_data?.foto_perfil_url || null;
     const inicial        = (c.usuario_iniciales || nombre.charAt(0)).toUpperCase();
-    const esAutorC       = usuarioId === c.usuario;
-    const esAutorEvento  = c.usuario === evento?.usuario?.id;
+    const esAutorC       = usuarioId === c.autor;
+    const esAutorEvento  = c.autor === evento?.usuario?.id;
     const rcComent       = reaccsComent[c.id] || [];
     const enEdicion      = editando[c.id]?.activo;
     const puedeEditar    = esAutorC && !esRespuesta;
@@ -540,7 +561,7 @@ function DetalleEvento() {
             <div className="comentario-nombre-fila">
               <span className="comentario-nombre">{nombre}</span>
               {esAutorEvento && <span className="autor-badge"><BsFillPatchCheckFill /> Organizador</span>}
-              {esAdmin && c.usuario === usuarioId && !esAutorEvento && (
+              {esAdmin && c.autor === usuarioId && !esAutorEvento && (
                 <span className="admin-badge"><MdAdminPanelSettings /> Admin</span>
               )}
               <span className="comentario-fecha">{tiempoRelativo}</span>
@@ -550,7 +571,7 @@ function DetalleEvento() {
               puedeEliminar={puedeEliminar}
               puedeReportar={puedeReportar}
               onEditar={() => iniciarEdicion(c.id, c.contenido)}
-              onEliminar={() => eliminarComentario(c.id, c.usuario)}
+              onEliminar={() => eliminarComentario(c.id, c.autor)}
               onReportar={() => reportarComentario(c.id, nombre)}
               estaAuth={estaAuth}
               onAbrirModal={openModal}

@@ -55,6 +55,38 @@ function Home() {
   );
 }
 
+function AdminPanel() {
+  const usuario = (() => { try { return JSON.parse(localStorage.getItem("usuario")); } catch { return null; } })();
+  if (!usuario || usuario.tipo_usuario !== "ADMIN") {
+    return (
+      <main className="main-container">
+        <section className="home-hero">
+          <div className="home-hero-content">
+            <h1>Acceso restringido</h1>
+            <p>Solo los administradores pueden acceder a este panel.</p>
+            <Link to="/login" className="btn-principal">Iniciar sesión <FaArrowRight /></Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+  return (
+    <main className="main-container">
+      <section className="home-hero">
+        <div className="home-hero-content">
+          <h1>Panel de Administración</h1>
+          <p>Bienvenido, {usuario.email}. El panel completo estará disponible próximamente.</p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 24, flexWrap: "wrap" }}>
+            <Link to="/perfil" className="btn-principal">Mi perfil <FaArrowRight /></Link>
+            <Link to="/noticias" className="btn-principal">Ver noticias <FaArrowRight /></Link>
+            <Link to="/eventos" className="btn-principal">Ver eventos <FaArrowRight /></Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function Layout() {
   const location = useLocation();
 
@@ -105,6 +137,8 @@ function Layout() {
               : <Login />
           }
         />
+
+        <Route path="/admin" element={<AdminPanel />} />
 
         <Route path="/donaciones" element={<Donaciones />} />
       </Routes>

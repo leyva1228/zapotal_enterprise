@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   FaArrowLeft, FaUserCircle, FaSignInAlt, FaUserPlus,
   FaTimes, FaReply, FaTrashAlt, FaUserCheck,
@@ -13,7 +12,7 @@ import { MdAdminPanelSettings, MdVerified } from "react-icons/md";
 import { AiOutlineLike, AiFillLike, AiOutlineDislike, AiFillDislike } from "react-icons/ai";
 import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import { RiSendPlaneFill, RiShareForwardLine } from "react-icons/ri";
-import { extractList } from "../../api";
+import api, { extractList } from "../../api";
 import "./DetalleNoticia.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1";
@@ -73,7 +72,7 @@ const Avatar = memo(({ foto, inicial, size = 40, bg = "#e0e0e0" }) => {
 });
 
 const ComentarioReacciones = memo(({ comentarioId, reaccionesLista, estaAuth, onReaccionar, onAbrirModal, usuarioActualId }) => {
-  const miReaccion   = reaccionesLista.find(r => r.usuario === usuarioActualId);
+  const miReaccion   = reaccionesLista.find(r => r.autor === usuarioActualId);
   const miTipo       = miReaccion?.tipo;
   const likeCount    = reaccionesLista.filter(r => r.tipo === "LIKE").length;
   const dislikeCount = reaccionesLista.filter(r => r.tipo === "DISLIKE").length;
@@ -283,7 +282,7 @@ function DetalleNoticia() {
     if (!noticiaId) return;
     (async () => {
       try {
-        const { data } = await axios.get(`${API_BASE_URL}/noticias/${noticiaId}/`);
+        const { data } = await api.get(`/noticias/${noticiaId}/`);
         setNoticia(data);
       } catch (err) {
         setError(err.response?.status === 404 ? "La noticia no existe o fue eliminada." : "No se pudo cargar la noticia.");
@@ -300,7 +299,7 @@ function DetalleNoticia() {
     const storage = estaAuth && usuarioId ? localStorage : sessionStorage;
     if (!storage?.getItem(claveLocal)) {
       const nuevasVistas = (noticia.vistas || 0) + 1;
-      axios.patch(`${API_BASE_URL}/noticias/${noticiaId}/`, { vistas: nuevasVistas })
+      api.patch(`/noticias/${noticiaId}/`, { vistas: nuevasVistas })
         .then(() => {
           setNoticia(prev => ({ ...prev, vistas: nuevasVistas }));
           storage.setItem(claveLocal, "true");
@@ -312,14 +311,14 @@ function DetalleNoticia() {
   // Cargar relacionadas
   useEffect(() => {
     if (!noticiaId) return;
-    axios.get(`${API_BASE_URL}/noticias/${noticiaId}/relacionadas/`)
+    api.get(`/noticias/${noticiaId}/relacionadas/`)
       .then(res => setRelacionadas(res.data))
       .catch(() => setRelacionadas([]));
   }, [noticiaId]);
 
   const cargarReacciones = useCallback(() => {
     if (!noticiaId) return Promise.resolve();
-    return axios.get(`${API_BASE_URL}/reacciones/?noticia=${noticiaId}`)
+    return api.get(`/reacciones/?noticia=${noticiaId}`)
       .then(({ data }) => setReacciones(extractList(data))).catch(() => {});
   }, [noticiaId]);
 
@@ -327,7 +326,7 @@ function DetalleNoticia() {
     if (!lista.length) return;
     const resultados = await Promise.all(
       lista.map(com =>
-        axios.get(`${API_BASE_URL}/reacciones/?comentario=${com.id}`)
+        api.get(`/reacciones/?comentario=${com.id}`)
           .then(res => ({ id: com.id, data: extractList(res.data) }))
           .catch(() => ({ id: com.id, data: [] }))
       )
@@ -339,7 +338,7 @@ function DetalleNoticia() {
 
   const cargarComentarios = useCallback(() => {
     if (!noticiaId) return Promise.resolve();
-    return axios.get(`${API_BASE_URL}/comentarios/?noticia=${noticiaId}`)
+    return api.get(`/comentarios/?noticia=${noticiaId}`)
       .then(async ({ data }) => {
         const visibles = extractList(data).filter(c => c.estado !== "ELIMINADO");
         setComentarios(visibles);
@@ -370,13 +369,16 @@ function DetalleNoticia() {
     if (!hasPermission("reaccionar") || !estaAuth) { openModal("reaccion"); return; }
     try {
       if (tipo === null) {
-        const existente = reacciones.find(r => r.usuario === usuarioId);
-        if (existente) await axios.delete(`${API_BASE_URL}/reacciones/${existente.id}/`);
+        const existente = reacciones.find(r => r.autor === usuarioId);
+        if (existente) await api.delete(`/reacciones/${existente.id}/`);
       } else {
-        const anterior = reacciones.find(r => r.usuario === usuarioId);
-        if (anterior && anterior.tipo !== tipo) await axios.delete(`${API_BASE_URL}/reacciones/${anterior.id}/`);
-        if (!anterior || anterior.tipo !== tipo)
-          await axios.post(`${API_BASE_URL}/reacciones/`, { tipo, usuario: usuarioId, noticia: noticiaId, evento: null, comentario: null });
+        const anterior = reacciones.find(r => r.autor === usuarioId);
+        if (anterior && anterior.tipo !== tipo) {
+          await api.delete(`/reacciones/${anterior.id}/`);
+        }
+        if (!anterior || anterior.tipo !== tipo) {
+          await api.post(`/reacciones/`, { tipo, noticia: noticiaId });
+        }
       }
       cargarReacciones();
     } catch {}
@@ -386,14 +388,18 @@ function DetalleNoticia() {
     if (!hasPermission("reaccionar") || !estaAuth) { openModal("like"); return; }
     try {
       if (tipo === null) {
-        const existente = (reaccsComent[comentarioId] || []).find(r => r.usuario === usuarioId);
-        if (existente) await axios.delete(`${API_BASE_URL}/reacciones/${existente.id}/`);
+        const existente = (reaccsComent[comentarioId] || []).find(r => r.autor === usuarioId);
+        if (existente) await api.delete(`/reacciones/${existente.id}/`);
       } else {
-        const anterior = (reaccsComent[comentarioId] || []).find(r => r.usuario === usuarioId);
-        if (anterior && anterior.tipo !== tipo) await axios.delete(`${API_BASE_URL}/reacciones/${anterior.id}/`);
-        await axios.post(`${API_BASE_URL}/reacciones/`, { tipo, usuario: usuarioId, noticia: null, evento: null, comentario: comentarioId });
+        const anterior = (reaccsComent[comentarioId] || []).find(r => r.autor === usuarioId);
+        if (anterior && anterior.tipo !== tipo) {
+          await api.delete(`/reacciones/${anterior.id}/`);
+        }
+        if (!anterior || anterior.tipo !== tipo) {
+          await api.post(`/reacciones/`, { tipo, comentario: comentarioId });
+        }
       }
-      const { data } = await axios.get(`${API_BASE_URL}/reacciones/?comentario=${comentarioId}`);
+      const { data } = await api.get(`/reacciones/?comentario=${comentarioId}`);
       setReaccsComent(prev => ({ ...prev, [comentarioId]: extractList(data) }));
     } catch {}
   };
@@ -409,7 +415,13 @@ function DetalleNoticia() {
     setIsSubmittingComment(true);
     setRateLimit(p => ({ ...p, count: p.count + 1 }));
     try {
-      await axios.post(`${API_BASE_URL}/comentarios/`, { contenido: texto, usuario: usuarioId, noticia: noticiaId, evento: null, comentario_padre: null, estado: "APROBADO" });
+      await api.post(`/comentarios/`, {
+        contenido: texto,
+        noticia: noticiaId,
+        evento: null,
+        respuesta_a: null,
+        estado: "PUBLICADO",
+      });
       setNuevo("");
       await cargarComentarios();
       if (comentariosScrollRef.current) comentariosScrollRef.current.scrollTop = comentariosScrollRef.current.scrollHeight;
@@ -427,7 +439,13 @@ function DetalleNoticia() {
     setIsSubmittingReply(true);
     setRateLimit(p => ({ ...p, count: p.count + 1 }));
     try {
-      await axios.post(`${API_BASE_URL}/comentarios/`, { contenido: texto, usuario: usuarioId, noticia: noticiaId, evento: null, comentario_padre: padreId, estado: "APROBADO" });
+      await api.post(`/comentarios/`, {
+        contenido: texto,
+        noticia: noticiaId,
+        evento: null,
+        respuesta_a: padreId,
+        estado: "PUBLICADO",
+      });
       setTextoResp(""); setRespondiendoA(null);
       await cargarComentarios();
     } catch { alert("Error al enviar la respuesta."); }
@@ -438,7 +456,7 @@ function DetalleNoticia() {
     if (usuarioId !== autorId && !esAdmin) { alert("Solo el autor o un administrador pueden eliminar."); return; }
     if (!window.confirm("¿Eliminar este comentario?")) return;
     try {
-      await axios.delete(`${API_BASE_URL}/comentarios/${cId}/`);
+      await api.delete(`/comentarios/${cId}/`);
       await cargarComentarios();
     } catch { alert("Error al eliminar el comentario."); }
   };
@@ -457,7 +475,7 @@ function DetalleNoticia() {
     const v = validarComentario(texto);
     if (!v.valido) { alert(v.mensaje); return; }
     try {
-      await axios.patch(`${API_BASE_URL}/comentarios/${cId}/`, { contenido: texto });
+      await api.patch(`/comentarios/${cId}/`, { contenido: texto });
       cancelarEdicion(cId);
       await cargarComentarios();
     } catch { alert("Error al editar el comentario."); }
@@ -477,7 +495,7 @@ function DetalleNoticia() {
 
   const obtenerComentariosOrdenados = useMemo(() => {
     if (!comentarios.length) return [];
-    const raices = comentarios.filter(c => !c.comentario_padre);
+    const raices = comentarios.filter(c => !c.respuesta_a);
     const ordenados = [...raices];
     if (ordenComentarios === "recientes")
       ordenados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
@@ -494,11 +512,11 @@ function DetalleNoticia() {
     const princ  = obtenerComentariosOrdenados;
     const likes  = reacciones.filter(r => r.tipo === "LIKE").length;
     const dislikes = reacciones.filter(r => r.tipo === "DISLIKE").length;
-    const userReact = reacciones.find(r => r.usuario === usuarioId);
+    const userReact = reacciones.find(r => r.autor === usuarioId);
     return { imagenes: imgs, videos: vids, principales: princ, totalLikes: likes, totalDislikes: dislikes, userReaccion: userReact?.tipo || null };
   }, [noticia, reacciones, comentarios, usuarioId, obtenerComentariosOrdenados]);
 
-  const getRespuestas = useCallback((cId) => comentarios.filter(c => c.comentario_padre === cId), [comentarios]);
+  const getRespuestas = useCallback((cId) => comentarios.filter(c => c.respuesta_a === cId), [comentarios]);
 
   const autorNombre  = noticia?.usuario?.nombre_completo || noticia?.usuario_nombre || "Comunidad Campesina";
   const autorFoto    = noticia?.usuario?.foto_perfil_url || noticia?.usuario_foto || null;
@@ -528,11 +546,11 @@ function DetalleNoticia() {
   const tieneRelacionadas = relacionadas.length > 0;
 
   const renderComentario = (c, esRespuesta = false) => {
-    const nombre         = c.usuario_nombre || c.usuario_data?.nombre_completo || "Usuario";
-    const foto           = c.usuario_foto   || c.usuario_data?.foto_perfil_url  || null;
+    const nombre         = c.autor_nombre || c.autor?.email || c.usuario_nombre || c.usuario_data?.nombre_completo || "Usuario";
+    const foto           = c.autor_foto   || c.usuario_foto  || c.usuario_data?.foto_perfil_url || null;
     const inicial        = (c.usuario_iniciales || nombre.charAt(0)).toUpperCase();
-    const esAutorC       = usuarioId === c.usuario;
-    const esAutorNoticia = c.usuario === noticia?.usuario?.id;
+    const esAutorC       = usuarioId === c.autor;
+    const esAutorNoticia = c.autor === noticia?.usuario?.id;
     const rcComent       = reaccsComent[c.id] || [];
     const enEdicion      = editando[c.id]?.activo;
     const puedeEditar    = esAutorC && !esRespuesta;
@@ -550,7 +568,7 @@ function DetalleNoticia() {
             <div className="comentario-nombre-fila">
               <span className="comentario-nombre">{nombre}</span>
               {esAutorNoticia && <span className="autor-badge"><BsFillPatchCheckFill /> Autor</span>}
-              {esAdmin && c.usuario === usuarioId && !esAutorNoticia && (
+              {esAdmin && c.autor === usuarioId && !esAutorNoticia && (
                 <span className="admin-badge"><MdAdminPanelSettings /> Admin</span>
               )}
               <span className="comentario-fecha">{tiempoRelativo}</span>
@@ -560,7 +578,7 @@ function DetalleNoticia() {
               puedeEliminar={puedeEliminar}
               puedeReportar={puedeReportar}
               onEditar={() => iniciarEdicion(c.id, c.contenido)}
-              onEliminar={() => eliminarComentario(c.id, c.usuario)}
+              onEliminar={() => eliminarComentario(c.id, c.autor)}
               onReportar={() => reportarComentario(c.id, nombre)}
               estaAuth={estaAuth}
               onAbrirModal={openModal}

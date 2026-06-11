@@ -84,8 +84,9 @@ class EventoViewSet(viewsets.ModelViewSet):
     Eventos de la comunidad.
     - Lectura pública.
     - Escritura solo ADMIN o COMUNERO.
+    - Endpoint personalizado: /eventos/{id}/comentarios/
     """
-    queryset = Evento.objects.prefetch_related('multimedia')
+    queryset = Evento.objects.prefetch_related('multimedia', 'reacciones', 'comentarios')
     serializer_class = EventoSerializer
     permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ['fecha', 'lugar']
@@ -96,6 +97,16 @@ class EventoViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsComuneroOrAdmin()]
         return super().get_permissions()
+
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    def comentarios(self, request, pk=None):
+        """Lista los comentarios públicos de un evento."""
+        evento = self.get_object()
+        comentarios = evento.comentarios.filter(
+            estado=Comentario.EstadoComentario.PUBLICADO
+        ).order_by('-fecha')
+        serializer = ComentarioSerializer(comentarios, many=True, context={'request': request})
+        return Response(serializer.data)
 
 
 class MultimediaViewSet(viewsets.ModelViewSet):
@@ -117,15 +128,15 @@ class MultimediaViewSet(viewsets.ModelViewSet):
 
 class ComentarioViewSet(viewsets.ModelViewSet):
     """
-    Comentarios en noticias.
+    Comentarios en noticias o eventos.
     - Lectura pública (solo PUBLICADO).
     - Crear: usuario autenticado.
     - Editar/eliminar: solo el autor o ADMIN.
     """
-    queryset = Comentario.objects.select_related('noticia', 'respuesta_a', 'autor')
+    queryset = Comentario.objects.select_related('noticia', 'evento', 'respuesta_a', 'autor')
     serializer_class = ComentarioSerializer
     permission_classes = [AllowAny]
-    filterset_fields = ['noticia', 'estado']
+    filterset_fields = ['noticia', 'evento', 'estado']
     search_fields = ['contenido', 'autor__email']
 
     def get_queryset(self):
@@ -148,22 +159,18 @@ class ComentarioViewSet(viewsets.ModelViewSet):
 
 class ReaccionViewSet(viewsets.ModelViewSet):
     """
-    Reacciones a noticias (LIKE, DISLIKE, LOVE, ANGRY).
+    Reacciones (LIKE / DISLIKE) a noticias, eventos o comentarios.
     - Lectura pública.
-    - Crear/actualizar: usuario autenticado.
+    - Crear/eliminar: usuario autenticado.
     - Toggle: si ya existe la misma reacción, se elimina; si es diferente, se actualiza.
     """
-    queryset = Reaccion.objects.select_related('noticia')
+    queryset = Reaccion.objects.select_related('noticia', 'evento', 'comentario', 'autor')
     serializer_class = ReaccionSerializer
     permission_classes = [AllowAny]
-    filterset_fields = ['noticia', 'tipo', 'autor']
+    filterset_fields = ['noticia', 'evento', 'comentario', 'tipo', 'autor']
 
     def get_queryset(self):
         qs = super().get_queryset()
-        user = self.request.user
-        if user.is_authenticated:
-            if self.action == 'list':
-                return qs.filter(autor=user)
         return qs
 
     def get_permissions(self):
@@ -175,15 +182,31 @@ class ReaccionViewSet(viewsets.ModelViewSet):
         """
         Crear o toggle una reacción.
 
-        - Si el usuario ya tiene la misma reacción a la misma noticia, se elimina.
-        - Si el usuario tiene una reacción diferente, se actualiza.
+        - Acepta payload con `noticia` O `evento` O `comentario` (uno es obligatorio).
+        - Si el usuario ya tiene la misma reacción al mismo objetivo, se elimina.
+        - Si el usuario tiene una reacción diferente al mismo objetivo, se actualiza.
         - Si no tiene, se crea.
         """
-        noticia_id = request.data.get('noticia')
-        tipo = request.data.get('tipo')
         autor = request.user
+        noticia_id  = request.data.get('noticia')
+        evento_id   = request.data.get('evento')
+        comentario_id = request.data.get('comentario')
+        tipo = request.data.get('tipo')
 
-        existente = Reaccion.objects.filter(noticia_id=noticia_id, autor=autor).first()
+        qs = Reaccion.objects.filter(autor=autor)
+        if noticia_id:
+            qs = qs.filter(noticia_id=noticia_id)
+        elif evento_id:
+            qs = qs.filter(evento_id=evento_id)
+        elif comentario_id:
+            qs = qs.filter(comentario_id=comentario_id)
+        else:
+            return Response(
+                {'detail': 'Debe especificar noticia, evento o comentario.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        existente = qs.first()
         if existente:
             if existente.tipo == tipo:
                 existente.delete()

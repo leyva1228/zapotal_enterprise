@@ -124,6 +124,16 @@ class Comentario(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Noticia',
         related_name='comentarios',
+        null=True,
+        blank=True,
+    )
+    evento = models.ForeignKey(
+        Evento,
+        on_delete=models.CASCADE,
+        verbose_name='Evento',
+        related_name='comentarios',
+        null=True,
+        blank=True,
     )
     autor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -183,14 +193,30 @@ class Reaccion(models.Model):
     class TipoReaccion(models.TextChoices):
         LIKE = 'LIKE', 'Like'
         DISLIKE = 'DISLIKE', 'Dislike'
-        LOVE = 'LOVE', 'Love'
-        ANGRY = 'ANGRY', 'Angry'
 
     noticia = models.ForeignKey(
         Noticia,
         on_delete=models.CASCADE,
         verbose_name='Noticia',
         related_name='reacciones',
+        null=True,
+        blank=True,
+    )
+    evento = models.ForeignKey(
+        Evento,
+        on_delete=models.CASCADE,
+        verbose_name='Evento',
+        related_name='reacciones',
+        null=True,
+        blank=True,
+    )
+    comentario = models.ForeignKey(
+        'Comentario',
+        on_delete=models.CASCADE,
+        verbose_name='Comentario',
+        related_name='reacciones',
+        null=True,
+        blank=True,
     )
     autor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -211,9 +237,26 @@ class Reaccion(models.Model):
         db_table = 'reaccion'
         verbose_name = 'Reaccion'
         verbose_name_plural = 'Reacciones'
-        unique_together = ['noticia', 'autor']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['noticia', 'autor'],
+                name='uniq_reaccion_noticia_autor',
+                condition=models.Q(noticia__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=['evento', 'autor'],
+                name='uniq_reaccion_evento_autor',
+                condition=models.Q(evento__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=['comentario', 'autor'],
+                name='uniq_reaccion_comentario_autor',
+                condition=models.Q(comentario__isnull=False),
+            ),
+        ]
         ordering = ['-fecha']
 
     def __str__(self):
         autor = self.autor.email if self.autor else 'Anónimo'
-        return f'{autor} - {self.tipo} en {self.noticia.titulo}'
+        destino = self.noticia or self.evento or self.comentario
+        return f'{autor} - {self.tipo} en {destino}'
