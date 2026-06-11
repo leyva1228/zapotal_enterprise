@@ -9,9 +9,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 
 from apps.core.permissions import IsAdminUser, IsAdminOrReadOnly
-from .models import Usuario
+from .models import Usuario, Comunero
 from .serializers import (
-    UsuarioSerializer, UsuarioEscrituraSerializer, LoginSerializer,
+    UsuarioSerializer, UsuarioEscrituraSerializer, LoginSerializer, ComuneroSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,21 @@ class ContactoThrottle(AnonRateThrottle):
 
 class RegisterThrottle(AnonRateThrottle):
     scope = 'register'
+
+
+class ComuneroViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de comuneros.
+    - Lectura: pública.
+    - Escritura: solo ADMIN.
+    """
+    queryset = Comunero.objects.all()
+    serializer_class = ComuneroSerializer
+    permission_classes = [IsAdminUser]
+    filterset_fields = ['estado']
+    search_fields = ['dni', 'nombres', 'apellidos']
+    ordering_fields = ['apellidos', 'nombres', 'dni']
+    ordering = ['apellidos', 'nombres']
 
 
 class UsuarioViewSet(viewsets.ModelViewSet):

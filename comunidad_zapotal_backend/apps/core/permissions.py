@@ -4,30 +4,35 @@ Permisos personalizados para el sistema Comunidad Zapotal.
 from rest_framework import permissions
 
 
-class IsAdminUser(permissions.BasePermission):
-    """Permite acceso solo a usuarios con tipo_usuario=ADMIN."""
+def _is_active_user(user):
+    """Usuario autenticado, activo y tipo_usuario válido."""
+    if not user or not getattr(user, 'is_authenticated', False):
+        return False
+    if getattr(user, 'estado', None) != 'ACTIVO':
+        return False
+    return getattr(user, 'tipo_usuario', None) in ('ADMIN', 'COMUNERO')
 
-    message = 'Solo administradores pueden realizar esta acción.'
+
+class IsAdminUser(permissions.BasePermission):
+    """Permite acceso solo a usuarios con tipo_usuario=ADMIN y estado ACTIVO."""
+
+    message = 'Solo administradores activos pueden realizar esta acción.'
 
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
+        if not request.user or not getattr(request.user, 'is_authenticated', False):
             return False
-        if not getattr(request.user, 'is_authenticated', False):
+        if getattr(request.user, 'estado', None) != 'ACTIVO':
             return False
-        tipo = getattr(request.user, 'tipo_usuario', None)
-        return tipo == 'ADMIN'
+        return getattr(request.user, 'tipo_usuario', None) == 'ADMIN'
 
 
 class IsComuneroOrAdmin(permissions.BasePermission):
-    """Permite acceso a ADMIN o COMUNERO."""
+    """Permite acceso a ADMIN o COMUNERO activos."""
 
-    message = 'Solo comuneros o administradores pueden realizar esta acción.'
+    message = 'Solo comuneros o administradores activos pueden realizar esta acción.'
 
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        tipo = getattr(request.user, 'tipo_usuario', None)
-        return tipo in ('ADMIN', 'COMUNERO')
+        return _is_active_user(request.user)
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):

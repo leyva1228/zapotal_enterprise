@@ -29,8 +29,19 @@ const formatearFecha = (str) => {
   return `${d.getDate().toString().padStart(2,"0")}.${(d.getMonth()+1).toString().padStart(2,"0")}.${d.getFullYear()}`;
 };
 
-/* Primer elemento multimedia de tipo imagen o video */
-const getMedia = (multimedia) => multimedia?.[0] || null;
+/* En el listado solo se muestran imágenes. Prioriza la primera IMAGEN del array
+ * multimedia; si no hay, intenta con el campo `imagen_url` o `imagen` del propio
+ * recurso (las portadas de las noticias). */
+const getMedia = (noticia) => {
+  const m = noticia?.multimedia?.find(x => x.tipo === "IMAGEN");
+  if (m) return m;
+  const fallback = noticia?.imagen_url || noticia?.imagen;
+  if (fallback) {
+    return { tipo: "IMAGEN", archivo_url: fallback, _fallback: true };
+  }
+  return null;
+};
+const tieneVideo = (noticia) => noticia?.multimedia?.some(m => m.tipo === "VIDEO") || false;
 
 function Noticias() {
   const [noticias, setNoticias]   = useState([]);
@@ -97,24 +108,18 @@ function Noticias() {
 
   /* ── Render de una card lateral (compacta) ── */
   const CardLateral = ({ noticia }) => {
-    const media     = getMedia(noticia.multimedia);
-    const esVideo   = media?.tipo === "VIDEO";
+    const media     = getMedia(noticia);
     const categoria = obtenerEtiquetaCategoria(noticia);
     return (
       <article className="nc-card-lateral">
         <Link to={`/noticias/${noticia.id}`} className="nc-lateral__media-link">
           <div className="nc-lateral__media">
-            {media?.tipo === "IMAGEN" && (
-              <img src={media.archivo_url} alt={noticia.titulo} className="nc-lateral__img" loading="lazy" />
-            )}
-            {esVideo && (
-              <video src={media.archivo_url} muted preload="metadata" className="nc-lateral__img" />
-            )}
-            {!media && <div className="nc-lateral__placeholder" />}
-            {media && (
-              <span className="nc-card__media-icon">
-                {esVideo ? <FaVideo /> : <FaCamera />}
-              </span>
+            {media
+              ? <img src={media.archivo_url} alt={noticia.titulo} className="nc-lateral__img" loading="lazy" />
+              : <div className="nc-lateral__placeholder"><FaCamera /></div>
+            }
+            {tieneVideo(noticia) && (
+              <span className="nc-card__media-icon video-badge"><FaVideo /></span>
             )}
           </div>
         </Link>
@@ -134,24 +139,18 @@ function Noticias() {
 
   /* ── Render de una card del grid inferior ── */
   const CardGrid = ({ noticia }) => {
-    const media     = getMedia(noticia.multimedia);
-    const esVideo   = media?.tipo === "VIDEO";
+    const media     = getMedia(noticia);
     const categoria = obtenerEtiquetaCategoria(noticia);
     return (
       <article className="nc-card">
         <Link to={`/noticias/${noticia.id}`} className="nc-card__media-link">
           <div className="nc-card__media">
-            {media?.tipo === "IMAGEN" && (
-              <img src={media.archivo_url} alt={noticia.titulo} className="nc-card__img" loading="lazy" />
-            )}
-            {esVideo && (
-              <video src={media.archivo_url} muted preload="metadata" className="nc-card__img" />
-            )}
-            {!media && <div className="nc-card__placeholder" />}
-            {media && (
-              <span className="nc-card__media-icon">
-                {esVideo ? <FaVideo /> : <FaCamera />}
-              </span>
+            {media
+              ? <img src={media.archivo_url} alt={noticia.titulo} className="nc-card__img" loading="lazy" />
+              : <div className="nc-card__placeholder"><FaCamera /></div>
+            }
+            {tieneVideo(noticia) && (
+              <span className="nc-card__media-icon video-badge"><FaVideo /></span>
             )}
           </div>
         </Link>
@@ -184,24 +183,18 @@ function Noticias() {
           {/* Hero grande */}
           <article className="nc-hero">
             {(() => {
-              const media     = getMedia(heroNoticia.multimedia);
-              const esVideo   = media?.tipo === "VIDEO";
+              const media     = getMedia(heroNoticia);
               const categoria = obtenerEtiquetaCategoria(heroNoticia);
               return (
                 <>
                   <Link to={`/noticias/${heroNoticia.id}`} className="nc-hero__media-link">
                     <div className="nc-hero__media">
-                      {media?.tipo === "IMAGEN" && (
-                        <img src={media.archivo_url} alt={heroNoticia.titulo} className="nc-hero__img" loading="eager" />
-                      )}
-                      {esVideo && (
-                        <video src={media.archivo_url} muted preload="metadata" className="nc-hero__img" />
-                      )}
-                      {!media && <div className="nc-hero__placeholder" />}
-                      {media && (
-                        <span className="nc-card__media-icon">
-                          {esVideo ? <FaVideo /> : <FaCamera />}
-                        </span>
+                      {media
+                        ? <img src={media.archivo_url} alt={heroNoticia.titulo} className="nc-hero__img" loading="eager" />
+                        : <div className="nc-hero__placeholder"><FaCamera /></div>
+                      }
+                      {tieneVideo(heroNoticia) && (
+                        <span className="nc-card__media-icon video-badge"><FaVideo /></span>
                       )}
                     </div>
                   </Link>

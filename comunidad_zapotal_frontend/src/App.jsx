@@ -20,6 +20,15 @@ import Perfil from "./pages/Perfil/Perfil";
 import LoadingScreen from "./pages/LoadingScreen/LoadingScreen";
 import Registro from "./pages/Registro/Registro";
 
+import AdminLayout from "./pages/Admin/AdminLayout";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import AdminNoticias from "./pages/Admin/AdminNoticias";
+import AdminEventos from "./pages/Admin/AdminEventos";
+import AdminCategorias from "./pages/Admin/AdminCategorias";
+import AdminAutoridades from "./pages/Admin/AdminAutoridades";
+import AdminUsuarios from "./pages/Admin/AdminUsuarios";
+import AdminComentarios from "./pages/Admin/AdminComentarios";
+
 import "./App.css";
 
 function ScrollToTop() {
@@ -70,21 +79,7 @@ function AdminPanel() {
       </main>
     );
   }
-  return (
-    <main className="main-container">
-      <section className="home-hero">
-        <div className="home-hero-content">
-          <h1>Panel de Administración</h1>
-          <p>Bienvenido, {usuario.email}. El panel completo estará disponible próximamente.</p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 24, flexWrap: "wrap" }}>
-            <Link to="/perfil" className="btn-principal">Mi perfil <FaArrowRight /></Link>
-            <Link to="/noticias" className="btn-principal">Ver noticias <FaArrowRight /></Link>
-            <Link to="/eventos" className="btn-principal">Ver eventos <FaArrowRight /></Link>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+  return <AdminLayout />;
 }
 
 function Layout() {
@@ -138,7 +133,15 @@ function Layout() {
           }
         />
 
-        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin" element={<AdminPanel />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="noticias"    element={<AdminNoticias />} />
+          <Route path="eventos"     element={<AdminEventos />} />
+          <Route path="categorias"  element={<AdminCategorias />} />
+          <Route path="autoridades" element={<AdminAutoridades />} />
+          <Route path="usuarios"    element={<AdminUsuarios />} />
+          <Route path="comentarios" element={<AdminComentarios />} />
+        </Route>
 
         <Route path="/donaciones" element={<Donaciones />} />
       </Routes>

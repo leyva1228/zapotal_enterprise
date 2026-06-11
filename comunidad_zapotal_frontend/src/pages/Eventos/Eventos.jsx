@@ -226,7 +226,10 @@ function Eventos() {
 
         {/* HERO: PRIMER EVENTO DESTACADO */}
         {eventoHero && (() => {
-          const mediaPrincipal  = eventoHero.multimedia?.[0];
+          const mediaPrincipal  = eventoHero.multimedia?.find(m => m.tipo === "IMAGEN")
+            || (eventoHero.imagen_url || eventoHero.imagen
+                  ? { tipo: "IMAGEN", archivo_url: eventoHero.imagen_url || eventoHero.imagen, _fallback: true }
+                  : null);
           const esProximo       = esEventoProximo(eventoHero.fecha_evento);
           const iconoCategoria  = obtenerIconoCategoria(eventoHero);
           const nombreCategoria = obtenerNombreCategoria(eventoHero);
@@ -315,7 +318,10 @@ function Eventos() {
             <div className="lista-eventos-columna">
               <div className={`contenedor-eventos ${vista === "lista" ? "vista-lista" : "vista-cuadricula"}`}>
                 {eventosPagina.map((evento) => {
-                  const mediaPrincipal  = evento.multimedia?.[0];
+                  const mediaPrincipal  = evento.multimedia?.find(m => m.tipo === "IMAGEN")
+                    || (evento.imagen_url || evento.imagen
+                          ? { tipo: "IMAGEN", archivo_url: evento.imagen_url || evento.imagen, _fallback: true }
+                          : null);
                   const esProximo       = esEventoProximo(evento.fecha_evento);
                   const iconoCategoria  = obtenerIconoCategoria(evento);
                   const nombreCategoria = obtenerNombreCategoria(evento);

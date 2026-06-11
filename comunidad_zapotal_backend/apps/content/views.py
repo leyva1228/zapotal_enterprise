@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
-from apps.core.permissions import IsAdminOrReadOnly, IsComuneroOrAdmin
+from apps.core.permissions import IsAdminOrReadOnly, IsComuneroOrAdmin, IsAdminUser
 from .models import Noticia, Categoria, Evento, Multimedia, Comentario, Reaccion
 from .serializers import (
     NoticiaSerializer, NoticiaEscrituraSerializer, NoticiaRelacionadaSerializer,
@@ -129,9 +129,10 @@ class MultimediaViewSet(viewsets.ModelViewSet):
 class ComentarioViewSet(viewsets.ModelViewSet):
     """
     Comentarios en noticias o eventos.
-    - Lectura pública (solo PUBLICADO).
-    - Crear: usuario autenticado.
+    - Lectura pública (solo PUBLICADO; ADMIN ve también OCULTO/ELIMINADO).
+    - Crear: solo COMUNERO o ADMIN activos.
     - Editar/eliminar: solo el autor o ADMIN.
+    - Acción especial `cambiar_estado` solo para ADMIN (PUBLICADO/OCULTO/ELIMINADO).
     """
     queryset = Comentario.objects.select_related('noticia', 'evento', 'respuesta_a', 'autor')
     serializer_class = ComentarioSerializer
@@ -147,21 +148,51 @@ class ComentarioViewSet(viewsets.ModelViewSet):
         return qs.filter(estado=Comentario.EstadoComentario.PUBLICADO)
 
     def get_permissions(self):
-        if self.action in ['create']:
-            return [IsAuthenticated()]
-        if self.action in ['update', 'partial_update', 'destroy']:
-            return [IsAuthenticated()]
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsComuneroOrAdmin()]
+        if self.action in ['cambiar_estado']:
+            return [IsAdminUser()]
         return [AllowAny()]
 
     def perform_create(self, serializer):
         serializer.save(autor=self.request.user)
+
+    def perform_update(self, serializer):
+        # Solo el autor del comentario o un ADMIN puede editarlo.
+        instance = self.get_object()
+        user = self.request.user
+        if instance.autor_id != user.id and getattr(user, 'tipo_usuario', None) != 'ADMIN':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Solo el autor o un administrador pueden editar este comentario.')
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if instance.autor_id != user.id and getattr(user, 'tipo_usuario', None) != 'ADMIN':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Solo el autor o un administrador pueden eliminar este comentario.')
+        instance.delete()
+
+    @action(detail=True, methods=['post'])
+    def cambiar_estado(self, request, pk=None):
+        """Solo ADMIN: cambia el estado del comentario (PUBLICADO/OCULTO/ELIMINADO)."""
+        comentario = self.get_object()
+        nuevo = request.data.get('estado')
+        if nuevo not in dict(Comentario.EstadoComentario.choices):
+            return Response(
+                {'detail': f'Estado inválido. Use uno de: {list(dict(Comentario.EstadoComentario.choices).keys())}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        comentario.estado = nuevo
+        comentario.save(update_fields=['estado'])
+        return Response(ComentarioSerializer(comentario, context={'request': request}).data)
 
 
 class ReaccionViewSet(viewsets.ModelViewSet):
     """
     Reacciones (LIKE / DISLIKE) a noticias, eventos o comentarios.
     - Lectura pública.
-    - Crear/eliminar: usuario autenticado.
+    - Crear/eliminar: solo COMUNERO o ADMIN activos.
     - Toggle: si ya existe la misma reacción, se elimina; si es diferente, se actualiza.
     """
     queryset = Reaccion.objects.select_related('noticia', 'evento', 'comentario', 'autor')
@@ -175,7 +206,7 @@ class ReaccionViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated()]
+            return [IsComuneroOrAdmin()]
         return [AllowAny()]
 
     def create(self, request, *args, **kwargs):

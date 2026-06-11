@@ -2,10 +2,11 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
 from django.urls import path
 
-from .views import UsuarioViewSet, login_usuario, register_usuario
+from .views import UsuarioViewSet, ComuneroViewSet, login_usuario, register_usuario
 
 router = DefaultRouter()
 router.register('usuarios', UsuarioViewSet, basename='usuarios')
+router.register('comuneros', ComuneroViewSet, basename='comuneros')
 
 urlpatterns = [
     path('login/', login_usuario, name='login_usuario'),

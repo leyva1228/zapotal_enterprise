@@ -123,56 +123,36 @@ const MenuComentario = memo(({ puedeEditar, puedeEliminar, puedeReportar, onEdit
   );
 });
 
-const GaleriaMedia = memo(({ imagenes = [], videos = [], titulo = "" }) => {
-  const [heroIdx, setHeroIdx] = useState(0);
-  const [anim, setAnim]       = useState(null);
-  useEffect(() => {
-    if (imagenes.length > 0 && heroIdx >= imagenes.length) setHeroIdx(0);
-  }, [imagenes, heroIdx]);
-  if (imagenes.length === 0 && videos.length === 0) return null;
-  const soloUna   = imagenes.length === 1;
-  const hayThumbs = imagenes.length > 1;
-  const heroImg   = imagenes[heroIdx];
-  const swap = (idx) => {
-    if (idx === heroIdx) return;
-    const dir = idx > heroIdx ? "slide-left" : "slide-right";
-    setAnim(dir);
-    setTimeout(() => { setHeroIdx(idx); setAnim(null); }, 260);
-  };
+const GaleriaMedia = memo(({ videos = [], titulo = "" }) => {
+  // En el detalle solo se muestra el video (autoplay silenciado con controles, estilo YouTube).
+  if (!videos.length) {
+    return (
+      <div className="gm-wrapper gm-wrapper--empty">
+        <div className="gm-empty">
+          <FaCalendarAlt />
+          <p>Este evento no tiene video disponible.</p>
+        </div>
+      </div>
+    );
+  }
+  const principal = videos[0];
   return (
-    <div className={`gm-wrapper${soloUna ? " gm-wrapper--solo" : ""}`}>
-      {imagenes.length > 0 && (
-        <div className="gm-hero">
-          <img key={heroIdx} src={heroImg?.archivo_url} alt={titulo} className={`gm-hero__img${anim ? ` gm-hero__img--${anim}` : ""}`} loading="lazy" onError={e => { e.target.src = "/images/image-not-found.jpg"; }} />
-          {hayThumbs && <div className="gm-hero__gradient" />}
-          {hayThumbs && <div className="gm-hero__counter">{heroIdx + 1} / {imagenes.length}</div>}
-          {hayThumbs && (
-            <>
-              <button className="gm-arrow gm-arrow--prev" onClick={() => swap((heroIdx - 1 + imagenes.length) % imagenes.length)} aria-label="Anterior">&#8249;</button>
-              <button className="gm-arrow gm-arrow--next" onClick={() => swap((heroIdx + 1) % imagenes.length)} aria-label="Siguiente">&#8250;</button>
-            </>
-          )}
-          {hayThumbs && (
-            <div className="gm-thumbs-overlay">
-              {imagenes.map((img, idx) => (
-                <button key={img.id ?? idx} className={`gm-thumb${idx === heroIdx ? " gm-thumb--active" : ""}`} onClick={() => swap(idx)} title={`Imagen ${idx + 1}`}>
-                  <img src={img.archivo_url} alt={`Miniatura ${idx + 1}`} loading="lazy" onError={e => { e.target.src = "/images/image-not-found.jpg"; }} />
-                  {idx === heroIdx && <span className="gm-thumb__ring" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      {videos.length > 0 && (
-        <div className="gm-videos">
-          {videos.map((v, i) => (
-            <div key={v.id ?? i} className="gm-video">
-              <video src={v.archivo_url} controls preload="metadata" className="gm-video__player" poster={v.thumbnail_url || imagenes[0]?.archivo_url} controlsList="nodownload" />
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="gm-wrapper">
+      <div className="gm-hero">
+        <video
+          key={principal.id}
+          src={principal.archivo_url}
+          autoPlay
+          muted
+          loop
+          playsInline
+          controls
+          preload="auto"
+          className="gm-hero__video"
+          poster={principal.thumbnail_url || ""}
+          controlsList="nodownload"
+        />
+      </div>
     </div>
   );
 });
@@ -182,11 +162,7 @@ const EventosRelacionados = memo(({ eventos }) => {
   if (!eventos.length) return null;
 
   const obtenerPreview = (evento) => {
-    const video = evento.multimedia?.find(m => m.tipo === "VIDEO");
     const imagen = evento.multimedia?.find(m => m.tipo === "IMAGEN");
-    if (video) {
-      return <video src={video.archivo_url} muted preload="metadata" className="preview-video-relacionada" />;
-    }
     return <img src={imagen?.archivo_url || evento.miniatura || "/images/placeholder-event.jpg"} alt={evento.titulo} />;
   };
 
@@ -671,7 +647,7 @@ function DetalleEvento() {
       <div className={`detalle-layout-full${tieneRelacionados ? " two-columns" : ""}`}>
         <div className="detalle-contenido-principal">
           <div className="noticia-card">
-            <GaleriaMedia imagenes={imagenes} videos={videos} titulo={evento.titulo} />
+            <GaleriaMedia videos={videos} titulo={evento.titulo} />
             <h1 className="yt-titulo">{evento.titulo}</h1>
 
             {/* Información adicional del evento */}

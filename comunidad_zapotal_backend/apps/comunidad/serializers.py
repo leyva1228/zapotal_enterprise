@@ -10,7 +10,12 @@ class AutoridadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Autoridad
         fields = ['id', 'cargo', 'periodo', 'fecha_inicio', 'fecha_fin',
+                  'comunero', 'usuario',
                   'nombres', 'apellidos', 'foto_url']
+        extra_kwargs = {
+            'comunero': {'write_only': True},
+            'usuario':   {'write_only': True},
+        }
 
     def get_foto_url(self, obj):
         request = self.context.get('request')
