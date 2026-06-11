@@ -8,7 +8,7 @@ echo.
 REM =============================================
 REM 1. CREAR CARPETAS FALTANTES
 REM ================================================
-echo [1/7] Creando carpetas necesarias...
+echo [1/8] Creando carpetas necesarias...
 
 if not exist "comunidad_zapotal_backend\logs" mkdir "comunidad_zapotal_backend\logs"
 if not exist "comunidad_zapotal_backend\media" mkdir "comunidad_zapotal_backend\media"
@@ -21,7 +21,7 @@ echo   - staticfiles/ ... OK
 REM =============================================
 REM 2. CONFIGURAR .ENV
 REM ================================================
-echo [2/7] Configurando archivos de entorno...
+echo [2/8] Configurando archivos de entorno...
 
 if not exist "comunidad_zapotal_backend\.env" (
     if exist "comunidad_zapotal_backend\.env.example" (
@@ -40,9 +40,8 @@ if not exist "comunidad_zapotal_frontend\.env" (
 REM =============================================
 REM 3. LEER CONFIGURACION DE BASE DE DATOS
 REM ================================================
-echo [3/7] Leyendo configuracion de base de datos...
+echo [3/8] Leyendo configuracion de base de datos...
 
-REM Extraer DB_NAME del .env
 for /f "tokens=1,* delims==" %%a in ('findstr /C:"DB_NAME=" comunidad_zapotal_backend\.env') do set "DB_NAME=%%b"
 for /f "tokens=1,* delims==" %%a in ('findstr /C:"DB_ENGINE=" comunidad_zapotal_backend\.env') do set "DB_ENGINE=%%b"
 
@@ -52,12 +51,26 @@ echo   - DB_ENGINE: %DB_ENGINE%
 REM =============================================
 REM 4. CREAR BASE DE DATOS MYSQL SI USA MYSQL
 REM ================================================
-echo [4/7] Verificando base de datos...
+echo [4/8] Verificando base de datos...
 
 if "%DB_ENGINE%"=="django.db.backends.mysql" (
     echo   - Creando base de datos MySQL si no existe...
     mysql -u root -e "CREATE DATABASE IF NOT EXISTS %DB_NAME% CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     echo   - Base de datos %DB_NAME% lista
+
+    REM Cargar timezone data si no esta
+    echo   - Cargando datos de timezone en MySQL...
+    mysql_tzinfo_to_sql C:\ProgramData\MySQL\MySQL\Server\*\share\timezones > tz_load.sql 2>nul
+    if exist tz_load.sql (
+        mysql -u root mysql < tz_load.sql >nul 2>&1
+        del tz_load.sql
+        echo   - Timezone data cargada
+    ) else (
+        echo   - Timezone data ya existe o no disponible
+    )
+
+    REM Intentar establecer timezone del servidor MySQL
+    mysql -u root -e "SET GLOBAL time_zone = 'America/Lima';" >nul 2>&1
 ) else (
     echo   - Usando SQLite (no requiere creacion de DB)
 )
@@ -65,7 +78,7 @@ if "%DB_ENGINE%"=="django.db.backends.mysql" (
 REM =============================================
 REM 5. VIRTUALENV Y DEPENDENCIAS DEL BACKEND
 REM ================================================
-echo [5/7] Instalando dependencias del backend...
+echo [5/8] Instalando dependencias del backend...
 
 cd comunidad_zapotal_backend
 
@@ -80,14 +93,14 @@ pip install -r requirements.txt --quiet
 REM =============================================
 REM 6. MIGRACIONES
 REM ================================================
-echo [6/7] Ejecutando migraciones...
+echo [6/8] Ejecutando migraciones...
 
 python manage.py migrate
 
 REM =============================================
 REM 7. SEED - Poblar base de datos
 REM ================================================
-echo [7/7] Poblando base de datos con datos de prueba...
+echo [7/8] Poblando base de datos con datos de prueba...
 python manage.py seed --wipe
 
 cd ..
