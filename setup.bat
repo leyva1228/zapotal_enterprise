@@ -31,6 +31,14 @@ echo                Revisa el archivo .env en comunidad_zapotal_backend\
 echo                con tus credenciales de MySQL.
 echo.
 
+:: Crear .env desde .env.example si no existe
+if not exist "%~dp0comunidad_zapotal_backend\.env" (
+    echo   Creando .env del backend desde .env.example...
+    copy "%~dp0comunidad_zapotal_backend\.env.example" "%~dp0comunidad_zapotal_backend\.env" >nul
+) else (
+    echo   .env del backend ya existe.
+)
+
 :: Generar DJANGO_SECRET_KEY si no existe o es placeholder
 call "%~dp0generate_secret_key.bat"
 echo.
@@ -100,6 +108,12 @@ start "Zapotal Backend" cmd /k "title Zapotal Backend && cd /d "%~dp0comunidad_z
 timeout /t 3 /nobreak >nul
 
 :: =============================================
+:: Crear .env desde .env.example si no existe
+if not exist "%~dp0comunidad_zapotal_frontend\.env" (
+    echo   Creando .env del frontend desde .env.example...
+    copy "%~dp0comunidad_zapotal_frontend\.env.example" "%~dp0comunidad_zapotal_frontend\.env" >nul
+)
+
 echo [PASO 4/4] Iniciando servidor FRONTEND...
 start "Zapotal Frontend" cmd /k "title Zapotal Frontend && cd /d "%~dp0comunidad_zapotal_frontend" && npm run dev"
 echo.
