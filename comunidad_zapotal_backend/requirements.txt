@@ -7,6 +7,7 @@ colorama==0.4.6
 coreapi==2.3.3
 coreschema==0.0.4
 Django==6.0.4
+django-baton==5.1.2
 django-cors-headers==4.9.0
 django-filter==25.2
 djangorestframework==3.17.1
@@ -33,5 +34,5 @@ typing_extensions==4.15.0
 tzdata==2026.1
 uritemplate==4.2.0
 urllib3==2.6.3
-uvicorn==0.48.0
+uvicorn==0.47.0
 whitenoise==6.12.0
