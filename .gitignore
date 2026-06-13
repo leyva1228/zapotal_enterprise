@@ -8,8 +8,6 @@ graphify-out/
 # Reportes
 API_MIGRATION_MAP.md
 usage_skills.md
-session-ses_14ca.md
-session-ses_14cd.md
 
 # Bases de datos
 ruvector.db
@@ -66,4 +64,7 @@ _categorize_skills.py
 _extract_skills.py
 
 comunidad_zapotal_mobile_bff
-zapotal-gateway
+zapotal-gateway.zip
+
+session-ses_14ca.md
+session-ses_14cd.md
