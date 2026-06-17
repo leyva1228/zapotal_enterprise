@@ -48,9 +48,6 @@ staticfiles/
 logs/
 *.log
 
-# Reports (error snapshots, debugging dumps)
-reports/
-
 # Security analysis outputs
 security-analisis/
 
