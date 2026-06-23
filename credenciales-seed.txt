@@ -1,0 +1,19 @@
+==========================================
+  COMUNIDAD ZAPOTAL - CREDENCIALES SEED
+==========================================
+(ejecutar: python manage.py seed_completo --reset)
+
+ADMIN (superuser):
+  Email:    admin@zapotal.com
+  Password: Admin123456
+
+AUTORIDADES (con usuario propio):
+  presidente@zapotal.com   / Zapotal2026
+  vicepresidente@zapotal.com / Zapotal2026
+  secretario@zapotal.com   / Zapotal2026
+  tesorero@zapotal.com     / Zapotal2026
+  regidor1@zapotal.com     / Zapotal2026
+  vocal1@zapotal.com       / Zapotal2026
+
+COMUNERO:
+  juan@zapotal.com         / Zapotal2026
