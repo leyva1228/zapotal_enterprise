@@ -40,3 +40,7 @@ staticfiles/
 # OS
 Thumbs.db
 .DS_Store
+
+docs/
+*.md
+setup.bat

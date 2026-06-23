@@ -180,7 +180,11 @@ class Comentario(models.Model):
 
     def __str__(self):
         autor = self.autor.email if self.autor else 'Anónimo'
-        return f'{autor} - {self.noticia.titulo}'
+        if self.noticia:
+            return f'{autor} - {self.noticia.titulo}'
+        if self.evento:
+            return f'{autor} - {self.evento.titulo}'
+        return f'{autor} (sin destino #{self.id})'
 
     def tiene_palabras_prohibidas(self):
         contenido_lower = (self.contenido or '').lower()
@@ -262,7 +266,8 @@ class Reaccion(models.Model):
     def __str__(self):
         autor = self.autor.email if self.autor else 'Anónimo'
         destino = self.noticia or self.evento or self.comentario
-        return f'{autor} - {self.tipo} en {destino}'
+        destino_label = getattr(destino, 'titulo', None) or getattr(destino, 'id', 'eliminado')
+        return f'{autor} - {self.tipo} en {destino_label}'
 
 
 # =====================================================================

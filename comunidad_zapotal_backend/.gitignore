@@ -78,3 +78,9 @@ session-*.md
 
 # ─── Archivos sueltos en raíz ───
 zapotal-gateway.zip
+
+pytest.ini
+fix_media.py
+conftest.py
+check_media.py
+README.md
