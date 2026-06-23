@@ -126,7 +126,9 @@ class NoticiaSerializer(serializers.ModelSerializer):
         return dict(Counter(r.tipo for r in obj.reacciones.all()))
 
     def get_imagen_url(self, obj):
-        """Retorna URL absoluta de la imagen (para que el frontend la muestre)."""
+        """Retorna URL absoluta de la imagen (local o externa)."""
+        if obj.imagen_url:
+            return obj.imagen_url
         request = self.context.get('request')
         if obj.imagen and request:
             return request.build_absolute_uri(obj.imagen.url)
@@ -163,6 +165,8 @@ class EventoSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'fecha_evento', 'ubicacion', 'total_reacciones', 'total_comentarios']
 
     def get_imagen_url(self, obj):
+        if obj.imagen_url:
+            return obj.imagen_url
         request = self.context.get('request')
         if obj.imagen and request:
             return request.build_absolute_uri(obj.imagen.url)
@@ -193,6 +197,8 @@ class NoticiaRelacionadaSerializer(serializers.ModelSerializer):
         return dict(Counter(r.tipo for r in obj.reacciones.all()))
 
     def get_imagen_url(self, obj):
+        if obj.imagen_url:
+            return obj.imagen_url
         request = self.context.get('request')
         if obj.imagen and request:
             return request.build_absolute_uri(obj.imagen.url)

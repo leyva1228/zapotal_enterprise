@@ -44,7 +44,6 @@ class CategoriaAdmin(admin.ModelAdmin):
     list_display = ['nombre', 'fecha_creacion', 'total_noticias']
     search_fields = ['nombre', 'descripcion']
     ordering = ['nombre']
-    date_hierarchy = 'fecha_creacion'
 
     def total_noticias(self, obj):
         return obj.noticias.count()
@@ -57,7 +56,6 @@ class NoticiaAdmin(admin.ModelAdmin):
     list_filter = ['estado', 'categoria', 'fecha_publicacion']
     search_fields = ['titulo', 'contenido', 'resumen']
     ordering = ['-fecha_publicacion']
-    date_hierarchy = 'fecha_publicacion'
     readonly_fields = ['fecha_publicacion', 'vistas']
     raw_id_fields = ['categoria']
     inlines = [MultimediaInline, ComentarioInline]
@@ -112,7 +110,6 @@ class EventoAdmin(admin.ModelAdmin):
     list_filter = ['fecha', 'lugar']
     search_fields = ['titulo', 'descripcion', 'lugar']
     ordering = ['-fecha']
-    date_hierarchy = 'fecha'
     list_per_page = 25
 
 
@@ -121,7 +118,6 @@ class MultimediaAdmin(admin.ModelAdmin):
     list_display = ['archivo', 'tipo', 'noticia', 'evento', 'fecha_subida']
     list_filter = ['tipo', 'fecha_subida']
     search_fields = ['archivo']
-    date_hierarchy = 'fecha_subida'
     raw_id_fields = ['noticia', 'evento']
     list_per_page = 30
 
@@ -132,7 +128,6 @@ class ComentarioAdmin(admin.ModelAdmin):
     list_filter = ['estado', 'fecha']
     search_fields = ['contenido', 'autor__email', 'noticia__titulo']
     ordering = ['-fecha']
-    date_hierarchy = 'fecha'
     raw_id_fields = ['noticia', 'autor', 'respuesta_a']
     readonly_fields = ['fecha']
     list_per_page = 30
@@ -160,6 +155,5 @@ class ReaccionAdmin(admin.ModelAdmin):
     list_display = ['noticia', 'autor', 'tipo', 'fecha']
     list_filter = ['tipo', 'fecha']
     search_fields = ['noticia__titulo', 'autor__email']
-    date_hierarchy = 'fecha'
     raw_id_fields = ['noticia', 'autor']
     list_per_page = 50

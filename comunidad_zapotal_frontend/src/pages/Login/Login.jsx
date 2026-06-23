@@ -1,47 +1,53 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import api from "../../api";
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import {
-  FaEnvelope, FaLock, FaUser, FaShieldAlt,
-  FaLeaf, FaUserPlus, FaEye, FaEyeSlash,
-  FaArrowRight, FaExclamationTriangle,
-} from "react-icons/fa";
-import "./Login.css";
+  FaEnvelope, FaLock, FaShieldAlt, FaLeaf, FaUserPlus,
+  FaEye, FaEyeSlash, FaArrowRight, FaExclamationTriangle,
+} from 'react-icons/fa';
+import Turnstile from '../../components/Turnstile';
 
 const MAX_INTENTOS = 10;
-const BLOQUEO_MS   = 5 * 60 * 1000;
-const STORAGE_KEY  = "lp_intentos";
+const BLOQUEO_MS = 5 * 60 * 1000;
+const STORAGE_KEY = 'lp_intentos';
+const ANTIBOT_KEY = 'lp_antibot_count';
+const ANTIBOT_EVERY = 5;
 
-const sanitize = (v) => v.replace(/[<>"'`;]/g, "").trimStart();
+const sanitize = (v) => v.replace(/[<>"'`;]/g, '').trimStart();
 
-const leerContador = () => {
+function leerContador() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return { intentos: 0, bloqueadoHasta: null };
     return JSON.parse(raw);
-  } catch {
+  } catch (e) {
     return { intentos: 0, bloqueadoHasta: null };
   }
-};
-
-const guardarContador = (data) => {
+}
+function guardarContador(data) {
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-};
-
-const resetContador = () => {
+}
+function resetContador() {
   sessionStorage.removeItem(STORAGE_KEY);
-};
+}
 
-function Login() {
-  const [form, setForm]         = useState({ email: "", password: "" });
+export default function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { setAuth, setLoading } = useAuth();
+  const [form, setForm] = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const [msg, setMsg]           = useState({ text: "", type: "" });
+  const [loading, setLocalLoading] = useState(false);
+  const [msg, setMsg] = useState({ text: '', type: '' });
   const [intentos, setIntentos] = useState(0);
-  const [bloqueado, setBloqueado]           = useState(false);
+  const [bloqueado, setBloqueado] = useState(false);
   const [tiempoRestante, setTiempoRestante] = useState(0);
+  const [antibotCount, setAntibotCount] = useState(0);
+  const [mostrarAntibot, setMostrarAntibot] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
 
-  useEffect(() => {
+  React.useEffect(() => {
     const { intentos: i, bloqueadoHasta } = leerContador();
     if (bloqueadoHasta && Date.now() < bloqueadoHasta) {
       setBloqueado(true);
@@ -52,6 +58,12 @@ function Login() {
     } else {
       setIntentos(i);
     }
+    try {
+      const raw = localStorage.getItem(ANTIBOT_KEY);
+      const c = raw ? parseInt(raw, 10) : 0;
+      setAntibotCount(Number.isFinite(c) ? c : 0);
+      setMostrarAntibot((Number.isFinite(c) ? c : 0) > 0 && (Number.isFinite(c) ? c : 0) % ANTIBOT_EVERY === 0);
+    } catch (e) { /* noop */ }
   }, []);
 
   const iniciarCuentaRegresiva = (hasta) => {
@@ -61,7 +73,7 @@ function Login() {
       if (restante <= 0) {
         setBloqueado(false);
         setIntentos(0);
-        setMsg({ text: "", type: "" });
+        setMsg({ text: '', type: '' });
         resetContador();
       } else {
         setTimeout(tick, 1000);
@@ -73,7 +85,7 @@ function Login() {
   const formatTiempo = (seg) => {
     const m = Math.floor(seg / 60);
     const s = seg % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
+    return `${m}:${String(s).padStart(2, '0')}`;
   };
 
   const setField = (f) => (e) => {
@@ -81,242 +93,219 @@ function Login() {
     setForm((p) => ({ ...p, [f]: val }));
   };
 
-  const showMsg = (text, type = "error") => setMsg({ text, type });
+  const showMsg = (text, type = 'error') => setMsg({ text, type });
 
-  const limpiarCampos = () => setForm({ email: "", password: "" });
+  const limpiarCampos = () => setForm({ email: '', password: '' });
 
   const registrarFallo = () => {
     const { intentos: prev } = leerContador();
     const nuevos = prev + 1;
     setIntentos(nuevos);
-
     if (nuevos >= MAX_INTENTOS) {
       const hasta = Date.now() + BLOQUEO_MS;
       guardarContador({ intentos: nuevos, bloqueadoHasta: hasta });
       setBloqueado(true);
       limpiarCampos();
-      showMsg("Límite de intentos excedido. Inténtelo nuevamente más tarde.", "blocked");
+      showMsg('Limite de intentos excedido. Intentelo nuevamente mas tarde.', 'blocked');
       iniciarCuentaRegresiva(hasta);
     } else {
       guardarContador({ intentos: nuevos, bloqueadoHasta: null });
       limpiarCampos();
-      showMsg("Correo o contraseña incorrectos.", "error");
+      showMsg('Correo o contrasena incorrectos.', 'error');
     }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
     if (bloqueado) return;
-
     const emailVal = form.email.trim();
-    const passVal  = form.password.trim();
-
-    if (!emailVal) return showMsg("Ingresa tu correo electrónico.");
-    if (!passVal)  return showMsg("Ingresa tu contraseña.");
-
+    const passVal = form.password.trim();
+    if (!emailVal) return showMsg('Ingresa tu correo electronico.');
+    if (!passVal) return showMsg('Ingresa tu contrasena.');
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailVal)) {
-      return registrarFallo();
-    }
+    if (!emailRegex.test(emailVal)) return registrarFallo();
+    if (passVal.length < 6) return registrarFallo();
 
-    if (passVal.length < 6) {
-      return registrarFallo();
-    }
-
+    setLocalLoading(true);
+    setMsg({ text: '', type: '' });
     setLoading(true);
-    setMsg({ text: "", type: "" });
 
     try {
-      const { data } = await api.post(
-        `/login/`,
-        { email: emailVal, password: passVal },
-        { timeout: 10000 }
-      );
+      let data;
+      try {
+        const resp = await api.post('/auth/login/', { email: emailVal, password: passVal }, { timeout: 10000 });
+        data = resp.data;
+      } catch (e) {
+        if (e.response?.status === 202 && e.response?.data?.requires_2fa) {
+          navigate('/2fa', { state: { tokenTemp: e.response.data.token_temp, usuarioId: e.response.data.usuario_id, email: emailVal } });
+          return;
+        }
+        if (e.response?.status === 202) {
+          navigate('/2fa', { state: { tokenTemp: e.response.data.token_temp, usuarioId: e.response.data.usuario_id, email: emailVal } });
+          return;
+        }
+        if (e.response?.status === 401) { registrarFallo(); return; }
+        if (e.response?.status === 403) {
+          const data = e.response?.data || {};
+          const code = data.code || data.error?.code;
+          if (code === 'USER_BLOCKED') { navigate('/cuenta/bloqueada'); return; }
+          if (code === 'USER_REJECTED') { navigate('/cuenta/rechazada'); return; }
+          if (code === 'USER_PENDING_OTP') {
+            showMsg('Tu cuenta esta esperando verificacion de codigo. Ve a Registro para reenviar.', 'warning');
+            setTimeout(() => navigate('/registro'), 2500);
+            return;
+          }
+          if (code === 'USER_INACTIVE') {
+            showMsg('Tu cuenta esta inactiva. Contacta al administrador.', 'blocked');
+            return;
+          }
+          showMsg('Tu cuenta ha sido suspendida. Contacta al administrador.', 'blocked');
+          return;
+        }
+        throw e;
+      }
 
-      const ud = data.usuario;
-      if (!ud) {
-        registrarFallo();
+      if (data?.requires_2fa) {
+        navigate('/2fa', { state: { tokenTemp: data.token_temp, usuarioId: data.usuario_id, email: emailVal } });
         return;
       }
 
-      const accessToken = data.access || data.token || null;
-      const refreshToken = data.refresh || null;
-
+      const ud = data.usuario;
+      if (!ud) { registrarFallo(); return; }
       const usuario = {
-        id:           ud.id,
-        email:        ud.email,
-        nombres:      ud.nombres      || "",
-        apellidos:    ud.apellidos    || "",
-        tipo_usuario: ud.tipo_usuario || "COMUNERO",
-        foto_perfil:  ud.foto_perfil_url || ud.foto_perfil || "",
-        dni:          ud.dni          || null,
-        token:        accessToken,
+        id: ud.id, email: ud.email,
+        nombres: ud.nombres || '', apellidos: ud.apellidos || '',
+        tipo_usuario: ud.tipo_usuario || 'COMUNERO',
+        estado: ud.estado,
+        es_admin: ud.es_admin === true,
+        es_autoridad: ud.es_autoridad === true,
+        autoridad_cargo: ud.autoridad_cargo || null,
+        foto_perfil: ud.foto_perfil || ud.foto_perfil_url || '',
+        dni: ud.dni || null,
       };
-
-      localStorage.setItem("usuario", JSON.stringify(usuario));
-      if (accessToken) localStorage.setItem("token", accessToken);
-      if (refreshToken) localStorage.setItem("refresh", refreshToken);
-
-      if (!localStorage.getItem("usuario")) {
-        limpiarCampos();
-        return showMsg("No se pudo guardar la sesión. Intenta nuevamente.");
-      }
-
+      setAuth({ user: usuario, access: data.access, refresh: data.refresh });
       resetContador();
-      showMsg("¡Bienvenido! Ingreso correcto.", "success");
-
-      // Redirección según rol (mejora)
+      showMsg('Bienvenido. Ingreso correcto.', 'success');
+      const from = location.state?.from;
       setTimeout(() => {
-        const accionPendiente = localStorage.getItem("accionPendiente");
-        if (accionPendiente) {
-          try {
-            const a = JSON.parse(accionPendiente);
-            window.location.href = a.noticiaId ? `/noticias/${a.noticiaId}` : "/";
-            localStorage.removeItem("accionPendiente");
-          } catch {
-            window.location.href = "/";
-          }
-        } else if (usuario.tipo_usuario === "ADMIN") {
-          window.location.href = "/admin";
+        if (from && !from.startsWith('/admin') && !ud.es_admin) {
+          navigate(from);
+        } else if (ud.tipo_usuario === 'ADMIN' || ud.es_admin) {
+          navigate('/admin');
         } else {
-          window.location.href = "/";
+          navigate('/');
         }
-      }, 1200);
-
+      }, 600);
     } catch (err) {
-      if (err.code === "ECONNABORTED") {
-        limpiarCampos();
-        showMsg("El servidor tardó demasiado. Verifica tu conexión.");
-      } else if (err.response) {
-        const status = err.response.status;
-        if (status === 401 || status === 400) {
-          registrarFallo();
-        } else if (status === 403) {
-          limpiarCampos();
-          showMsg("Tu cuenta ha sido suspendida. Contacta al administrador.", "blocked");
-        } else if (status >= 500) {
-          limpiarCampos();
-          showMsg("Error en el servidor. Intenta más tarde.");
-        } else {
-          registrarFallo();
-        }
-      } else if (err.request) {
-        limpiarCampos();
-        showMsg("No se pudo conectar con el servidor. Verifica tu conexión.");
-      } else {
-        limpiarCampos();
-        showMsg("Ocurrió un error inesperado. Intenta nuevamente.");
-      }
+      showMsg('No se pudo conectar con el servidor. Verifica tu conexion.');
     } finally {
+      setLocalLoading(false);
       setLoading(false);
+      setTurnstileToken('');
     }
   };
 
-  const accesoInvitado = () => {
-    localStorage.setItem("usuario", JSON.stringify({
-      id: null, nombres: "Invitado", apellidos: "",
-      email: "invitado@temporal.com", tipo_usuario: "INVITADO",
-      foto_perfil: "", esInvitado: true,
-    }));
-    localStorage.removeItem("token");
-    showMsg("Accediendo como invitado. No podrás comentar ni reaccionar.", "info");
-    setTimeout(() => { window.location.href = "/"; }, 1000);
-  };
+  // Antibot counter effect: show Turnstile every N failed attempts
+  React.useEffect(() => {
+    if (antibotCount > 0 && antibotCount % ANTIBOT_EVERY === 0) {
+      setMostrarAntibot(true);
+    }
+  }, [antibotCount]);
+
+  const msgClass = msg.type === 'success'
+    ? 'bg-primary-50 border-primary-300 text-primary-800'
+    : msg.type === 'warning'
+      ? 'bg-accent-50 border-accent-300 text-accent-800'
+      : msg.type === 'blocked'
+        ? 'bg-red-50 border-red-300 text-red-800'
+        : 'bg-red-50 border-red-300 text-red-800';
 
   return (
-    <div className="lp">
-
-      <section className="lp-hero">
-        <div className="lp-overlay" />
-        <div className="lp-hero-body">
-          <div className="lp-emblem-wrap">
-            <img
-              src="/img/Logo-comunidad/Logo-principal.png"
-              alt="Escudo Comunidad Campesina Zapotal"
-              className="lp-emblem"
-            />
+    <div className="min-h-screen flex flex-col md:flex-row bg-white">
+      {/* Hero / Branding */}
+      <aside className="relative bg-hero-gradient md:w-1/2 flex items-center justify-center py-16 md:py-0">
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="relative z-10 text-center px-6 max-w-md">
+          <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+            <img src="/img/Logo-comunidad/Logo-principal.png" alt="Escudo" className="h-20 w-20" />
           </div>
-          <h1 className="lp-hero-title">
-            Comunidad<br />Campesina<br />Zapotal
+          <h1 className="font-display text-3xl md:text-4xl font-bold text-white leading-tight">
+            Comunidad Campesina<br />Zapotal
           </h1>
-          <div className="lp-ornament">
-            <span /><FaLeaf /><span />
+          <div className="my-5 flex items-center justify-center gap-3 text-white/70">
+            <span className="h-px w-12 bg-accent-400" />
+            <FaLeaf className="text-accent-300" />
+            <span className="h-px w-12 bg-accent-400" />
           </div>
-          <p className="lp-hero-desc">
-            Plataforma digital institucional diseñada para la gestión eficiente, la comunicación transparente y la participación activa de los comuneros.  
-            Un espacio seguro que fortalece la identidad comunitaria y facilita el acceso a información relevante y servicios en línea.  
+          <p className="text-white/85 text-base leading-relaxed">
+            Plataforma digital institucional para la gestion eficiente y transparente.
           </p>
-          <div className="lp-shield">
-            <FaShieldAlt /><span>Acceso seguro y autorizado</span>
+          <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm">
+            <FaShieldAlt className="text-primary-300" />
+            <span>Acceso seguro y autorizado</span>
           </div>
         </div>
-      </section>
+      </aside>
 
-      <section className="lp-panel">
-        <form className="lp-card" onSubmit={handleLogin} noValidate>
-
-          <header className="lp-head">
-            <div className="lp-deco"><span /><FaLeaf /><span /></div>
-            <p className="lp-eyebrow">Bienvenido</p>
-            <h2 className="lp-card-title">Iniciar Sesión</h2>
-            <hr className="lp-rule" />
-            <p className="lp-card-sub">
+      {/* Form */}
+      <section className="md:w-1/2 flex items-center justify-center p-6 md:p-10">
+        <form onSubmit={handleLogin} noValidate className="w-full max-w-md">
+          <header className="text-center mb-6">
+            <div className="my-3 flex items-center justify-center gap-3 text-secondary-400">
+              <span className="h-px w-12 bg-secondary-300" />
+              <FaLeaf />
+              <span className="h-px w-12 bg-secondary-300" />
+            </div>
+            <p className="text-sm text-secondary-600 uppercase tracking-wider">Bienvenido</p>
+            <h2 className="font-display text-3xl font-bold text-primary-800 mt-1">Iniciar Sesion</h2>
+            <hr className="my-3 border-t border-secondary-200" />
+            <p className="text-mute text-sm">
               Ingresa tus credenciales para acceder a la plataforma institucional.
             </p>
           </header>
 
           {bloqueado && (
-            <div className="lp-bloqueo-banner">
-              <FaExclamationTriangle />
+            <div className="flex items-start gap-3 p-4 mb-4 rounded-lg bg-red-50 border border-red-300 text-red-800">
+              <FaExclamationTriangle className="text-xl mt-0.5 flex-shrink-0" />
               <div>
                 <strong>Acceso bloqueado temporalmente</strong>
-                <p>Podrás intentarlo nuevamente en <strong>{formatTiempo(tiempoRestante)}</strong>.</p>
+                <p className="text-sm">Podras intentarlo nuevamente en <strong>{formatTiempo(tiempoRestante)}</strong>.</p>
               </div>
             </div>
           )}
 
-          <div className="lp-fields">
-            <div className="lp-field">
-              <label htmlFor="lp-email">Correo electrónico</label>
-              <div className={`lp-inp ${bloqueado ? "lp-inp--disabled" : ""}`}>
-                <FaEnvelope className="lp-ico" aria-hidden="true" />
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="lp-email" className="label">Correo electronico</label>
+              <div className={`flex items-center gap-2 px-3 py-2 border rounded-md transition-colors bg-white ${
+                bloqueado ? 'opacity-50' : 'border-secondary-300 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200'
+              }`}>
+                <FaEnvelope className="text-secondary-400" />
                 <input
-                  id="lp-email"
-                  type="email"
-                  placeholder="usuario@ejemplo.com"
-                  value={form.email}
-                  onChange={setField("email")}
-                  autoComplete="email"
-                  disabled={bloqueado}
-                  maxLength={120}
-                  required
+                  id="lp-email" type="email" placeholder="usuario@ejemplo.com"
+                  value={form.email} onChange={setField('email')}
+                  autoComplete="email" disabled={bloqueado} maxLength={120} required
+                  className="flex-1 bg-transparent outline-none text-sm"
                 />
               </div>
             </div>
 
-            <div className="lp-field">
-              <label htmlFor="lp-pass">Contraseña</label>
-              <div className={`lp-inp ${bloqueado ? "lp-inp--disabled" : ""}`}>
-                <FaLock className="lp-ico" aria-hidden="true" />
+            <div>
+              <label htmlFor="lp-pass" className="label">Contrasena</label>
+              <div className={`flex items-center gap-2 px-3 py-2 border rounded-md transition-colors bg-white ${
+                bloqueado ? 'opacity-50' : 'border-secondary-300 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200'
+              }`}>
+                <FaLock className="text-secondary-400" />
                 <input
-                  id="lp-pass"
-                  type={showPass ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={setField("password")}
-                  autoComplete="current-password"
-                  disabled={bloqueado}
-                  maxLength={64}
-                  required
+                  id="lp-pass" type={showPass ? 'text' : 'password'} placeholder="********"
+                  value={form.password} onChange={setField('password')}
+                  autoComplete="current-password" disabled={bloqueado} maxLength={64} required
+                  className="flex-1 bg-transparent outline-none text-sm"
                 />
                 {!bloqueado && (
-                  <button
-                    type="button"
-                    className="lp-eye"
-                    onClick={() => setShowPass((v) => !v)}
-                    aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  >
+                  <button type="button" onClick={() => setShowPass((v) => !v)}
+                    className="text-xs text-primary-700 hover:text-primary-900 font-medium px-2"
+                    aria-label={showPass ? 'Ocultar contrasena' : 'Mostrar contrasena'}>
                     {showPass ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 )}
@@ -324,59 +313,62 @@ function Login() {
             </div>
           </div>
 
-          <div className="lp-opts">
-            <label className="lp-remember">
-              <input type="checkbox" disabled={bloqueado} /><span>Recordarme</span>
-            </label>
-            <Link to="/recuperar-password" className="lp-forgot">¿Olvidaste tu contraseña?</Link>
+          <div className="mt-3">
+            <Link to="/recuperar-password" className="text-sm text-primary-700 hover:text-primary-900 font-medium">
+              ¿Olvidaste tu contrasena?
+            </Link>
           </div>
+
+          {mostrarAntibot && (
+            <div className="mt-4 p-3 rounded-lg bg-accent-50 border border-accent-300">
+              <div className="text-sm text-accent-800 mb-2">
+                Verificacion de seguridad requerida. Marca la casilla para continuar.
+              </div>
+              <Turnstile
+                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || ''}
+                onVerify={(token) => { setTurnstileToken(token); showMsg('Verificacion completada.', 'success'); }}
+                onExpire={() => setTurnstileToken('')}
+                onError={() => { setTurnstileToken(''); showMsg('Error en la verificacion. Intenta de nuevo.', 'error'); }}
+              />
+            </div>
+          )}
 
           <button
             type="submit"
-            className={`lp-btn-submit ${bloqueado ? "lp-btn-submit--blocked" : ""}`}
             disabled={loading || bloqueado}
+            className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md font-semibold text-sm transition-colors ${
+              loading || bloqueado
+                ? 'bg-primary-300 text-white cursor-not-allowed'
+                : 'bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900'
+            }`}
           >
-            {loading
-              ? <span className="lp-spinner" />
-              : bloqueado
-                ? <><FaLock aria-hidden="true" /><span>Bloqueado {formatTiempo(tiempoRestante)}</span></>
-                : <><FaLock aria-hidden="true" /><span>Ingresar</span><FaArrowRight className="lp-arr" aria-hidden="true" /></>
-            }
+            {loading ? <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : (
+              <>
+                <FaLock />
+                <span>{bloqueado ? `Bloqueado ${formatTiempo(tiempoRestante)}` : 'Ingresar'}</span>
+                {!bloqueado && <FaArrowRight />}
+              </>
+            )}
           </button>
 
           {msg.text && (
-            <div className={`lp-msg lp-msg--${msg.type}`} role="alert">
+            <div role="alert" className={`mt-3 p-3 rounded-lg border text-sm ${msgClass}`}>
               {msg.text}
             </div>
           )}
 
-          <div className="lp-sep"><span /><em>o continúa como</em><span /></div>
-
-          <button
-            type="button"
-            className="lp-btn-guest"
-            onClick={accesoInvitado}
-            disabled={loading}
-          >
-            <FaUser aria-hidden="true" /><span>Acceso como invitado</span>
-          </button>
-
-          <p className="lp-reg">
-            ¿No tienes una cuenta?{" "}
-            <Link to="/registro" className="lp-reg-link">
-              <FaUserPlus aria-hidden="true" /> Regístrate aquí
+          <p className="text-center mt-5 text-sm text-mute">
+            ¿No tienes una cuenta?{' '}
+            <Link to="/registro" className="text-primary-700 hover:text-primary-900 font-semibold inline-flex items-center gap-1">
+              <FaUserPlus /> Registrate aqui
             </Link>
           </p>
 
-          <p className="lp-copy">
-            © 2025 Comunidad Campesina Zapotal. Todos los derechos reservados.
+          <p className="text-center mt-4 text-xs text-soft">
+            © 2026 Comunidad Campesina Zapotal. Todos los derechos reservados.
           </p>
-
         </form>
       </section>
-
     </div>
   );
 }
-
-export default Login;

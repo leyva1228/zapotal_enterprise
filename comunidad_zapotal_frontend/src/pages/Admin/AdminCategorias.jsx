@@ -52,7 +52,7 @@ export default function AdminCategorias() {
       {error && <div className="admin-error">{error}</div>}
       {ok && <div className="admin-success">{ok}</div>}
 
-      <div className="admin-card" style={{ marginTop: 16 }}>
+      <div className="admin-card mt-4">
         <div className="admin-card__header">
           <h3 className="admin-card__title">Categorías ({items.length})</h3>
           <button className="admin-btn admin-btn-primary" onClick={abrirNuevo}>
@@ -66,14 +66,14 @@ export default function AdminCategorias() {
             <div className="admin-empty">No hay categorías.</div>
           ) : (
             <table className="admin-table">
-              <thead><tr><th>Nombre</th><th>Descripción</th><th>Noticias</th><th style={{ textAlign: "right" }}>Acciones</th></tr></thead>
+              <thead><tr><th>Nombre</th><th>Descripción</th><th>Noticias</th><th className="text-right">Acciones</th></tr></thead>
               <tbody>
                 {items.map(c => (
                   <tr key={c.id}>
-                    <td style={{ fontWeight: 600 }}>{c.nombre}</td>
-                    <td style={{ color: "#6b7280" }}>{c.descripcion || "—"}</td>
+                    <td className="font-semibold">{c.nombre}</td>
+                    <td className="text-mute">{c.descripcion || "—"}</td>
                     <td>{c.total_noticias ?? 0}</td>
-                    <td className="actions" style={{ justifyContent: "flex-end" }}>
+                    <td className="actions justify-end">
                       <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(c)}><FaEdit /> Editar</button>
                       <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => eliminar(c)}><FaTrash /></button>
                     </td>

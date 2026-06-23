@@ -24,7 +24,7 @@ class UsuarioFactory(DjangoModelFactory):
     tipo_usuario = Usuario.TipoUsuario.USUARIO
     estado = Usuario.EstadoUsuario.ACTIVO
     is_active = True
-    password = factory.PostGenerationMethodHandler(
+    password = factory.PostGenerationMethodCall(
         'set_password', 'testpass123'
     )
 

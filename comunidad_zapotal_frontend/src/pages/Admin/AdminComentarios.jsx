@@ -48,22 +48,21 @@ export default function AdminComentarios() {
       {error && <div className="admin-error">{error}</div>}
       {ok && <div className="admin-success">{ok}</div>}
 
-      <div className="admin-card" style={{ marginTop: 16 }}>
+      <div className="admin-card mt-4">
         <div className="admin-card__header">
           <h3 className="admin-card__title">Comentarios ({items.length})</h3>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ position: "relative" }}>
-              <FaSearch style={{ position: "absolute", left: 10, top: 11, color: "#9ca3af" }} />
+          <div className="flex">
+            <div className="relative">
+              <FaSearch className="absolute" />
               <input
-                className="admin-input"
-                style={{ paddingLeft: 30, width: 220 }}
+                className="admin-input pl-7 w-56"
                 placeholder="Buscar texto o autor..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
             <select
-              className="admin-select" style={{ width: 160 }}
+              className="admin-select w-40"
               value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}
             >
               <option value="">Todos los estados</option>
@@ -90,24 +89,24 @@ export default function AdminComentarios() {
                   <th>Noticia/Evento</th>
                   <th>Estado</th>
                   <th>Fecha</th>
-                  <th style={{ textAlign: "right" }}>Acciones</th>
+                  <th className="text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {itemsFiltrados.map(c => (
                   <tr key={c.id}>
                     <td>{c.id}</td>
-                    <td style={{ maxWidth: 340 }}>
-                      <div style={{ fontSize: 13 }}>{(c.contenido || "").substring(0, 140)}{(c.contenido || "").length > 140 ? "…" : ""}</div>
+                    <td className="max-w-md">
+                      <div className="text-[13px]">{(c.contenido || "").substring(0, 140)}{(c.contenido || "").length > 140 ? "…" : ""}</div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 600, fontSize: 12 }}>{c.autor_nombre || c.autor_email || `Usuario #${c.autor || "?"}`}</div>
-                      <div style={{ color: "#6b7280", fontSize: 11 }}>{c.autor_email}</div>
+                      <div className="font-[600]">{c.autor_nombre || c.autor_email || `Usuario #${c.autor || "?"}`}</div>
+                      <div className="text-mute">{c.autor_email}</div>
                     </td>
-                    <td style={{ fontSize: 12, color: "#374151" }}>
+                    <td className="text-[12px]">
                       {c.noticia  ? <span title="Noticia #{c.noticia}">📰 #{c.noticia}</span> : null}
                       {c.evento   ? <span title="Evento #{c.evento}">📅 #{c.evento}</span>  : null}
-                      {c.respuesta_a ? <div style={{ color: "#6b7280" }}>↳ Respuesta a #{c.respuesta_a}</div> : null}
+                      {c.respuesta_a ? <div className="text-mute">↳ Respuesta a #{c.respuesta_a}</div> : null}
                     </td>
                     <td>
                       <span className={"admin-badge " + (
@@ -119,10 +118,10 @@ export default function AdminComentarios() {
                         {c.estado}
                       </span>
                     </td>
-                    <td style={{ color: "#6b7280", fontSize: 12 }}>
+                    <td className="text-mute">
                       {c.fecha ? new Date(c.fecha).toLocaleString("es-PE") : ""}
                     </td>
-                    <td className="actions" style={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <td className="actions justify-end">
                       {c.estado !== "PUBLICADO" && (
                         <button className="admin-btn admin-btn-sm admin-btn-success" onClick={() => cambiarEstado(c, "PUBLICADO")}>
                           <FaEye /> Publicar

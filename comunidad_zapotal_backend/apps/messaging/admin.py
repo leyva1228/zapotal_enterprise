@@ -9,7 +9,6 @@ class MensajeAdmin(admin.ModelAdmin):
     list_filter = ['leido', 'fecha']
     search_fields = ['remitente__email', 'destinatario__email', 'contenido']
     ordering = ['-fecha']
-    date_hierarchy = 'fecha'
     raw_id_fields = ['remitente', 'destinatario']
     readonly_fields = ['fecha']
     list_per_page = 30
@@ -21,7 +20,6 @@ class NotificacionAdmin(admin.ModelAdmin):
     list_filter = ['tipo', 'leido', 'fecha']
     search_fields = ['titulo', 'mensaje', 'destinatario__email']
     ordering = ['-fecha']
-    date_hierarchy = 'fecha'
     raw_id_fields = ['destinatario']
     readonly_fields = ['fecha']
     list_per_page = 30

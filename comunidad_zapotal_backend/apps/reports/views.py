@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
-from apps.core.permissions import IsAdminUser, IsAdminOrReadOnly
+from apps.core.permissions import IsAdminUser
 from .models import ContactoMensaje, LibroReclamacion
 from .serializers import (
     ContactoMensajeSerializer,
@@ -18,9 +18,10 @@ class ContactoMensajeViewSet(viewsets.ModelViewSet):
     Mensajes de contacto.
     - Cualquier visitante puede crear (POST).
     - Solo ADMIN puede listar, ver, editar o eliminar.
+    - Restriccion: por privacidad (PII), los datos solo son accesibles a admins.
     """
     queryset = ContactoMensaje.objects.all()
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsAdminUser]
     filterset_fields = ['fecha']
     search_fields = ['nombre', 'email', 'asunto']
     ordering_fields = ['fecha']
@@ -29,7 +30,7 @@ class ContactoMensajeViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             return [AllowAny()]
-        return super().get_permissions()
+        return [IsAdminUser()]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -42,9 +43,11 @@ class LibroReclamacionViewSet(viewsets.ModelViewSet):
     Libro de Reclamaciones (Ley N° 29571 - Perú).
     - Cualquier visitante puede crear un reclamo (POST).
     - Solo ADMIN puede listar, ver, cambiar estado o eliminar.
+    - Restriccion: por privacidad (PII / Ley de Proteccion de Datos),
+      los datos solo son accesibles a admins.
     """
     queryset = LibroReclamacion.objects.all()
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsAdminUser]
     filterset_fields = ['estado', 'tipo', 'fecha']
     search_fields = ['nombre', 'email', 'descripcion']
     ordering_fields = ['fecha', 'estado']
@@ -53,7 +56,7 @@ class LibroReclamacionViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             return [AllowAny()]
-        return super().get_permissions()
+        return [IsAdminUser()]
 
     def get_serializer_class(self):
         if self.action in ['create']:

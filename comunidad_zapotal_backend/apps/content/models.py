@@ -28,6 +28,7 @@ class Noticia(models.Model):
     contenido = models.TextField('Contenido', validators=[validate_not_empty])
     resumen = models.TextField('Resumen', blank=True, default='')
     imagen = models.ImageField('Imagen', upload_to='noticias/', blank=True, null=True)
+    imagen_url = models.URLField('URL de imagen externa', max_length=500, blank=True, default='')
     fecha_publicacion = models.DateTimeField('Fecha de publicacion', auto_now_add=True, db_index=True)
     estado = models.CharField(
         'Estado',
@@ -62,6 +63,8 @@ class Evento(models.Model):
     fecha = models.DateTimeField('Fecha del evento', db_index=True)
     lugar = models.CharField('Lugar', max_length=200, blank=True, default='')
     imagen = models.ImageField('Imagen', upload_to='eventos/', blank=True, null=True)
+    imagen_url = models.URLField('URL de imagen externa', max_length=500, blank=True, default='')
+    vistas = models.PositiveIntegerField('Vistas', default=0)
 
     class Meta:
         db_table = 'evento'
@@ -260,3 +263,163 @@ class Reaccion(models.Model):
         autor = self.autor.email if self.autor else 'Anónimo'
         destino = self.noticia or self.evento or self.comentario
         return f'{autor} - {self.tipo} en {destino}'
+
+
+# =====================================================================
+# FAVORITOS
+# =====================================================================
+
+class Favorito(models.Model):
+    class TipoFavorito(models.TextChoices):
+        NOTICIA = 'NOTICIA', 'Noticia'
+        EVENTO = 'EVENTO', 'Evento'
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='favoritos',
+        verbose_name='Usuario',
+    )
+    tipo = models.CharField(
+        'Tipo',
+        max_length=10,
+        choices=TipoFavorito.choices,
+        db_index=True,
+    )
+    noticia = models.ForeignKey(
+        'content.Noticia',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='favoritos',
+        verbose_name='Noticia',
+    )
+    evento = models.ForeignKey(
+        'content.Evento',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='favoritos',
+        verbose_name='Evento',
+    )
+    fecha_agregado = models.DateTimeField('Fecha agregado', auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'favorito'
+        verbose_name = 'Favorito'
+        verbose_name_plural = 'Favoritos'
+        ordering = ['-fecha_agregado']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['usuario', 'noticia'],
+                name='uniq_favorito_usuario_noticia',
+                condition=models.Q(noticia__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=['usuario', 'evento'],
+                name='uniq_favorito_usuario_evento',
+                condition=models.Q(evento__isnull=False),
+            ),
+        ]
+
+    def __str__(self):
+        target = self.noticia_id or self.evento_id
+        return f'Favorito({self.usuario_id} -> {self.tipo}#{target})'
+
+
+# =====================================================================
+# SOLICITUDES DE BAJA DE CUENTA
+# =====================================================================
+
+class SolicitudBaja(models.Model):
+    class EstadoSolicitud(models.TextChoices):
+        PENDIENTE = 'PENDIENTE', 'Pendiente'
+        APROBADA = 'APROBADA', 'Aprobada'
+        RECHAZADA = 'RECHAZADA', 'Rechazada'
+        CANCELADA = 'CANCELADA', 'Cancelada por el usuario'
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='solicitudes_baja',
+        verbose_name='Usuario',
+    )
+    motivo = models.TextField('Motivo')
+    estado = models.CharField(
+        max_length=10,
+        choices=EstadoSolicitud.choices,
+        default=EstadoSolicitud.PENDIENTE,
+        db_index=True,
+    )
+    fecha_solicitud = models.DateTimeField('Fecha de solicitud', auto_now_add=True, db_index=True)
+    fecha_revision = models.DateTimeField('Fecha de revision', null=True, blank=True)
+    revisado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='solicitudes_baja_revisadas',
+        verbose_name='Revisado por',
+    )
+    notas_admin = models.TextField('Notas del administrador', blank=True, default='')
+
+    class Meta:
+        db_table = 'solicitud_baja'
+        verbose_name = 'Solicitud de baja'
+        verbose_name_plural = 'Solicitudes de baja'
+        ordering = ['-fecha_solicitud']
+
+    def __str__(self):
+        return f'SolicitudBaja({self.usuario_id} - {self.estado})'
+
+
+# =====================================================================
+# NOVEDADES VISTAS (tracking de novedades marcadas como leidas)
+# =====================================================================
+
+class NovedadVista(models.Model):
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='novedades_vistas',
+        verbose_name='Usuario',
+    )
+    noticia = models.ForeignKey(
+        'content.Noticia',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='novedades_vistas',
+        verbose_name='Noticia',
+    )
+    evento = models.ForeignKey(
+        'content.Evento',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='novedades_vistas',
+        verbose_name='Evento',
+    )
+    fecha_vista = models.DateTimeField('Fecha de vista', auto_now=True)
+
+    class Meta:
+        db_table = 'novedad_vista'
+        verbose_name = 'Novedad vista'
+        verbose_name_plural = 'Novedades vistas'
+        ordering = ['-fecha_vista']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['usuario', 'noticia'],
+                name='uniq_novedad_vista_usuario_noticia',
+                condition=models.Q(noticia__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=['usuario', 'evento'],
+                name='uniq_novedad_vista_usuario_evento',
+                condition=models.Q(evento__isnull=False),
+            ),
+        ]
+
+    def __str__(self):
+        target = self.noticia_id or self.evento_id
+        return f'NovedadVista({self.usuario_id} -> {target})'

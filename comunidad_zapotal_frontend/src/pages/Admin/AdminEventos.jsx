@@ -105,15 +105,14 @@ export default function AdminEventos() {
       {error && <div className="admin-error">{error}</div>}
       {ok && <div className="admin-success">{ok}</div>}
 
-      <div className="admin-card" style={{ marginTop: 16 }}>
+      <div className="admin-card mt-4">
         <div className="admin-card__header">
           <h3 className="admin-card__title">Eventos ({items.length})</h3>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ position: "relative" }}>
-              <FaSearch style={{ position: "absolute", left: 10, top: 11, color: "#9ca3af" }} />
+          <div className="flex">
+            <div className="relative">
+              <FaSearch className="absolute" />
               <input
-                className="admin-input"
-                style={{ paddingLeft: 30, width: 200 }}
+                className="admin-input pl-7 w-52"
                 placeholder="Buscar..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
@@ -139,31 +138,31 @@ export default function AdminEventos() {
                   <th>Fecha</th>
                   <th>Reacciones</th>
                   <th>Comentarios</th>
-                  <th style={{ textAlign: "right" }}>Acciones</th>
+                  <th className="text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {itemsFiltrados.map(ev => (
                   <tr key={ev.id}>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{ev.titulo}</div>
-                      <div style={{ color: "#6b7280", fontSize: 12 }}>
+                      <div className="font-semibold">{ev.titulo}</div>
+                      <div className="text-mute">
                         {(ev.descripcion || "").substring(0, 80)}
                       </div>
                     </td>
                     <td>{ev.lugar || "—"}</td>
-                    <td style={{ color: "#6b7280", fontSize: 12 }}>
+                    <td className="text-mute">
                       {ev.fecha ? new Date(ev.fecha).toLocaleString("es-PE") : ""}
                     </td>
                     <td>
                       {Object.entries(ev.total_reacciones || {}).map(([k, v]) => (
-                        <span key={k} className="admin-badge admin-badge--info" style={{ marginRight: 4 }}>
+                        <span key={k} className="admin-badge admin-badge--info mr-1">
                           {k} {v}
                         </span>
                       ))}
                     </td>
                     <td>{ev.total_comentarios || 0}</td>
-                    <td className="actions" style={{ justifyContent: "flex-end" }}>
+                    <td className="actions justify-end">
                       <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(ev)}>
                         <FaEdit /> Editar
                       </button>

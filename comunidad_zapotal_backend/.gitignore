@@ -1,4 +1,4 @@
-# Secrets
+# ─── Secretos ───
 .env
 .env.*
 *.key
@@ -7,61 +7,74 @@
 credentials.json
 service-account*.json
 
-# Environment
+# ─── Entornos virtuales ───
 venv/
+zapotal_venv/
 zapotal-venv/
 env/
 .env.local
 .env.production
 .env.development
 
-# Dependencies
+# ─── Node (por si hay tooling local) ───
 node_modules/
 package-lock.json
 
-# Media
+# ─── Archivos subidos por usuarios (van a R2/S3 en prod) ───
 media/
 
-# Database
+# ─── Bases de datos locales ───
 db.sqlite3
+comunidad_zapotal_db.sqlite3
+*.sqlite3
 
-# Python
+# ─── Python ───
 __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
 dist/
 build/
+.pytest_cache/
 
-# IDE
+# ─── IDE ───
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# Django
+# ─── Django ───
 staticfiles/
 *.pot
 
-# Logs
+# ─── Logs ───
 logs/
 *.log
 
-# Security analysis outputs
+# ─── Scripts temporales ───
+check_media.py
+fix_media.py
+check_tz.ps1
+remove_date_hierarchy.ps1
+postman_collection.json
+
+# ─── Seguridad ───
 security-analisis/
 
-# OS
+# ─── OS ───
 .DS_Store
 Thumbs.db
 
-improve
-comunidad_zapotal_db.sqlite3
-docs
-
+# ─── Reportes de mejora (IA) ───
+improve/
 TRACKER.md
 
-session-ses_14cd.md
-session-ses_14ca.md
+# ─── Session logs ───
+session-*.md
 
+# ─── CI/CD (se maneja aparte) ───
+.github/
+
+# ─── Archivos sueltos en raíz ───
 zapotal-gateway.zip

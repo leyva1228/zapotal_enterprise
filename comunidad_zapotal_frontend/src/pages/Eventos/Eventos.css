@@ -5,17 +5,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-  --azul-institucional: #003087;
-  --azul-medio: #0050b3;
-  --azul-badge: #1565c0;
-  --azul-claro: #e8f0fe;
+  --azul-institucional: #0a3d1f;
+  --azul-medio: #15803d;
+  --azul-badge: #166534;
+  --azul-claro: #dcfce7;
   --negro: #111111;
   --gris-texto: #444444;
   --gris-medio: #777777;
   --gris-claro: #f5f5f5;
   --gris-borde: #e0e0e0;
   --blanco: #ffffff;
-  --verde-proximo: #2e7d32;
+  --verde-proximo: #15803d;
   --rojo-pasado: #c0392b;
   --font-display: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -200,11 +200,11 @@
   padding: 11px 22px;
   border-radius: 999px;
 }
-.pag-btn--nav:hover:not(:disabled) { background: #1b5e20; }
+.pag-btn--nav:hover:not(:disabled) { background: #14532d; }
 
 /* Deshabilitado */
 .pag-btn--disabled {
-  background: #a5d6a7 !important;
+  background: #bbf7d0 !important;
   cursor: not-allowed;
   opacity: 0.75;
 }
@@ -219,7 +219,7 @@
   border-radius: 50%;
   justify-content: center;
 }
-.pag-btn--num:hover:not(.pag-btn--active) { background: #c8e6c9; color: var(--verde-proximo); }
+.pag-btn--num:hover:not(.pag-btn--active) { background: #dcfce7; color: var(--verde-proximo); }
 
 /* Activo */
 .pag-btn--active {

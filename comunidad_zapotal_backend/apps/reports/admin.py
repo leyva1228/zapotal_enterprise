@@ -9,7 +9,6 @@ class ContactoMensajeAdmin(admin.ModelAdmin):
     list_filter = ['fecha']
     search_fields = ['nombre', 'email', 'asunto', 'mensaje']
     ordering = ['-fecha']
-    date_hierarchy = 'fecha'
     readonly_fields = ['fecha']
     list_per_page = 30
 
@@ -24,7 +23,6 @@ class LibroReclamacionAdmin(admin.ModelAdmin):
     list_filter = ['estado', 'tipo', 'fecha']
     search_fields = ['nombre', 'email', 'descripcion']
     ordering = ['-fecha']
-    date_hierarchy = 'fecha'
     readonly_fields = ['fecha']
     list_per_page = 30
 

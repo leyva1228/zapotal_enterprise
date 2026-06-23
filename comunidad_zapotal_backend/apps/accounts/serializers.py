@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import Usuario, Comunero
+from .models import Usuario, Comunero, OTPVerification, PendingApproval
 
 
 class ComuneroSerializer(serializers.ModelSerializer):
@@ -22,6 +22,9 @@ class UsuarioSerializer(serializers.ModelSerializer):
     nombres = serializers.SerializerMethodField()
     apellidos = serializers.SerializerMethodField()
     dni = serializers.SerializerMethodField()
+    es_admin = serializers.SerializerMethodField()
+    es_autoridad = serializers.SerializerMethodField()
+    autoridad_cargo = serializers.SerializerMethodField()
 
     class Meta:
         model = Usuario
@@ -30,6 +33,9 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'foto_perfil', 'foto_perfil_url',
             'nombre_completo', 'iniciales', 'nombres', 'apellidos', 'dni',
             'fecha_registro', 'is_active', 'comunero',
+            'email_verificado', 'telefono', 'telefono_verificado',
+            'two_factor_enabled', 'aprobado_por', 'fecha_aprobacion',
+            'es_admin', 'es_autoridad', 'autoridad_cargo',
         ]
         read_only_fields = ['id', 'fecha_registro', 'is_active']
 
@@ -71,6 +77,16 @@ class UsuarioSerializer(serializers.ModelSerializer):
             return obj.comunero.dni
         return None
 
+    def get_es_admin(self, obj):
+        return getattr(obj, 'es_admin_efectivo', False)
+
+    def get_es_autoridad(self, obj):
+        return obj.get_autoridad_vigente() is not None
+
+    def get_autoridad_cargo(self, obj):
+        aut = obj.get_autoridad_vigente()
+        return aut.cargo if aut else None
+
 
 class UsuarioEscrituraSerializer(serializers.ModelSerializer):
     """Serializer para crear/actualizar usuarios. Password es write_only."""
@@ -90,7 +106,7 @@ class UsuarioEscrituraSerializer(serializers.ModelSerializer):
 
     def validate_password(self, value):
         if value and len(value) < 6:
-            raise serializers.ValidationError('La contraseña debe tener mínimo 6 caracteres.')
+            raise serializers.ValidationError('La contrasena debe tener minimo 6 caracteres.')
         return value
 
     def create(self, validated_data):
@@ -126,17 +142,28 @@ class LoginSerializer(serializers.Serializer):
                 password=password,
             )
             if not user:
-                raise serializers.ValidationError(
-                    {'detail': 'Credenciales inválidas.'}
+                # Si authenticate fallo por is_active=False, intentar lookup directo
+                # para distinguir "credenciales invalidas" de "usuario inactivo".
+                try:
+                    candidato = Usuario.objects.get(email=Usuario.objects.normalize_email(email))
+                    if candidato.check_password(password):
+                        user = candidato
+                except Usuario.DoesNotExist:
+                    pass
+            if not user:
+                from apps.core.utils import log_audit_event
+                log_audit_event(
+                    accion='LOGIN_FAILED',
+                    descripcion=f'Credenciales invalidas para {email}',
+                    metadata={'email': email},
                 )
-            if user.estado != 'ACTIVO':
                 raise serializers.ValidationError(
-                    {'detail': 'El usuario se encuentra inactivo.'}
+                    {'detail': 'Credenciales invalidas.'}
                 )
             attrs['user'] = user
             return attrs
         raise serializers.ValidationError(
-            'Debe proporcionar email y contraseña.'
+            'Debe proporcionar email y contrasena.'
         )
 
 
@@ -145,3 +172,26 @@ class LoginResponseSerializer(serializers.Serializer):
     access = serializers.CharField()
     refresh = serializers.CharField()
     usuario = UsuarioSerializer()
+    requiere_otp = serializers.BooleanField()
+
+
+class PendingApprovalSerializer(serializers.ModelSerializer):
+    usuario_email = serializers.CharField(source='usuario.email', read_only=True)
+    usuario_nombre = serializers.SerializerMethodField()
+    usuario_dni = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PendingApproval
+        fields = [
+            'id', 'usuario', 'usuario_email', 'usuario_nombre', 'usuario_dni',
+            'datos_registro', 'ip_registro', 'user_agent_registro',
+            'oauth_provider', 'fecha_solicitud', 'revisado_por',
+            'fecha_revision', 'notas_admin',
+        ]
+        read_only_fields = ['id', 'fecha_solicitud']
+
+    def get_usuario_nombre(self, obj):
+        return obj.usuario.nombre_completo if obj.usuario else None
+
+    def get_usuario_dni(self, obj):
+        return obj.usuario.dni if obj.usuario else None

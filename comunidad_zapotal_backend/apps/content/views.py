@@ -1,3 +1,4 @@
+from django.db.models import F
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -78,6 +79,19 @@ class NoticiaViewSet(viewsets.ModelViewSet):
         serializer = ComentarioSerializer(comentarios, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def incrementar_vistas(self, request, pk=None):
+        """Incrementa el contador de vistas de forma atomica.
+
+        Usa F('vistas') + 1 para evitar condiciones de carrera.
+        Es publico (AllowAny) porque solo registra metricas de lectura.
+        """
+        Noticia.objects.filter(pk=pk).update(vistas=F('vistas') + 1)
+        noticia = Noticia.objects.filter(pk=pk).values('id', 'vistas').first()
+        if not noticia:
+            return Response({'detail': 'Noticia no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'id': noticia['id'], 'vistas': noticia['vistas']}, status=status.HTTP_200_OK)
+
 
 class EventoViewSet(viewsets.ModelViewSet):
     """
@@ -107,6 +121,15 @@ class EventoViewSet(viewsets.ModelViewSet):
         ).order_by('-fecha')
         serializer = ComentarioSerializer(comentarios, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def incrementar_vistas(self, request, pk=None):
+        """Incrementa el contador de vistas del evento de forma atomica."""
+        Evento.objects.filter(pk=pk).update(vistas=F('vistas') + 1)
+        evento = Evento.objects.filter(pk=pk).values('id', 'vistas').first()
+        if not evento:
+            return Response({'detail': 'Evento no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'id': evento['id'], 'vistas': evento['vistas']}, status=status.HTTP_200_OK)
 
 
 class MultimediaViewSet(viewsets.ModelViewSet):
@@ -155,7 +178,12 @@ class ComentarioViewSet(viewsets.ModelViewSet):
         return [AllowAny()]
 
     def perform_create(self, serializer):
-        serializer.save(autor=self.request.user)
+        comentario = serializer.save(autor=self.request.user)
+        # Moderacion automatica: si el comentario contiene palabras prohibidas,
+        # se envia a PENDIENTE en lugar de PUBLICADO para revision administrativa.
+        if comentario.tiene_palabras_prohibidas():
+            comentario.estado = Comentario.EstadoComentario.PENDIENTE
+            comentario.save(update_fields=['estado'])
 
     def perform_update(self, serializer):
         # Solo el autor del comentario o un ADMIN puede editarlo.

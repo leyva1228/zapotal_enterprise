@@ -108,23 +108,21 @@ export default function AdminNoticias() {
       {error && <div className="admin-error">{error}</div>}
       {ok && <div className="admin-success">{ok}</div>}
 
-      <div className="admin-card" style={{ marginTop: 16 }}>
+      <div className="admin-card mt-4">
         <div className="admin-card__header">
           <h3 className="admin-card__title">Noticias ({items.length})</h3>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ position: "relative" }}>
-              <FaSearch style={{ position: "absolute", left: 10, top: 11, color: "#9ca3af" }} />
+          <div className="flex">
+            <div className="relative">
+              <FaSearch className="absolute" />
               <input
-                className="admin-input"
-                style={{ paddingLeft: 30, width: 200 }}
+                className="admin-input pl-7 w-52"
                 placeholder="Buscar..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
             <select
-              className="admin-select"
-              style={{ width: 160 }}
+              className="admin-select w-40"
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
             >
@@ -152,15 +150,15 @@ export default function AdminNoticias() {
                   <th>Categoría</th>
                   <th>Estado</th>
                   <th>Fecha</th>
-                  <th style={{ textAlign: "right" }}>Acciones</th>
+                  <th className="text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {itemsFiltrados.map(n => (
                   <tr key={n.id}>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{n.titulo}</div>
-                      <div style={{ color: "#6b7280", fontSize: 12, marginTop: 2 }}>
+                      <div className="font-semibold">{n.titulo}</div>
+                      <div className="text-mute text-[12px]">
                         {(n.resumen || "").substring(0, 80)}
                       </div>
                     </td>
@@ -174,10 +172,10 @@ export default function AdminNoticias() {
                         {n.estado}
                       </span>
                     </td>
-                    <td style={{ color: "#6b7280", fontSize: 12 }}>
+                    <td className="text-mute">
                       {n.fecha_publicacion ? new Date(n.fecha_publicacion).toLocaleString("es-PE") : ""}
                     </td>
-                    <td className="actions" style={{ justifyContent: "flex-end" }}>
+                    <td className="actions justify-end">
                       <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(n)}>
                         <FaEdit /> Editar
                       </button>
@@ -231,8 +229,7 @@ export default function AdminNoticias() {
           <div className="admin-form-group">
             <label className="admin-form-group__label admin-form-group__label--required">Contenido</label>
             <textarea
-              className="admin-textarea"
-              style={{ minHeight: 180 }}
+              className="admin-textarea min-h-[180px]"
               value={form.contenido}
               onChange={(e) => setForm({ ...form, contenido: e.target.value })}
               required

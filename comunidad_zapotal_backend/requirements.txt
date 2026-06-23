@@ -1,38 +1,43 @@
-asgiref==3.11.1
-attrs==26.1.0
-certifi==2026.2.25
-charset-normalizer==3.4.7
-click==8.4.1
-colorama==0.4.6
-coreapi==2.3.3
-coreschema==0.0.4
+# === Zapotal Enterprise - Dependencias de producción ===
+# Solo paquetes usados directamente por el código, en INSTALLED_APPS,
+# middleware, configuración (settings.py) o modelos.
+# Las dependencias transitivas se resuelven automáticamente con pip.
+
+# === Core ===
 Django==6.0.4
-django-baton==5.1.2
-django-cors-headers==4.9.0
-django-filter==25.2
+
+# === API REST ===
 djangorestframework==3.17.1
 djangorestframework_simplejwt==5.5.1
+django-filter==25.2
+django-cors-headers==4.9.0
 drf-spectacular==0.29.0
-h11==0.16.0
-idna==3.11
-inflection==0.5.1
-itypes==1.2.0
-Jinja2==3.1.6
-jsonschema==4.26.0
-jsonschema-specifications==2025.9.1
-MarkupSafe==3.0.3
-mysqlclient==2.2.8
-pillow==12.2.0
-PyJWT==2.13.0
-python-decouple==3.8
-PyYAML==6.0.3
-referencing==0.37.0
-requests==2.33.1
-rpds-py==0.30.0
-sqlparse==0.5.5
-typing_extensions==4.15.0
-tzdata==2026.1
-uritemplate==4.2.0
-urllib3==2.6.3
-uvicorn==0.47.0
+
+# === Storage / Files (Cloudflare R2) ===
+django-storages[s3]==1.14.6
+boto3==1.43.34
+
+# === Email (Resend) ===
+django-anymail[resend]==15.0
+
+# === Static files (whiteNoise para producción) ===
 whitenoise==6.12.0
+
+# === Database (MySQL) ===
+mysqlclient==2.2.8
+
+# === Image handling (ImageField) ===
+pillow==12.2.0
+
+# === Config / settings ===
+python-decouple==3.8
+
+# === 2FA (TOTP) ===
+pyotp==2.10.0
+qrcode==8.2
+
+# === HTTP client (servicios externos) ===
+requests==2.33.1
+
+# === Pasarela de pagos (Mercado Pago Checkout Bricks) ===
+mercadopago==3.2.0

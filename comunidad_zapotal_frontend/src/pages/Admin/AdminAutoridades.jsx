@@ -76,7 +76,7 @@ export default function AdminAutoridades() {
       {error && <div className="admin-error">{error}</div>}
       {ok && <div className="admin-success">{ok}</div>}
 
-      <div className="admin-card" style={{ marginTop: 16 }}>
+      <div className="admin-card mt-4">
         <div className="admin-card__header">
           <h3 className="admin-card__title">Autoridades ({items.length})</h3>
           <button className="admin-btn admin-btn-primary" onClick={abrirNuevo}>
@@ -90,16 +90,16 @@ export default function AdminAutoridades() {
             <div className="admin-empty">No hay autoridades.</div>
           ) : (
             <table className="admin-table">
-              <thead><tr><th>Cargo</th><th>Persona</th><th>Período</th><th>Desde</th><th>Hasta</th><th style={{ textAlign: "right" }}>Acciones</th></tr></thead>
+              <thead><tr><th>Cargo</th><th>Persona</th><th>Período</th><th>Desde</th><th>Hasta</th><th className="text-right">Acciones</th></tr></thead>
               <tbody>
                 {items.map(a => (
                   <tr key={a.id}>
-                    <td style={{ fontWeight: 600 }}>{a.cargo}</td>
+                    <td className="font-semibold">{a.cargo}</td>
                     <td>{[a.nombres, a.apellidos].filter(Boolean).join(" ") || "—"}</td>
                     <td>{a.periodo || "—"}</td>
-                    <td style={{ color: "#6b7280", fontSize: 12 }}>{a.fecha_inicio || "—"}</td>
-                    <td style={{ color: "#6b7280", fontSize: 12 }}>{a.fecha_fin || "En curso"}</td>
-                    <td className="actions" style={{ justifyContent: "flex-end" }}>
+                    <td className="text-mute">{a.fecha_inicio || "—"}</td>
+                    <td className="text-mute">{a.fecha_fin || "En curso"}</td>
+                    <td className="actions justify-end">
                       <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(a)}><FaEdit /> Editar</button>
                       <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => eliminar(a)}><FaTrash /></button>
                     </td>

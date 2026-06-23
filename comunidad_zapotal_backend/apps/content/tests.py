@@ -90,9 +90,8 @@ class TestComentarioViewSet:
         assert all(c['estado'] == 'PUBLICADO' for c in results)
 
     def test_comentario_con_palabra_prohibida_rechazado(self, api_client, regular_user):
-        """Comentario con palabras prohibidas debe ser rechazado."""
+        """Comentario con palabras prohibidas se envia a moderacion (PENDIENTE)."""
         from apps.content.models import Noticia
-        from django.core.exceptions import ValidationError
         noticia = Noticia.objects.create(titulo='N', contenido='C')
         api_client.force_authenticate(user=regular_user)
         response = api_client.post(
@@ -100,4 +99,5 @@ class TestComentarioViewSet:
             {'noticia': noticia.id, 'contenido': 'Eres un tonto'},
             format='json',
         )
-        assert response.status_code == 400
+        assert response.status_code == 201
+        assert response.json()['estado'] == 'PENDIENTE'

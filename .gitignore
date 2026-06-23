@@ -1,71 +1,42 @@
-# Herramientas
-.swarm/
-.playwright-mcp/
-graphify-out/
+# ─── Allowlist: solo estos directorios/archivos se trackean ───
+/*
+!/comunidad_zapotal_backend/
+!/comunidad_zapotal_frontend/
+!/generate_secret_key.bat
 
-# Scripts temporales
-
-# Reportes
-API_MIGRATION_MAP.md
-usage_skills.md
-
-# Bases de datos
-ruvector.db
-*.db
-*.sqlite
-*.sqlite3
-
-# Python virtual environments
-zapotal_venv/
-env/
-venv/
-.venv/
+# ─── Patrones generales dentro de las carpetas permitidas ───
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
 
-# React / Node
+# Node / React
 node_modules/
-build/
 dist/
+build/
 
-# Reportes de mejora (IA)
-improve/
-
-# Java / Kotlin
-.gradle/
-
-# IDEs
-.idea/
-.vscode/
-
-# Logs
-*.log
-
-# Variables de entorno
+# Entorno y secretos
 .env
 
 # Django
 staticfiles/
 
-# ─── Proyectos que NO se suben a este repo ───
-# Backend antiguo
-comunidad-zapotal-backend/
-# Core Django antiguo
-zapotal_core_django/
-# Frontend antiguo (React)
-zapotal_web_react/
-# Bases de datos y dumps
-comunidad_db.sql
+# Bases de datos
+*.db
+*.sqlite
+*.sqlite3
 
+# Logs
+*.log
 
-_categorize_skills.py
-_extract_skills.py
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
 
-comunidad_zapotal_mobile_bff/
-zapotal-gateway.zip
-zapotal-gateway/
-
-session-ses_14ca.md
-session-ses_14cd.md
+# OS
+Thumbs.db
+.DS_Store

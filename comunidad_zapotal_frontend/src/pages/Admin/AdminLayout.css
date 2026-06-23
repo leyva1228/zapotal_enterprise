@@ -10,7 +10,7 @@
 .admin-shell--collapsed { grid-template-columns: 72px 1fr; }
 
 .admin-sidebar {
-  background: linear-gradient(180deg, #1a3a52 0%, #0f2434 100%);
+  background: linear-gradient(180deg, #0a3d1f 0%, #052e16 100%);
   color: #e6edf3;
   display: flex;
   flex-direction: column;
@@ -30,7 +30,7 @@
   width: 36px; height: 36px;
   border-radius: 8px;
   background: #d4a72c;
-  color: #1a3a52;
+  color: #0a3d1f;
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 20px;
   flex-shrink: 0;
@@ -55,7 +55,7 @@
   white-space: nowrap;
 }
 .admin-sidebar__link:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
-.admin-sidebar__link--active { background: #d4a72c; color: #1a3a52; font-weight: 600; }
+.admin-sidebar__link--active { background: #d4a72c; color: #0a3d1f; font-weight: 600; }
 .admin-sidebar__icon { display: flex; font-size: 16px; min-width: 18px; justify-content: center; }
 .admin-shell--collapsed .admin-sidebar__link { justify-content: center; padding: 12px 0; }
 
@@ -118,8 +118,8 @@
   text-decoration: none;
 }
 .admin-btn:hover { background: #e5e7eb; }
-.admin-btn-primary { background: #1a3a52; color: #fff; }
-.admin-btn-primary:hover { background: #0f2434; }
+.admin-btn-primary { background: #0a3d1f; color: #fff; }
+.admin-btn-primary:hover { background: #052e16; }
 .admin-btn-danger { background: #fee2e2; color: #b91c1c; }
 .admin-btn-danger:hover { background: #fecaca; }
 .admin-btn-success { background: #d1fae5; color: #047857; }
@@ -257,7 +257,7 @@
 }
 .admin-input:focus, .admin-textarea:focus, .admin-select:focus {
   outline: none;
-  border-color: #1a3a52;
+  border-color: #0a3d1f;
   box-shadow: 0 0 0 3px rgba(26, 58, 82, 0.1);
 }
 .admin-textarea { min-height: 90px; resize: vertical; }
@@ -291,6 +291,18 @@
   border-radius: 12px;
   padding: 18px 20px;
   display: flex; align-items: center; gap: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  color: inherit;
+}
+.dash-stat--link { cursor: pointer; }
+.dash-stat--link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: #0a3d1f;
+}
+.dash-action {
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
 }
 .dash-stat__icon {
   width: 48px; height: 48px;
@@ -336,3 +348,54 @@
   .admin-shell, .admin-shell--collapsed { grid-template-columns: 1fr; }
   .admin-sidebar { display: none; }
 }
+
+/* Grupos de menu */
+.admin-sidebar__group {
+  display: flex; flex-direction: column;
+  margin-top: 6px;
+}
+.admin-sidebar__group-title {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: transparent; border: 0;
+  color: #d4a72c;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  cursor: pointer; text-align: left;
+  width: 100%;
+  transition: background 0.15s;
+}
+.admin-sidebar__group-title:hover { background: rgba(255, 255, 255, 0.04); }
+.admin-sidebar__group-title.is-open { color: #fff; }
+.admin-sidebar__group-title--collapsed {
+  display: flex; justify-content: center; padding: 12px 0;
+  font-size: 16px; color: #d4a72c; cursor: default;
+  width: 100%;
+}
+.admin-sidebar__group-label { flex: 1; }
+.admin-sidebar__group-chevron {
+  display: flex; font-size: 10px; opacity: 0.7;
+}
+.admin-sidebar__sublinks {
+  display: flex; flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 4px 12px;
+  border-left: 2px solid rgba(212, 167, 44, 0.25);
+  margin-left: 18px;
+}
+.admin-sidebar__sublink {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  color: #c9d4e0; text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.admin-sidebar__sublink:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+.admin-sidebar__sublink--active { background: rgba(212, 167, 44, 0.15); color: #fff; font-weight: 600; }
+.admin-sidebar__subicon {
+  display: flex; font-size: 13px; min-width: 16px; justify-content: center;
+}
+.admin-shell--collapsed .admin-sidebar__sublinks { display: none; }

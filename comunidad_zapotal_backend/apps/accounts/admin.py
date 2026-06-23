@@ -19,7 +19,6 @@ class UsuarioAdmin(DjangoUserAdmin):
     list_filter = ['tipo_usuario', 'estado', 'is_active', 'is_staff', 'is_superuser']
     search_fields = ['email', 'comunero__nombres', 'comunero__apellidos', 'comunero__dni']
     ordering = ['-fecha_registro']
-    date_hierarchy = 'fecha_registro'
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),

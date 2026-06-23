@@ -1,79 +1,194 @@
-import React, { useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaTachometerAlt, FaNewspaper, FaCalendarAlt, FaTags, FaUsers,
   FaUserShield, FaCommentDots, FaSignOutAlt, FaUser, FaChevronLeft, FaHome,
-} from "react-icons/fa";
-import "./AdminLayout.css";
+  FaHistory, FaEnvelope, FaBell, FaChevronDown, FaChevronRight,
+  FaInbox, FaFlag, FaCog, FaListAlt, FaArchive, FaCheckCircle, FaUserCheck,
+  FaHandHoldingHeart, FaMoneyBillWave,
+} from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+import './AdminLayout.css';
 
-const MENU = [
-  { to: "/admin", icon: <FaTachometerAlt />,  label: "Dashboard",  end: true },
-  { to: "/admin/noticias",   icon: <FaNewspaper />,  label: "Noticias" },
-  { to: "/admin/eventos",    icon: <FaCalendarAlt />, label: "Eventos" },
-  { to: "/admin/categorias", icon: <FaTags />,        label: "Categorías" },
-  { to: "/admin/autoridades",icon: <FaUsers />,       label: "Autoridades" },
-  { to: "/admin/usuarios",   icon: <FaUserShield />,  label: "Usuarios" },
-  { to: "/admin/comentarios",icon: <FaCommentDots />, label: "Comentarios" },
+const MENU_GROUPS = [
+  {
+    id: 'usuarios',
+    title: 'Usuarios',
+    icon: <FaUserShield />,
+    items: [
+      { to: '/admin/usuarios', label: 'Todos', icon: <FaUsers /> },
+      { to: '/admin/usuarios', label: 'Pendientes', icon: <FaUserCheck />, state: 'PENDIENTE' },
+      { to: '/admin/usuarios', label: 'Bloqueados', icon: <FaFlag />, state: 'BLOQUEADO' },
+    ],
+  },
+  {
+    id: 'comentarios',
+    title: 'Comentarios',
+    icon: <FaCommentDots />,
+    items: [
+      { to: '/admin/comentarios', label: 'Todos', icon: <FaListAlt /> },
+      { to: '/admin/comentarios', label: 'Moderacion', icon: <FaCommentDots />, estado: 'PENDIENTE' },
+      { to: '/admin/comentarios', label: 'Censurados', icon: <FaFlag />, estado: 'OCULTO' },
+    ],
+  },
+  {
+    id: 'noticias',
+    title: 'Noticias',
+    icon: <FaNewspaper />,
+    items: [
+      { to: '/admin/noticias', label: 'Publicadas', icon: <FaCheckCircle />, estadoNoticia: 'PUBLICADA' },
+      { to: '/admin/noticias', label: 'Borradores', icon: <FaArchive />, estadoNoticia: 'BORRADOR' },
+      { to: '/admin/categorias', label: 'Categorias', icon: <FaTags /> },
+    ],
+  },
+  {
+    id: 'eventos',
+    title: 'Eventos',
+    icon: <FaCalendarAlt />,
+    items: [
+      { to: '/admin/eventos', label: 'Activos', icon: <FaCheckCircle /> },
+      { to: '/admin/eventos', label: 'Finalizados', icon: <FaArchive /> },
+    ],
+  },
+  {
+    id: 'contenido',
+    title: 'Contenido',
+    icon: <FaListAlt />,
+    items: [
+      { to: '/admin/autoridades', label: 'Autoridades', icon: <FaUsers /> },
+      { to: '/admin/bajas', label: 'Solicitudes de baja', icon: <FaUserShield /> },
+      { to: '/admin/cms', label: 'CMS', icon: <FaCog /> },
+    ],
+  },
+  {
+    id: 'mensajeria',
+    title: 'Mensajeria',
+    icon: <FaEnvelope />,
+    items: [
+      { to: '/admin/notificaciones', label: 'Notificaciones', icon: <FaBell /> },
+      { to: '/admin/contacto', label: 'Contacto', icon: <FaEnvelope /> },
+      { to: '/admin/reclamaciones', label: 'Reclamaciones', icon: <FaInbox /> },
+    ],
+  },
+  {
+    id: 'donaciones',
+    title: 'Donaciones',
+    icon: <FaHandHoldingHeart />,
+    items: [
+      { to: '/admin/donaciones', label: 'Todas', icon: <FaListAlt /> },
+      { to: '/admin/donaciones', label: 'Aprobadas', icon: <FaCheckCircle />, estado: 'APROBADO' },
+      { to: '/admin/donaciones', label: 'Pendientes', icon: <FaArchive />, estado: 'PENDIENTE' },
+      { to: '/admin/donaciones', label: 'Rechazadas', icon: <FaFlag />, estado: 'RECHAZADO' },
+    ],
+  },
+  {
+    id: 'sistema',
+    title: 'Sistema',
+    icon: <FaCog />,
+    items: [
+      { to: '/admin/auditoria', label: 'Auditoria', icon: <FaHistory /> },
+    ],
+  },
 ];
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [abiertos, setAbiertos] = useState(() => {
+    const inicial = {};
+    MENU_GROUPS.forEach((g) => { inicial[g.id] = true; });
+    return inicial;
+  });
+  const { user, clearAuth } = useAuth();
 
-  const usuario = (() => {
-    try { return JSON.parse(localStorage.getItem("usuario") || "null"); }
-    catch { return null; }
-  })();
+  const toggleGrupo = (id) => setAbiertos((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  if (!usuario || usuario.tipo_usuario !== "ADMIN") {
+  const handleLogout = async () => {
+    try {
+      await clearAuth();
+    } finally {
+      navigate('/login');
+    }
+  };
+
+  const renderItem = (item) => {
+    const params = new URLSearchParams();
+    if (item.estado)      params.set('estado', item.estado);
+    if (item.estadoNoticia) params.set('estadoNoticia', item.estadoNoticia);
+    if (item.state)       params.set('state', item.state);
+    const search = params.toString();
+    const to = search ? `${item.to}?${search}` : item.to;
+
     return (
-      <main className="admin-denied">
-        <div className="admin-denied-card">
-          <h1>Acceso restringido</h1>
-          <p>Solo los administradores pueden acceder al panel.</p>
-          <Link to="/login" className="admin-btn admin-btn-primary">Iniciar sesión</Link>
-        </div>
-      </main>
+      <NavLink
+        key={`${item.to}-${item.label}`}
+        to={to}
+        end={item.to === '/admin'}
+        className={({ isActive }) =>
+          'admin-sidebar__sublink' + (isActive && location.search === (search ? `?${search}` : '') ? ' admin-sidebar__sublink--active' : '')
+        }
+      >
+        <span className="admin-sidebar__subicon">{item.icon}</span>
+        {!collapsed && <span>{item.label}</span>}
+      </NavLink>
     );
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem("usuario");
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh");
-    navigate("/login");
   };
 
   return (
-    <div className={`admin-shell${collapsed ? " admin-shell--collapsed" : ""}`}>
+    <div className={`admin-shell${collapsed ? ' admin-shell--collapsed' : ''}`}>
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">
           <span className="admin-sidebar__logo">Z</span>
           {!collapsed && <span className="admin-sidebar__title">Zapotal Admin</span>}
         </div>
         <nav className="admin-sidebar__nav">
-          {MENU.map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                "admin-sidebar__link" + (isActive ? " admin-sidebar__link--active" : "")
-              }
-            >
-              <span className="admin-sidebar__icon">{item.icon}</span>
-              {!collapsed && <span className="admin-sidebar__label">{item.label}</span>}
-            </NavLink>
+          <NavLink
+            to="/admin"
+            end
+            className={({ isActive }) =>
+              'admin-sidebar__link' + (isActive ? ' admin-sidebar__link--active' : '')
+            }
+          >
+            <span className="admin-sidebar__icon"><FaTachometerAlt /></span>
+            {!collapsed && <span className="admin-sidebar__label">Dashboard</span>}
+          </NavLink>
+
+          {MENU_GROUPS.map((grupo) => (
+            <div key={grupo.id} className="admin-sidebar__group">
+              {!collapsed && (
+                <button
+                  type="button"
+                  className={`admin-sidebar__group-title ${abiertos[grupo.id] ? 'is-open' : ''}`}
+                  onClick={() => toggleGrupo(grupo.id)}
+                >
+                  <span className="admin-sidebar__icon">{grupo.icon}</span>
+                  <span className="admin-sidebar__group-label">{grupo.title}</span>
+                  <span className="admin-sidebar__group-chevron">
+                    {abiertos[grupo.id] ? <FaChevronDown /> : <FaChevronRight />}
+                  </span>
+                </button>
+              )}
+              {collapsed && (
+                <div className="admin-sidebar__group-title admin-sidebar__group-title--collapsed" title={grupo.title}>
+                  {grupo.icon}
+                </div>
+              )}
+              {abiertos[grupo.id] && (
+                <div className="admin-sidebar__sublinks">
+                  {grupo.items.map(renderItem)}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
         <button
           type="button"
           className="admin-sidebar__collapse"
-          onClick={() => setCollapsed(c => !c)}
-          title={collapsed ? "Expandir" : "Colapsar"}
+          onClick={() => setCollapsed((c) => !c)}
+          title={collapsed ? 'Expandir' : 'Colapsar'}
         >
-          <FaChevronLeft style={{ transform: collapsed ? "rotate(180deg)" : "none" }} />
+          <FaChevronLeft className={collapsed ? 'rotate-180' : ''} />
           {!collapsed && <span>Colapsar</span>}
         </button>
       </aside>
@@ -87,9 +202,9 @@ export default function AdminLayout() {
             <h1 className="admin-topbar__title">{tituloRuta(location.pathname)}</h1>
           </div>
           <div className="admin-topbar__right">
-            <div className="admin-topbar__user" title={usuario.email}>
+            <div className="admin-topbar__user" title={user?.email}>
               <FaUser />
-              <span>{usuario.nombre_completo || usuario.email}</span>
+              <span>{user?.nombre_completo || user?.email}</span>
             </div>
             <button className="admin-btn admin-btn-ghost" onClick={handleLogout}>
               <FaSignOutAlt /> Salir
@@ -105,7 +220,11 @@ export default function AdminLayout() {
 }
 
 function tituloRuta(path) {
-  if (path === "/admin") return "Dashboard";
-  const item = MENU.find(m => m.to !== "/admin" && path.startsWith(m.to));
-  return item ? item.label : "Administración";
+  if (path === '/admin') return 'Dashboard';
+  for (const g of MENU_GROUPS) {
+    for (const it of g.items) {
+      if (it.to === path) return `${g.title} - ${it.label}`;
+    }
+  }
+  return 'Administracion';
 }

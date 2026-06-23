@@ -9,7 +9,6 @@ class AutoridadAdmin(admin.ModelAdmin):
     list_filter = ['cargo', 'periodo', 'fecha_inicio']
     search_fields = ['cargo', 'comunero__nombres', 'comunero__apellidos', 'comunero__dni']
     ordering = ['-fecha_inicio']
-    date_hierarchy = 'fecha_inicio'
     raw_id_fields = ['comunero', 'usuario']
     list_per_page = 25
 

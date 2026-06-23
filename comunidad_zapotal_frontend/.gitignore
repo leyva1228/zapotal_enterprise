@@ -1,11 +1,29 @@
-node_modules
-dist
+# ─── Dependencias ───
+node_modules/
+
+# ─── Build ───
+dist/
+
+# ─── Secretos ───
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-*.log
-.DS_Store
 
-improv
-docs
+# ─── Logs ───
+*.log
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── IDEs ───
+.idea/
+.vscode/
+
+# ─── Reportes de mejora (IA) ───
+improve/
+
+# ─── Docs de implementación ───
+docs/

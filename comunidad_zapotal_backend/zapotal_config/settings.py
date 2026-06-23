@@ -34,8 +34,10 @@ INSTALLED_APPS = [
     'apps.content',
     'apps.comunidad',
     'apps.messaging',
-    'apps.reports',
-]
+      'apps.reports',
+      'apps.cms',
+      'apps.donaciones',
+  ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -47,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.core.middleware.AuditMiddleware',
 ]
 
 ROOT_URLCONF = 'zapotal_config.urls'
@@ -109,6 +112,26 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ===== Cloudflare R2 (multimedia) =====
+# Si USE_CLOUDFLARE_R2=True, el backend de storage cambia a R2.
+# Mantener en False en dev local para no consumir el bucket gratis.
+USE_CLOUDFLARE_R2 = config('USE_CLOUDFLARE_R2', default=False, cast=bool)
+if USE_CLOUDFLARE_R2:
+    AWS_ACCESS_KEY_ID = config('CLOUDFLARE_R2_ACCESS_KEY_ID', default='')
+    AWS_SECRET_ACCESS_KEY = config('CLOUDFLARE_R2_SECRET_ACCESS_KEY', default='')
+    AWS_STORAGE_BUCKET_NAME = config('CLOUDFLARE_R2_BUCKET', default='zapotal-media')
+    AWS_S3_ENDPOINT_URL = config('CLOUDFLARE_R2_ENDPOINT', default='')
+    AWS_S3_REGION_NAME = 'auto'
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_FILE_OVERWRITE = False
+    # Dominio custom opcional (si esta configurado en Cloudflare).
+    CLOUDFLARE_R2_PUBLIC_DOMAIN = config('CLOUDFLARE_R2_PUBLIC_DOMAIN', default='')
+    CLOUDFLARE_R2_LOCATION = config('CLOUDFLARE_R2_LOCATION', default='')
+    STORAGES['default'] = {
+        'BACKEND': 'apps.core.storage_backends.CloudflareR2Storage',
+    }
+
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:5173,http://localhost:3000',
@@ -154,6 +177,9 @@ REST_FRAMEWORK = {
         'user': '5000/hour',
         'login': '5/minute',
         'register': '3/hour',
+        'otp': '5/hour',
+        'reset_password': '3/hour',
+        'oauth_callback': '10/hour',
         'contacto': '10/hour',
     },
     'DEFAULT_PAGINATION_CLASS': 'apps.core.pagination.StandardPagination',
@@ -178,7 +204,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API REST para la gestión de la Comunidad Zapotal.\n\n'
                    'Incluye gestión de usuarios, noticias, eventos, '
                    'mensajería y libro de reclamaciones.',
-    'VERSION': '1.0.0',
+    'VERSION': '3.5.3',
     'SERVE_INCLUDE_SCHEMA': False,
     'SERVE_AUTHENTICATION': ['rest_framework.authentication.SessionAuthentication'],
     'SWAGGER_UI_SETTINGS': {
@@ -274,3 +300,68 @@ LOGGING = {
 }
 
 AUTH_USER_MODEL = 'accounts.Usuario'
+
+# ===== Email / OTP / OAuth =====
+RESEND_API_KEY = config('RESEND_API_KEY', default='')
+RESEND_FROM_EMAIL = config('RESEND_FROM_EMAIL', default='noreply@comunidadzapotal.com')
+RESEND_FROM_NAME = config('RESEND_FROM_NAME', default='Comunidad Zapotal')
+DEFAULT_FROM_EMAIL = config(
+    'DEFAULT_FROM_EMAIL',
+    default='Comunidad Zapotal <noreply@comunidadzapotal.com>',
+)
+
+# Backend de email:
+# - Si RESEND_API_KEY esta configurado: usar django-anymail (HTTP API, robusto).
+# - Si no, fallback a SMTP (config manual).
+# - Si DEBUG=True sin API key: console backend (solo para dev local sin internet).
+if RESEND_API_KEY:
+    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+    ANYMAIL_RESEND_API_KEY = RESEND_API_KEY
+    ANYMAIL_DEFAULT_FROM_EMAIL = DEFAULT_FROM_EMAIL
+elif DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('EMAIL_HOST', default='smtp.resend.com')
+    EMAIL_PORT = config('EMAIL_PORT', default=465, cast=int)
+    EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=True, cast=bool)
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='resend')
+    EMAIL_HOST_PASSWORD = config('RESEND_API_KEY', default='')
+
+TURNSTILE_SITE_KEY = config('TURNSTILE_SITE_KEY', default='')
+TURNSTILE_SECRET_KEY = config('TURNSTILE_SECRET_KEY', default='')
+
+# ===== Mercado Pago (Checkout Bricks) =====
+# Ver: docs/implementaciones-realizadas/plan-donaciones-mercadopago.md
+MERCADO_PAGO_PUBLIC_KEY = config('MERCADO_PAGO_PUBLIC_KEY', default='')
+MERCADO_PAGO_ACCESS_TOKEN = config('MERCADO_PAGO_ACCESS_TOKEN', default='')
+MERCADO_PAGO_ENV = config('MERCADO_PAGO_ENV', default='sandbox')
+MERCADO_PAGO_WEBHOOK_URL = config('MERCADO_PAGO_WEBHOOK_URL', default='')
+MERCADO_PAGO_DONATION_MIN_AMOUNT = config('MERCADO_PAGO_DONATION_MIN_AMOUNT', default='1.00')
+MERCADO_PAGO_DONATION_MAX_AMOUNT = config('MERCADO_PAGO_DONATION_MAX_AMOUNT', default='5000.00')
+
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    **REST_FRAMEWORK.get('DEFAULT_THROTTLE_RATES', {}),
+    'donaciones': '5/min',
+    'donaciones_webhook': '30/min',
+}
+
+ADMIN_EMAILS = config(
+    'ADMIN_EMAILS',
+    default='admin@comunidadzapotal.com',
+    cast=Csv(),
+)
+
+# ===== OTP / Password / Account =====
+OTP_VALIDITY_MINUTES = config('OTP_VALIDITY_MINUTES', default=10, cast=int)
+OTP_CLEANUP_GRACE_MINUTES = config('OTP_CLEANUP_GRACE_MINUTES', default=15, cast=int)
+PASSWORD_MIN_LENGTH = config('PASSWORD_MIN_LENGTH', default=8, cast=int)
+PASSWORD_COOLDOWN_MINUTES = config('PASSWORD_COOLDOWN_MINUTES', default=60, cast=int)
+PASSWORD_REQUIRE_UPPERCASE = config('PASSWORD_REQUIRE_UPPERCASE', default=True, cast=bool)
+PASSWORD_REQUIRE_DIGIT = config('PASSWORD_REQUIRE_DIGIT', default=True, cast=bool)
+INACTIVE_USER_GRACE_DAYS = config('INACTIVE_USER_GRACE_DAYS', default=30, cast=int)
+
+# Notifications polling hint
+NOTIFICATIONS_POLL_INTERVAL_SECONDS = config('NOTIFICATIONS_POLL_INTERVAL_SECONDS', default=60, cast=int)
+
+SESSION_COOKIE_SAMESITE = 'Strict'

@@ -64,7 +64,7 @@
 /* Punto azul antes del título */
 .nc-cabecera__titulo::before {
   content: "•";
-  color: #003087;
+  color: #0a3d1f;
   font-size: 50px;
   line-height: 0;
   margin-right: 8px;
@@ -123,7 +123,7 @@
   letter-spacing: -0.02em;
   transition: color 0.2s;
 }
-.nc-card__title-link:hover .nc-hero__title { color: #003087; }
+.nc-card__title-link:hover .nc-hero__title { color: #0a3d1f; }
 
 .nc-hero__excerpt {
   font-family: var(--nc-font-sans);
@@ -184,7 +184,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.nc-card__title-link:hover .nc-lateral__title { color: #003087; }
+.nc-card__title-link:hover .nc-lateral__title { color: #0a3d1f; }
 
 /* ============================================
    BARRA DE HERRAMIENTAS
@@ -393,7 +393,7 @@
   transition: color 0.2s;
 }
 
-.nc-card__title-link:hover .nc-card__title { color: #003087; }
+.nc-card__title-link:hover .nc-card__title { color: #0a3d1f; }
 
 .nc-card__date {
   font-family: var(--nc-font-sans);

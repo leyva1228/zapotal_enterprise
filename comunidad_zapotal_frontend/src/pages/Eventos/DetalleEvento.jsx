@@ -3,9 +3,10 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft, FaUserCircle, FaSignInAlt, FaUserPlus,
   FaTimes, FaReply, FaTrashAlt, FaUserCheck,
-  FaTags, FaCalendarAlt, FaRegClock, FaEye, FaLock,
-  FaBookmark, FaEllipsisH, FaEllipsisV, FaPencilAlt, FaCheck,
-  FaFlag, FaPlay, FaMapMarkerAlt, FaUsers
+  FaCalendarAlt, FaRegClock, FaEye, FaLock,
+  FaEllipsisV, FaPencilAlt, FaCheck,
+  FaFlag, FaPlay, FaMapMarkerAlt, FaUsers,
+  FaImage, FaVideo, FaChevronLeft, FaChevronRight,
 } from "react-icons/fa";
 import { BsShieldLockFill, BsFillPatchCheckFill } from "react-icons/bs";
 import { MdAdminPanelSettings, MdVerified } from "react-icons/md";
@@ -13,9 +14,10 @@ import { AiOutlineLike, AiFillLike, AiOutlineDislike, AiFillDislike } from "reac
 import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import { RiSendPlaneFill, RiShareForwardLine } from "react-icons/ri";
 import api, { extractList } from "../../api";
+import { useAuth } from "../../context/AuthContext";
+import BotonFavorito from "../../components/BotonFavorito";
 import "./DetalleEvento.css";
 
-// ========== CONSTANTES Y FUNCIONES COMPARTIDAS ==========
 const MAX_COMMENT_LENGTH = 500;
 const MIN_COMMENT_LENGTH = 3;
 const RATE_LIMIT_COMMENTS = 10;
@@ -62,11 +64,11 @@ const validarComentario = (texto) => {
   return { valido: true };
 };
 
-// ========== COMPONENTES REUTILIZABLES (idénticos a DetalleNoticia) ==========
 const Avatar = memo(({ foto, inicial, size = 40, bg = "#e0e0e0" }) => {
-  if (foto) return <img src={foto} alt="" className="avatar-img" style={{ width: size, height: size }} />;
+  const varStyle = { '--avatar-size': `${size}px` };
+  if (foto) return <img src={foto} alt="" className="avatar-img" style={{ ...varStyle, width: size, height: size }} />;
   return (
-    <div className="avatar-inicial" style={{ width: size, height: size, fontSize: size * 0.38, backgroundColor: bg }}>
+    <div className="avatar-inicial" style={varStyle}>
       {inicial}
     </div>
   );
@@ -110,7 +112,7 @@ const MenuComentario = memo(({ puedeEditar, puedeEliminar, puedeReportar, onEdit
   };
   return (
     <div className="menu-tres-puntos" ref={menuRef}>
-      <button className="btn-tres-puntos" onClick={handleClick} title="Más opciones"><FaEllipsisV /></button>
+      <button className="btn-tres-puntos" onClick={handleClick} title="Mas opciones"><FaEllipsisV /></button>
       {abierto && estaAuth && (
         <div className="dropdown-menu-comentario">
           {puedeEditar && <button className="dropdown-item" onClick={() => { setAbierto(false); onEditar(); }}><FaPencilAlt /> Editar</button>}
@@ -122,47 +124,118 @@ const MenuComentario = memo(({ puedeEditar, puedeEliminar, puedeReportar, onEdit
   );
 });
 
-const GaleriaMedia = memo(({ videos = [], titulo = "" }) => {
-  // En el detalle solo se muestra el video (autoplay silenciado con controles, estilo YouTube).
-  if (!videos.length) {
+// ============== GALERIA MULTIMEDIA COMPLETA ==============
+const GaleriaMedia = memo(({ imagenPrincipal, multimedia = [], titulo = "" }) => {
+  const [indice, setIndice] = useState(0);
+
+  const items = useMemo(() => {
+    const base = [];
+    if (imagenPrincipal) {
+      base.push({ id: "principal", kind: "IMAGEN", url: imagenPrincipal, principal: true });
+    }
+    const extra = (multimedia || [])
+      .slice()
+      .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+      .map((m, i) => ({
+        id: m.id ?? `mm-${i}`,
+        kind: m.tipo === "VIDEO" ? "VIDEO" : "IMAGEN",
+        url: m.archivo_url || m.url,
+        principal: false,
+      }));
+    return [...base, ...extra];
+  }, [imagenPrincipal, multimedia]);
+
+  if (!items.length) {
     return (
       <div className="gm-wrapper gm-wrapper--empty">
         <div className="gm-empty">
           <FaCalendarAlt />
-          <p>Este evento no tiene video disponible.</p>
+          <p>Este evento no tiene contenido multimedia disponible.</p>
         </div>
       </div>
     );
   }
-  const principal = videos[0];
+
+  const actual = items[Math.min(indice, items.length - 1)];
+
+  const irAtras = () => setIndice((i) => (i - 1 + items.length) % items.length);
+  const irAdelante = () => setIndice((i) => (i + 1) % items.length);
+
   return (
     <div className="gm-wrapper">
       <div className="gm-hero">
-        <video
-          key={principal.id}
-          src={principal.archivo_url}
-          autoPlay
-          muted
-          loop
-          playsInline
-          controls
-          preload="auto"
-          className="gm-hero__video"
-          poster={principal.thumbnail_url || ""}
-          controlsList="nodownload"
-        />
+        {actual.kind === "VIDEO" ? (
+          <video
+            key={actual.id}
+            src={actual.url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+            preload="metadata"
+            className="gm-hero__video"
+            poster={imagenPrincipal || ""}
+            controlsList="nodownload"
+          />
+        ) : (
+          <img
+            key={actual.id}
+            src={actual.url}
+            alt={titulo}
+            className="gm-hero__imagen"
+            loading="lazy"
+          />
+        )}
+        {actual.principal && <span className="gm-badge gm-badge--principal">Principal</span>}
+        <span className="gm-badge gm-badge--kind">
+          {actual.kind === "VIDEO" ? <FaVideo /> : <FaImage />}
+        </span>
+        {items.length > 1 && (
+          <>
+            <button className="gm-nav gm-nav--prev" onClick={irAtras} aria-label="Anterior"><FaChevronLeft /></button>
+            <button className="gm-nav gm-nav--next" onClick={irAdelante} aria-label="Siguiente"><FaChevronRight /></button>
+            <div className="gm-counter">{indice + 1} / {items.length}</div>
+          </>
+        )}
       </div>
+
+      {items.length > 1 && (
+        <div className="gm-thumbs">
+          {items.map((it, i) => (
+            <button
+              key={it.id}
+              className={`gm-thumb ${i === indice ? "gm-thumb--active" : ""}`}
+              onClick={() => setIndice(i)}
+              aria-label={`Item ${i + 1}`}
+            >
+              {it.kind === "VIDEO" ? (
+                <span className="gm-thumb__video"><FaPlay /></span>
+              ) : (
+                <img src={it.url} alt="" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 });
 
-// ========== EVENTOS RELACIONADOS (similar a noticias relacionadas) ==========
 const EventosRelacionados = memo(({ eventos }) => {
   if (!eventos.length) return null;
 
   const obtenerPreview = (evento) => {
     const imagen = evento.multimedia?.find(m => m.tipo === "IMAGEN");
-    return <img src={imagen?.archivo_url || evento.miniatura || "/images/placeholder-event.jpg"} alt={evento.titulo} />;
+    const src = imagen?.archivo_url || evento.imagen_url || evento.miniatura;
+    if (src) {
+      return <img src={src} alt={evento.titulo} onError={(e) => { e.currentTarget.src = "/images/placeholder-event.jpg"; }} />;
+    }
+    return (
+      <div className="gm-thumb__placeholder">
+        <FaCalendarAlt />
+      </div>
+    );
   };
 
   const tieneVideo = (evento) => evento.multimedia?.some(m => m.tipo === "VIDEO") || false;
@@ -180,11 +253,11 @@ const EventosRelacionados = memo(({ eventos }) => {
             <div className="relacionada-contenido">
               <h5 className="relacionada-titulo-horizontal">{evento.titulo}</h5>
               <div className="relacionada-meta">
-                <span className="relacionada-canal-horizontal">{evento.usuario_nombre?.split(" ")[0] || "Organizador"}</span>
+                <span className="relacionada-canal-horizontal">{evento.lugar || "Comunidad"}</span>
                 <span className="relacionada-puntos">•</span>
-                {evento.vistas && <span className="relacionada-views-horizontal">{evento.vistas} vistas</span>}
+                {evento.vistas != null && <span className="relacionada-views-horizontal">{evento.vistas} vistas</span>}
                 <span className="relacionada-puntos">•</span>
-                <span className="relacionada-fecha-horizontal">{formatFecha(evento.fecha_evento)}</span>
+                <span className="relacionada-fecha-horizontal">{formatFecha(evento.fecha_evento || evento.fecha)}</span>
               </div>
             </div>
           </Link>
@@ -194,7 +267,6 @@ const EventosRelacionados = memo(({ eventos }) => {
   );
 });
 
-// ========================= COMPONENTE PRINCIPAL =========================
 function DetalleEvento() {
   const { id }   = useParams();
   const navigate = useNavigate();
@@ -205,11 +277,8 @@ function DetalleEvento() {
     return parsed;
   }, [id, navigate]);
 
-  const [userActual] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("usuario")); } catch { return null; }
-  });
-  const estaAuth  = !!userActual?.id;
-  const esAdmin   = userActual?.tipo_usuario === "ADMIN";
+  const { user: userActual, isAuthenticated: estaAuth, isAdmin: esAdminCtx } = useAuth();
+  const esAdmin   = !!esAdminCtx || userActual?.tipo_usuario === "ADMIN" || userActual?.is_superuser === true;
   const usuarioId = userActual?.id;
 
   const [evento,              setEvento]            = useState(null);
@@ -252,25 +321,26 @@ function DetalleEvento() {
     })();
   }, [eventoId]);
 
-  // Contador de vistas
+  // Contador de vistas (endpoint dedicado, una vez por usuario/sesion)
   useEffect(() => {
     if (!eventoId || !evento) return;
     const claveLocal = estaAuth && usuarioId
       ? `visto_evento_${eventoId}_user_${usuarioId}`
       : `visto_evento_${eventoId}_session`;
-    const storage = estaAuth && usuarioId ? localStorage : sessionStorage;
-    if (!storage?.getItem(claveLocal)) {
-      const nuevasVistas = (evento.vistas || 0) + 1;
-      api.patch(`/eventos/${eventoId}/`, { vistas: nuevasVistas })
-        .then(() => {
-          setEvento(prev => ({ ...prev, vistas: nuevasVistas }));
-          storage.setItem(claveLocal, "true");
+    const storage = (typeof window !== "undefined")
+      ? (estaAuth && usuarioId ? window.localStorage : window.sessionStorage)
+      : null;
+    if (storage && !storage.getItem(claveLocal)) {
+      api.post(`/eventos/${eventoId}/incrementar_vistas/`)
+        .then(({ data }) => {
+          setEvento((prev) => prev ? { ...prev, vistas: data.vistas } : prev);
+          try { storage.setItem(claveLocal, new Date().toISOString()); } catch (e) { /* noop */ }
         })
         .catch(err => console.warn("Error al incrementar vistas:", err));
     }
   }, [eventoId, evento, estaAuth, usuarioId]);
 
-  // Cargar relacionados (placeholder: usar lista de eventos excluyendo el actual)
+  // Cargar relacionados
   useEffect(() => {
     if (!eventoId) return;
     api.get(`/eventos/`)
@@ -372,7 +442,7 @@ function DetalleEvento() {
   const enviarComentario = async (e) => {
     e.preventDefault();
     if (!hasPermission("comentar") || !estaAuth) { openModal("comentario"); return; }
-    if (!checkRate()) { alert("Límite de comentarios alcanzado. Espera un momento."); return; }
+    if (!checkRate()) { alert("Limite de comentarios alcanzado. Espera un momento."); return; }
     const texto = nuevoComentario.trim();
     const v = validarComentario(texto);
     if (!v.valido) { alert(v.mensaje); return; }
@@ -390,13 +460,17 @@ function DetalleEvento() {
       setNuevo("");
       await cargarComentarios();
       if (comentariosScrollRef.current) comentariosScrollRef.current.scrollTop = comentariosScrollRef.current.scrollHeight;
-    } catch { alert("Error al enviar el comentario."); }
+    } catch (err) {
+      const d = err.response?.data;
+      const msg = (d && (d.detail || d.mensaje)) || "Error al enviar el comentario.";
+      alert(typeof msg === "string" ? msg : "Error al enviar el comentario.");
+    }
     finally { setIsSubmittingComment(false); }
   };
 
   const enviarRespuesta = async (padreId) => {
     if (!hasPermission("comentar") || !estaAuth) { openModal("respuesta"); return; }
-    if (!checkRate()) { alert("Límite de respuestas alcanzado."); return; }
+    if (!checkRate()) { alert("Limite de respuestas alcanzado."); return; }
     const texto = textoRespuesta.trim();
     const v = validarComentario(texto);
     if (!v.valido) { alert(v.mensaje); return; }
@@ -469,16 +543,21 @@ function DetalleEvento() {
     return ordenados;
   }, [comentarios, ordenComentarios]);
 
-  const { imagenes, videos, principales, totalLikes, totalDislikes, userReaccion } = useMemo(() => {
-    if (!evento) return { imagenes: [], videos: [], principales: [], totalLikes: 0, totalDislikes: 0, userReaccion: null };
-    const multi  = evento.multimedia ? [...evento.multimedia].sort((a, b) => a.orden - b.orden) : [];
-    const imgs   = multi.filter(m => m.tipo === "IMAGEN");
-    const vids   = multi.filter(m => m.tipo === "VIDEO");
+  const { multimedia, principales, totalLikes, totalDislikes, userReaccion, imagenPrincipal } = useMemo(() => {
+    if (!evento) return { multimedia: [], principales: [], totalLikes: 0, totalDislikes: 0, userReaccion: null, imagenPrincipal: null };
+    const multi  = (evento.multimedia || []).slice();
     const princ  = obtenerComentariosOrdenados;
     const likes  = reacciones.filter(r => r.tipo === "LIKE").length;
     const dislikes = reacciones.filter(r => r.tipo === "DISLIKE").length;
     const userReact = reacciones.find(r => r.autor === usuarioId);
-    return { imagenes: imgs, videos: vids, principales: princ, totalLikes: likes, totalDislikes: dislikes, userReaccion: userReact?.tipo || null };
+    return {
+      multimedia: multi,
+      principales: princ,
+      totalLikes: likes,
+      totalDislikes: dislikes,
+      userReaccion: userReact?.tipo || null,
+      imagenPrincipal: evento.imagen_url || null,
+    };
   }, [evento, reacciones, comentarios, usuarioId, obtenerComentariosOrdenados]);
 
   const getRespuestas = useCallback((cId) => comentarios.filter(c => c.respuesta_a === cId), [comentarios]);
@@ -511,7 +590,6 @@ function DetalleEvento() {
   const tieneRelacionados = relacionados.length > 0;
   const fechaEvento = evento.fecha_evento ? new Date(evento.fecha_evento) : null;
   const ubicacion = evento.ubicacion || evento.lugar || "Lugar por confirmar";
-  const capacidad = evento.cupo_maximo || evento.capacidad || null;
 
   const renderComentario = (c, esRespuesta = false) => {
     const nombre         = c.autor_nombre || c.autor?.email || c.usuario_nombre || c.usuario_data?.nombre_completo || "Usuario";
@@ -622,9 +700,9 @@ function DetalleEvento() {
             <button className="modal-auth-close" onClick={closeModal}><FaTimes /></button>
             <div className="modal-auth-icon"><FaLock /></div>
             <h3>Acceso Restringido</h3>
-            <p>Para <strong>{accionLabel[modal.accion] || "interactuar"}</strong> necesitas iniciar sesión.</p>
+            <p>Para <strong>{accionLabel[modal.accion] || "interactuar"}</strong> necesitas iniciar sesion.</p>
             <div className="modal-auth-buttons">
-              <button className="modal-btn-login"    onClick={() => navigate("/login")}    ><FaSignInAlt /> Iniciar Sesión</button>
+              <button className="modal-btn-login"    onClick={() => navigate("/login")}    ><FaSignInAlt /> Iniciar Sesion</button>
               <button className="modal-btn-register" onClick={() => navigate("/registro")} ><FaUserPlus /> Registrarme</button>
             </div>
           </div>
@@ -638,7 +716,7 @@ function DetalleEvento() {
           <span>
             {userActual
               ? <>Conectado como: <strong>{userActual.nombres || userActual.email || "Usuario"}</strong></>
-              : <>Modo invitado — <Link to="/login">Inicia sesión</Link></>}
+              : <>Modo invitado — <Link to="/login">Inicia sesion</Link></>}
           </span>
         </div>
       </div>
@@ -646,24 +724,22 @@ function DetalleEvento() {
       <div className={`detalle-layout-full${tieneRelacionados ? " two-columns" : ""}`}>
         <div className="detalle-contenido-principal">
           <div className="noticia-card">
-            <GaleriaMedia videos={videos} titulo={evento.titulo} />
+            <GaleriaMedia
+              imagenPrincipal={imagenPrincipal}
+              multimedia={multimedia}
+              titulo={evento.titulo}
+            />
             <h1 className="yt-titulo">{evento.titulo}</h1>
 
-            {/* Información adicional del evento */}
             <div className="evento-info-adicional">
               {fechaEvento && (
                 <div className="evento-info-item">
-                  <FaCalendarAlt /> <strong>Fecha:</strong> {formatFecha(evento.fecha_evento)} {evento.hora_evento && `a las ${evento.hora_evento}`}
+                  <FaCalendarAlt /> <strong>Fecha:</strong> {formatFecha(evento.fecha_evento)}
                 </div>
               )}
               {ubicacion && (
                 <div className="evento-info-item">
-                  <FaMapMarkerAlt /> <strong>Ubicación:</strong> {ubicacion}
-                </div>
-              )}
-              {capacidad && (
-                <div className="evento-info-item">
-                  <FaUsers /> <strong>Cupo:</strong> {capacidad} personas
+                  <FaMapMarkerAlt /> <strong>Ubicacion:</strong> {ubicacion}
                 </div>
               )}
             </div>
@@ -680,8 +756,7 @@ function DetalleEvento() {
                     {organizadorEsAdmin && <MdVerified className="yt-verificado" />}
                   </div>
                   <div className="yt-canal-sub">
-                    {evento.categoria_nombre && <span className="yt-categoria-chip">{evento.categoria_nombre}</span>}
-                    <span className="yt-canal-fecha"><FaRegClock /> {formatFecha(evento.fecha_creacion)}</span>
+                    <span className="yt-canal-fecha"><FaRegClock /> {formatFecha(evento.fecha_evento || evento.fecha)}</span>
                   </div>
                 </div>
               </div>
@@ -710,21 +785,21 @@ function DetalleEvento() {
                 <button className={`yt-btn yt-share-btn ${compartido ? "copiado" : ""}`} onClick={compartirEvento} title="Compartir">
                   <RiShareForwardLine /><span>{compartido ? "¡Copiado!" : "Compartir"}</span>
                 </button>
-                <button className="yt-btn" title="Guardar"><FaBookmark /><span>Guardar</span></button>
-                <button className="yt-btn yt-mas-btn" title="Más opciones"><FaEllipsisH /></button>
+
+                <BotonFavorito tipo="EVENTO" itemId={eventoId} />
               </div>
             </div>
 
             <div className={`yt-desc-box ${descExpanded ? "expandida" : ""}`}>
               <div className="yt-desc-meta-row">
-                {evento.vistas && <span className="yt-desc-views"><FaEye /> {evento.vistas} visualizaciones</span>}
-                <span className="yt-desc-fecha">Publicado: {formatFecha(evento.fecha_creacion)}</span>
+                {evento.vistas != null && <span className="yt-desc-views"><FaEye /> {evento.vistas} visualizaciones</span>}
+                <span className="yt-desc-fecha">Publicado: {formatFecha(evento.fecha)}</span>
               </div>
               <div className="yt-desc-contenido">
                 <p>{evento.descripcion || evento.contenido}</p>
               </div>
               <button className="yt-desc-toggle" onClick={() => setDescExpanded(!descExpanded)}>
-                {descExpanded ? "mostrar menos" : "mostrar más"}
+                {descExpanded ? "mostrar menos" : "mostrar mas"}
               </button>
             </div>
           </div>
@@ -738,8 +813,8 @@ function DetalleEvento() {
                 </button>
                 {mostrarMenuOrden && (
                   <div className="dropdown-menu-orden">
-                    <button className={ordenComentarios === "recientes" ? "active" : ""} onClick={() => { setOrdenComentarios("recientes"); setMostrarMenuOrden(false); }}>Más recientes</button>
-                    <button className={ordenComentarios === "antiguos" ? "active" : ""} onClick={() => { setOrdenComentarios("antiguos"); setMostrarMenuOrden(false); }}>Más antiguos</button>
+                    <button className={ordenComentarios === "recientes" ? "active" : ""} onClick={() => { setOrdenComentarios("recientes"); setMostrarMenuOrden(false); }}>Mas recientes</button>
+                    <button className={ordenComentarios === "antiguos" ? "active" : ""} onClick={() => { setOrdenComentarios("antiguos"); setMostrarMenuOrden(false); }}>Mas antiguos</button>
                   </div>
                 )}
               </div>
@@ -752,7 +827,7 @@ function DetalleEvento() {
                   : <FaUserCircle className="avatar-icon-default" />}
               </div>
               <form className="comentario-form" onSubmit={enviarComentario}>
-                <input type="text" value={nuevoComentario} onChange={e => setNuevo(e.target.value)} placeholder={estaAuth ? "Añade un comentario…" : "Inicia sesión para comentar…"} disabled={!estaAuth} maxLength={MAX_COMMENT_LENGTH} />
+                <input type="text" value={nuevoComentario} onChange={e => setNuevo(e.target.value)} placeholder={estaAuth ? "Añade un comentario…" : "Inicia sesion para comentar…"} disabled={!estaAuth} maxLength={MAX_COMMENT_LENGTH} />
                 <button type="submit" disabled={!estaAuth || !nuevoComentario.trim() || isSubmittingComment} title="Enviar"><RiSendPlaneFill /></button>
               </form>
             </div>
@@ -760,7 +835,7 @@ function DetalleEvento() {
             <div className="comentarios-tiktok-scroll" ref={comentariosScrollRef}>
               <div className="comentarios-lista">
                 {principales.length === 0
-                  ? <div className="sin-comentarios"><HiOutlineChatBubbleLeftRight className="sin-comentarios-icon" /><p>No hay comentarios. ¡Sé el primero!</p></div>
+                  ? <div className="sin-comentarios"><HiOutlineChatBubbleLeftRight className="sin-comentarios-icon" /><p>No hay comentarios. ¡Se el primero!</p></div>
                   : principales.map(c => renderComentario(c, false))
                 }
               </div>

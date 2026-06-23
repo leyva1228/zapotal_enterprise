@@ -18,11 +18,14 @@ class MensajeSerializer(serializers.ModelSerializer):
 
 class NotificacionSerializer(serializers.ModelSerializer):
     destinatario_email = serializers.CharField(source='destinatario.email', read_only=True)
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    referencia_tipo_display = serializers.CharField(source='get_referencia_tipo_display', read_only=True)
 
     class Meta:
         model = Notificacion
         fields = [
             'id', 'titulo', 'mensaje', 'destinatario',
-            'destinatario_email', 'fecha', 'leido', 'tipo',
+            'destinatario_email', 'fecha', 'leido', 'tipo', 'tipo_display',
+            'url_destino', 'referencia_tipo', 'referencia_tipo_display', 'referencia_id',
         ]
-        read_only_fields = ['id', 'fecha']
+        read_only_fields = ['id', 'fecha', 'tipo_display', 'referencia_tipo_display']
