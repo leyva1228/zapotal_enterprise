@@ -38,45 +38,45 @@ class TestModelStrRobustness:
         from apps.content.models import Comentario, Noticia, Categoria
         from django.utils import timezone
         from apps.accounts.factories import UsuarioFactory
-        usuario = UsuarioFactory()
+        autor = UsuarioFactory()
         cat = Categoria.objects.create(nombre='Cat', descripcion='x')
         noticia = Noticia.objects.create(
             titulo='Noti', contenido='c', resumen='r',
             categoria=cat, estado='PUBLICADA',
             fecha_publicacion=timezone.now(),
         )
-        c = Comentario.objects.create(usuario=usuario, noticia=noticia, contenido='hola')
+        c = Comentario.objects.create(autor=autor, noticia=noticia, contenido='hola')
         s = str(c)
-        assert usuario.email in s
+        assert autor.email in s
         assert 'Noti' in s
 
     def test_comentario_str_sin_destino_no_crashea(self):
         from apps.content.models import Comentario
         from apps.accounts.factories import UsuarioFactory
-        usuario = UsuarioFactory()
-        c = Comentario.objects.create(usuario=usuario, contenido='huerfano')
+        autor = UsuarioFactory()
+        c = Comentario.objects.create(autor=autor, contenido='huerfano')
         s = str(c)
-        assert usuario.email in s
-        assert 'eliminado' in s.lower()
+        assert autor.email in s
+        assert 'sin destino' in s.lower()
 
     def test_comentario_str_con_evento(self):
         from apps.content.models import Comentario, Evento
         from django.utils import timezone
         from apps.accounts.factories import UsuarioFactory
-        usuario = UsuarioFactory()
+        autor = UsuarioFactory()
         evento = Evento.objects.create(
             titulo='Mi Evento', descripcion='d', lugar='l',
             fecha=timezone.now().date(),
         )
-        c = Comentario.objects.create(usuario=usuario, evento=evento, contenido='ok')
+        c = Comentario.objects.create(autor=autor, evento=evento, contenido='ok')
         s = str(c)
         assert 'Mi Evento' in s
 
     def test_reaccion_str_sin_destino_no_crashea(self):
         from apps.content.models import Reaccion
         from apps.accounts.factories import UsuarioFactory
-        usuario = UsuarioFactory()
-        r = Reaccion.objects.create(usuario=usuario, tipo='LIKE')
+        autor = UsuarioFactory()
+        r = Reaccion.objects.create(autor=autor, tipo='LIKE')
         s = str(r)
-        assert usuario.email in s
+        assert autor.email in s
         assert 'LIKE' in s
