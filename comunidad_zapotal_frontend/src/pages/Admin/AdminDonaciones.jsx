@@ -6,6 +6,10 @@ import {
   FaDownload, FaFilter,
 } from "react-icons/fa";
 import api, { extractList } from "../../api";
+import FiltersBar from "../../components/Admin/FiltersBar";
+import Pagination from "../../components/Admin/Pagination";
+import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import "./AdminDonaciones.css";
 
 const ESTADOS = [
@@ -72,10 +76,13 @@ export default function AdminDonaciones() {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
 
-  const [filtroEstado, setFiltroEstado] = useState("");
-  const [filtroDestinatario, setFiltroDestinatario] = useState("");
-  const [filtroBuscar, setFiltroBuscar] = useState("");
-  const [page, setPage] = useState(1);
+  const [filters, setFilters, clearFilters] = useUrlFilters({
+    estado: { defaultValue: "" },
+    destinatario: { defaultValue: "" },
+    search: { defaultValue: "" },
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
+  const debouncedSearch = useDebouncedValue(filters.search, 350);
   const PAGE_SIZE = 20;
 
   const [detalle, setDetalle] = useState(null);
@@ -94,10 +101,10 @@ export default function AdminDonaciones() {
     setLoading(true);
     setError("");
     try {
-      const params = { page };
-      if (filtroEstado) params.estado = filtroEstado;
-      if (filtroDestinatario) params.destinatario = filtroDestinatario;
-      if (filtroBuscar.trim()) params.search = filtroBuscar.trim();
+      const params = { page: filters.page };
+      if (filters.estado) params.estado = filters.estado;
+      if (filters.destinatario) params.destinatario = filters.destinatario;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
       const { data } = await api.get("/donaciones/admin/lista/", { params });
       setItems(extractList(data));
       setCount(typeof data === "object" && data?.count !== undefined ? data.count : (Array.isArray(data) ? data.length : 0));
@@ -108,7 +115,7 @@ export default function AdminDonaciones() {
     } finally {
       setLoading(false);
     }
-  }, [page, filtroEstado, filtroDestinatario, filtroBuscar]);
+  }, [filters.page, filters.estado, filters.destinatario, debouncedSearch]);
 
   useEffect(() => { cargarStats(); }, [cargarStats]);
   useEffect(() => { cargar(); }, [cargar]);
@@ -182,42 +189,46 @@ export default function AdminDonaciones() {
         </section>
       )}
 
-      <section className="adn-filters">
-        <FaFilter className="adn-filters__icon" />
-        <select
-          className="adn-select"
-          value={filtroEstado}
-          onChange={(e) => { setPage(1); setFiltroEstado(e.target.value); }}
-        >
-          {ESTADOS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
-        </select>
-        <select
-          className="adn-select"
-          value={filtroDestinatario}
-          onChange={(e) => { setPage(1); setFiltroDestinatario(e.target.value); }}
-        >
-          <option value="">Todos los destinos</option>
-          {Object.entries(DESTINATARIOS_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
-        <div className="adn-search">
-          <FaSearch />
-          <input
-            type="search"
-            placeholder="Buscar por email, nombre o MP payment id..."
-            value={filtroBuscar}
-            onChange={(e) => { setPage(1); setFiltroBuscar(e.target.value); }}
+        <section className="adn-filters">
+          <FaFilter className="adn-filters__icon" />
+          <FiltersBar
+            filters={filters}
+            setFilters={setFilters}
+            clearFilters={clearFilters}
+            chips={[
+              { key: "estado", value: "", label: "Todos" },
+              { key: "estado", value: "APROBADO", label: "Aprobadas" },
+              { key: "estado", value: "PENDIENTE", label: "Pendientes" },
+              { key: "estado", value: "RECHAZADO", label: "Rechazadas" },
+              { key: "estado", value: "CANCELADO", label: "Canceladas" },
+              { key: "estado", value: "REEMBOLSADO", label: "Reembolsadas" },
+            ]}
+            searchKey="search"
+            searchPlaceholder="Buscar por email, nombre o MP payment id..."
+            extra={
+              <select
+                className="adn-select"
+                value={filters.destinatario || ""}
+                onChange={(e) => setFilters({ destinatario: e.target.value, page: 1 })}
+                aria-label="Filtrar por destinatario"
+              >
+                <option value="">Todos los destinos</option>
+                {Object.entries(DESTINATARIOS_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            }
           />
-        </div>
-        <button
-          type="button"
-          className="adn-btn adn-btn-ghost"
-          onClick={() => { setFiltroEstado(""); setFiltroDestinatario(""); setFiltroBuscar(""); setPage(1); }}
-        >
-          Limpiar
-        </button>
-      </section>
+          <div className="adn-search">
+            <FaSearch />
+            <input
+              type="search"
+              placeholder="Buscar por email, nombre o MP payment id..."
+              value={filters.search || ""}
+              onChange={(e) => setFilters({ search: e.target.value, page: 1 })}
+            />
+          </div>
+        </section>
 
       <section className="adn-table-card">
         <div className="adn-table-meta">
@@ -310,28 +321,18 @@ export default function AdminDonaciones() {
           </div>
         )}
 
-        {totalPaginas > 1 && (
-          <nav className="adn-pager">
-            <button
-              type="button"
-              className="adn-btn adn-btn-ghost"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Anterior
-            </button>
-            <span className="adn-pager__info">{page} / {totalPaginas}</span>
-            <button
-              type="button"
-              className="adn-btn adn-btn-ghost"
-              disabled={page >= totalPaginas}
-              onClick={() => setPage((p) => Math.min(totalPaginas, p + 1))}
-            >
-              Siguiente
-            </button>
-          </nav>
-        )}
-      </section>
+          {totalPaginas > 1 && (
+            <div className="adn-pager">
+              <Pagination
+                page={filters.page}
+                totalPages={totalPaginas}
+                totalItems={count}
+                pageSize={PAGE_SIZE}
+                onPageChange={(p) => setFilters({ page: p })}
+              />
+            </div>
+          )}
+        </section>
 
       {detalle && (
         <DonacionDetalleModal donacion={detalle} onClose={() => setDetalle(null)} />

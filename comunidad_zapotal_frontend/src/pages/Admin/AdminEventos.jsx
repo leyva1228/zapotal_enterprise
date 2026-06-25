@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import FiltersBar from "../../components/Admin/FiltersBar";
+import Pagination from "../../components/Admin/Pagination";
+import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 const EMPTY = {
   titulo: "", descripcion: "", lugar: "",
@@ -18,29 +22,58 @@ function toLocalDateTime(iso) {
 
 export default function AdminEventos() {
   const [items, setItems] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
-  const [busqueda, setBusqueda] = useState("");
+  const abortRef = useRef(null);
+
+  const [filters, setFilters, clearFilters] = useUrlFilters({
+    estadoEvento: { defaultValue: "" }, // "activos" | "finalizados" | ""
+    search: { defaultValue: "" },
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
+  const debouncedSearch = useDebouncedValue(filters.search, 350);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
 
-  const cargar = async () => {
+  const cargar = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
+    setError(""); setOk("");
     try {
-      const r = await api.get("/eventos/?page_size=200");
-      setItems(extractList(r.data));
+      const params = { page: filters.page };
+      if (filters.estadoEvento === "activos") {
+        const hoy = new Date().toISOString().slice(0, 10);
+        params.fecha__gte = hoy;
+      } else if (filters.estadoEvento === "finalizados") {
+        const hoy = new Date().toISOString().slice(0, 10);
+        params.fecha__lt = hoy;
+      }
+      if (debouncedSearch) params.search = debouncedSearch;
+      const r = await api.get("/eventos/", { params, signal: controller.signal });
+      const data = r.data;
+      setItems(extractList(data));
+      setTotalItems(data.count || 0);
     } catch (e) {
-      setError("No se pudieron cargar los eventos.");
+      if (e.name !== "CanceledError" && e.name !== "AbortError") {
+        setError("No se pudieron cargar los eventos.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.page, filters.estadoEvento, debouncedSearch]);
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    if (filters.page !== 1) setFilters({ page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.estadoEvento, debouncedSearch]);
 
   const abrirNuevo = () => { setEditItem(null); setForm(EMPTY); setModalOpen(true); };
   const abrirEditar = (ev) => {
@@ -96,9 +129,7 @@ export default function AdminEventos() {
     }
   };
 
-  const itemsFiltrados = items.filter(ev =>
-    !busqueda || (ev.titulo || "").toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const itemsFiltrados = items;
 
   return (
     <div>
@@ -107,42 +138,48 @@ export default function AdminEventos() {
 
       <div className="admin-card mt-4">
         <div className="admin-card__header">
-          <h3 className="admin-card__title">Eventos ({items.length})</h3>
-          <div className="flex">
-            <div className="relative">
-              <FaSearch className="absolute" />
-              <input
-                className="admin-input pl-7 w-52"
-                placeholder="Buscar..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
-            </div>
-            <button className="admin-btn admin-btn-primary" onClick={abrirNuevo}>
-              <FaPlus /> Nuevo evento
-            </button>
-          </div>
+          <h3 className="admin-card__title">Eventos ({totalItems})</h3>
+          <button className="admin-btn admin-btn-primary" onClick={abrirNuevo}>
+            <FaPlus /> Nuevo evento
+          </button>
         </div>
-
         <div className="admin-card__body">
+          <FiltersBar
+            filters={filters}
+            setFilters={setFilters}
+            clearFilters={clearFilters}
+            chips={[
+              { key: "estadoEvento", value: "", label: "Todos" },
+              { key: "estadoEvento", value: "activos", label: "Activos" },
+              { key: "estadoEvento", value: "finalizados", label: "Finalizados" },
+            ]}
+            searchKey="search"
+            searchPlaceholder="Buscar por titulo..."
+          />
+
           {loading ? (
-            <div className="admin-loading">Cargando eventos…</div>
+            <div className="admin-loading">Cargando eventos...</div>
           ) : itemsFiltrados.length === 0 ? (
-            <div className="admin-empty">No hay eventos.</div>
+            <div className="admin-empty">
+              {Object.values(filters).some((v) => v && v !== 1)
+                ? "No hay eventos con los filtros aplicados."
+                : "No hay eventos."}
+            </div>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Lugar</th>
-                  <th>Fecha</th>
-                  <th>Reacciones</th>
-                  <th>Comentarios</th>
-                  <th className="text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {itemsFiltrados.map(ev => (
+            <>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Titulo</th>
+                    <th>Lugar</th>
+                    <th>Fecha</th>
+                    <th>Reacciones</th>
+                    <th>Comentarios</th>
+                    <th className="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itemsFiltrados.map(ev => (
                   <tr key={ev.id}>
                     <td>
                       <div className="font-semibold">{ev.titulo}</div>
@@ -171,9 +208,16 @@ export default function AdminEventos() {
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+              <Pagination
+                page={filters.page}
+                totalPages={Math.max(1, Math.ceil(totalItems / 20))}
+                totalItems={totalItems}
+                onPageChange={(p) => setFilters({ page: p })}
+              />
+            </>
           )}
         </div>
       </div>

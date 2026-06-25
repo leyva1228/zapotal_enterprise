@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import FiltersBar from "../../components/Admin/FiltersBar";
+import Pagination from "../../components/Admin/Pagination";
+import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 const EMPTY = {
   titulo: "", contenido: "", resumen: "",
@@ -11,35 +15,57 @@ const EMPTY = {
 
 export default function AdminNoticias() {
   const [items, setItems] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
-  const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("");
+  const abortRef = useRef(null);
+
+  const [filters, setFilters, clearFilters] = useUrlFilters({
+    estadoNoticia: { defaultValue: "" },
+    search: { defaultValue: "" },
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
+  const debouncedSearch = useDebouncedValue(filters.search, 350);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
 
-  const cargar = async () => {
+  const cargar = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
+    setError(""); setOk("");
     try {
+      const params = { page: filters.page };
+      if (filters.estadoNoticia) params.estado = filters.estadoNoticia;
+      if (debouncedSearch) params.search = debouncedSearch;
       const [n, c] = await Promise.all([
-        api.get("/noticias/?page_size=200"),
-        api.get("/categorias/"),
+        api.get("/noticias/", { params, signal: controller.signal }),
+        api.get("/categorias/", { signal: controller.signal }),
       ]);
-      setItems(extractList(n.data));
+      const data = n.data;
+      setItems(extractList(data));
+      setTotalItems(data.count || 0);
       setCategorias(extractList(c.data));
     } catch (e) {
-      setError("No se pudieron cargar las noticias.");
+      if (e.name !== "CanceledError" && e.name !== "AbortError") {
+        setError("No se pudieron cargar las noticias.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.page, filters.estadoNoticia, debouncedSearch]);
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    if (filters.page !== 1) setFilters({ page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.estadoNoticia, debouncedSearch]);
 
   const abrirNuevo = () => { setEditItem(null); setForm(EMPTY); setModalOpen(true); };
   const abrirEditar = (n) => {
@@ -96,12 +122,7 @@ export default function AdminNoticias() {
     }
   };
 
-  const itemsFiltrados = items.filter(n => {
-    const t = (n.titulo || "").toLowerCase();
-    const okB = !busqueda || t.includes(busqueda.toLowerCase());
-    const okE = !filtroEstado || n.estado === filtroEstado;
-    return okB && okE;
-  });
+  const itemsFiltrados = items;
 
   return (
     <div>
@@ -110,83 +131,87 @@ export default function AdminNoticias() {
 
       <div className="admin-card mt-4">
         <div className="admin-card__header">
-          <h3 className="admin-card__title">Noticias ({items.length})</h3>
-          <div className="flex">
-            <div className="relative">
-              <FaSearch className="absolute" />
-              <input
-                className="admin-input pl-7 w-52"
-                placeholder="Buscar..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
-            </div>
-            <select
-              className="admin-select w-40"
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-            >
-              <option value="">Todos los estados</option>
-              <option value="PUBLICADA">Publicada</option>
-              <option value="BORRADOR">Borrador</option>
-              <option value="ARCHIVADA">Archivada</option>
-            </select>
-            <button className="admin-btn admin-btn-primary" onClick={abrirNuevo}>
-              <FaPlus /> Nueva noticia
-            </button>
-          </div>
+          <h3 className="admin-card__title">Noticias ({totalItems})</h3>
+          <button className="admin-btn admin-btn-primary" onClick={abrirNuevo}>
+            <FaPlus /> Nueva noticia
+          </button>
         </div>
-
         <div className="admin-card__body">
+          <FiltersBar
+            filters={filters}
+            setFilters={setFilters}
+            clearFilters={clearFilters}
+            chips={[
+              { key: "estadoNoticia", value: "", label: "Todos" },
+              { key: "estadoNoticia", value: "PUBLICADA", label: "Publicadas" },
+              { key: "estadoNoticia", value: "BORRADOR", label: "Borradores" },
+              { key: "estadoNoticia", value: "ARCHIVADA", label: "Archivadas" },
+            ]}
+            searchKey="search"
+            searchPlaceholder="Buscar por titulo..."
+          />
+
           {loading ? (
-            <div className="admin-loading">Cargando noticias…</div>
+            <div className="admin-loading">Cargando noticias...</div>
           ) : itemsFiltrados.length === 0 ? (
-            <div className="admin-empty">No hay noticias que coincidan.</div>
+            <div className="admin-empty">
+              {Object.values(filters).some((v) => v && v !== 1)
+                ? "No hay noticias con los filtros aplicados."
+                : "No hay noticias."}
+            </div>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Categoría</th>
-                  <th>Estado</th>
-                  <th>Fecha</th>
-                  <th className="text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {itemsFiltrados.map(n => (
-                  <tr key={n.id}>
-                    <td>
-                      <div className="font-semibold">{n.titulo}</div>
-                      <div className="text-mute text-[12px]">
-                        {(n.resumen || "").substring(0, 80)}
-                      </div>
-                    </td>
-                    <td>{n.categoria_nombre || "—"}</td>
-                    <td>
-                      <span className={"admin-badge " + (
-                        n.estado === "PUBLICADA" ? "admin-badge--success" :
-                        n.estado === "BORRADOR"  ? "admin-badge--warning" :
-                                                     "admin-badge--gray"
-                      )}>
-                        {n.estado}
-                      </span>
-                    </td>
-                    <td className="text-mute">
-                      {n.fecha_publicacion ? new Date(n.fecha_publicacion).toLocaleString("es-PE") : ""}
-                    </td>
-                    <td className="actions justify-end">
-                      <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(n)}>
-                        <FaEdit /> Editar
-                      </button>
-                      <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => eliminar(n)}>
-                        <FaTrash />
-                      </button>
-                    </td>
+            <>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Titulo</th>
+                    <th>Categoria</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th className="text-right">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {itemsFiltrados.map(n => (
+                    <tr key={n.id}>
+                      <td>
+                        <div className="font-semibold">{n.titulo}</div>
+                        <div className="text-mute text-[12px]">
+                          {(n.resumen || "").substring(0, 80)}
+                        </div>
+                      </td>
+                      <td>{n.categoria_nombre || "-"}</td>
+                      <td>
+                        <span className={"admin-badge " + (
+                          n.estado === "PUBLICADA" ? "admin-badge--success" :
+                          n.estado === "BORRADOR"  ? "admin-badge--warning" :
+                                                       "admin-badge--gray"
+                        )}>
+                          {n.estado}
+                        </span>
+                      </td>
+                      <td className="text-mute">
+                        {n.fecha_publicacion ? new Date(n.fecha_publicacion).toLocaleString("es-PE") : ""}
+                      </td>
+                      <td className="actions justify-end">
+                        <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(n)}>
+                          <FaEdit /> Editar
+                        </button>
+                        <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => eliminar(n)}>
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <Pagination
+                page={filters.page}
+                totalPages={Math.max(1, Math.ceil(totalItems / 20))}
+                totalItems={totalItems}
+                onPageChange={(p) => setFilters({ page: p })}
+              />
+            </>
           )}
         </div>
       </div>

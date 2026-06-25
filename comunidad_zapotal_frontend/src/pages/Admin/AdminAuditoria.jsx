@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FaSearch, FaHistory, FaRedo } from "react-icons/fa";
 import api, { extractList } from "../../api";
+import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 
 const ACCIONES = [
   "", "CREATE", "UPDATE", "DELETE",
@@ -35,7 +36,6 @@ export default function AdminAuditoria() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
   const [filtros, setFiltros] = useState({
     accion: "",
@@ -45,13 +45,18 @@ export default function AdminAuditoria() {
     hasta: "",
   });
 
+  // LOOP 6: sincronizar page con URL.
+  const [filters, setFilters] = useUrlFilters({
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
+
   const PAGE_SIZE = 30;
 
   const cargar = async () => {
     setLoading(true);
     setError("");
     try {
-      const params = { page, page_size: PAGE_SIZE };
+      const params = { page: filters.page, page_size: PAGE_SIZE };
       if (filtros.accion) params.accion = filtros.accion;
       if (filtros.usuario) params.usuario = filtros.usuario;
       if (filtros.modelo_afectado) params.modelo_afectado = filtros.modelo_afectado;
@@ -215,13 +220,13 @@ export default function AdminAuditoria() {
               >
                 Anterior
               </button>
-              <span className="text-[13px]">
-                Pagina {page} de {totalPages}
-              </span>
+                <span className="text-[13px]">
+                  Pagina {filters.page} de {totalPages}
+                </span>
               <button
                 className="admin-btn admin-btn-sm"
                 disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
+                  onClick={() => setFilters({ page: filters.page + 1 })}
               >
                 Siguiente
               </button>

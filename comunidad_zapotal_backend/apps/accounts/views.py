@@ -63,7 +63,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
     permission_classes = [IsAdminUser]
     filterset_fields = ['tipo_usuario', 'estado']
-    search_fields = ['email']
+    # search_fields vacio: el search se maneja manualmente en
+    # filter_queryset() para incluir campos del Comunero relacionado
+    # (email + nombres + apellidos + dni).
+    search_fields = []
     ordering_fields = ['fecha_registro', 'email']
 
     def get_permissions(self):
@@ -91,6 +94,43 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         ):
             return qs
         return qs.filter(id=user.id) if user.is_authenticated else qs.none()
+
+    def filter_queryset(self, queryset):
+        """Override LOOP 1:
+        - Magic value 'PENDIENTE' mapea a ambos estados pendientes.
+        - Search extendido a nombre/apellido/DNI del comunero relacionado.
+        """
+        from django.db.models import Q
+        from django.http import QueryDict
+
+        estado = self.request.query_params.get('estado')
+        if estado in ('PENDIENTE', 'PENDIENTE_OTP,PENDIENTE_APROBACION'):
+            queryset = queryset.filter(
+                Q(estado='PENDIENTE_OTP')
+                | Q(estado='PENDIENTE_APROBACION')
+            )
+            # Reconstruimos el QueryDict sin 'estado' para que
+            # django-filter no lo re-procese (causaria 400).
+            new_qd = QueryDict(mutable=True)
+            for k, v in self.request.query_params.items():
+                if k != 'estado':
+                    new_qd.appendlist(k, v)
+            self.request._request.GET = new_qd
+
+        # Aplicar filtros estandar (tipo_usuario, etc).
+        queryset = super().filter_queryset(queryset)
+
+        # Extender el search para incluir campos del Comunero relacionado.
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(email__icontains=search)
+                | Q(comunero__nombres__icontains=search)
+                | Q(comunero__apellidos__icontains=search)
+                | Q(comunero__dni__icontains=search)
+            )
+
+        return queryset
 
     def get_object(self):
         """Permite a un usuario ver/editar su propio perfil sin ser ADMIN.

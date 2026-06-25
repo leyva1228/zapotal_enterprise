@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FaEdit, FaTrash, FaKey, FaLock, FaLockOpen, FaBan, FaUserSlash, FaUndo } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import FiltersBar from "../../components/Admin/FiltersBar";
+import Pagination from "../../components/Admin/Pagination";
+import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 const ESTADOS = ["ACTIVO", "INACTIVO", "BLOQUEADO", "RECHAZADO", "PENDIENTE_OTP", "PENDIENTE_APROBACION"];
 
@@ -21,6 +25,7 @@ const EMPTY = {
 
 export default function AdminUsuarios() {
   const [items, setItems] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [comuneros, setComuneros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,20 +37,54 @@ export default function AdminUsuarios() {
   const [actionModal, setActionModal] = useState({ open: false, item: null, accion: null });
   const [motivo, setMotivo] = useState("");
 
-  const cargar = async () => {
+  const [filters, setFilters, clearFilters] = useUrlFilters({
+    estado: { defaultValue: "" },
+    tipo_usuario: { defaultValue: "" },
+    search: { defaultValue: "" },
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
+
+  const debouncedSearch = useDebouncedValue(filters.search, 350);
+  const abortRef = useRef(null);
+
+  const cargar = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     setError(""); setOk("");
     try {
+      const params = { page: filters.page };
+      if (filters.estado) params.estado = filters.estado;
+      if (filters.tipo_usuario) params.tipo_usuario = filters.tipo_usuario;
+      if (debouncedSearch) params.search = debouncedSearch;
       const [u, c] = await Promise.all([
-        api.get("/usuarios/?page_size=200"),
-        api.get("/comuneros/").catch(() => ({ data: { data: [] } })),
+        api.get("/usuarios/", { params, signal: controller.signal }),
+        api.get("/comuneros/", { signal: controller.signal }).catch(() => ({ data: { data: [] } })),
       ]);
-      setItems(extractList(u.data));
+      const data = u.data;
+      const list = extractList(data);
+      setItems(list);
+      setTotalItems(data.count || list.length);
       setComuneros(extractList(c.data));
-    } catch (e) { setError("No se pudieron cargar los usuarios."); }
-    finally { setLoading(false); }
-  };
-  useEffect(() => { cargar(); }, []);
+    } catch (e) {
+      if (e.name !== "CanceledError" && e.name !== "AbortError") {
+        setError("No se pudieron cargar los usuarios.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [filters.page, filters.estado, filters.tipo_usuario, debouncedSearch]);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  // Resetea a pagina 1 cuando cambia cualquier filtro (excepto page).
+  useEffect(() => {
+    if (filters.page !== 1) {
+      setFilters({ page: 1 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.estado, filters.tipo_usuario, debouncedSearch]);
 
   const abrirNuevo = () => { setEditItem(null); setForm(EMPTY); setModalOpen(true); };
   const abrirEditar = (u) => {
@@ -140,6 +179,24 @@ export default function AdminUsuarios() {
     desbloquear: { title: "Desbloquear usuario", label: "Notas (opcional)", color: "admin-btn-primary", btn: "Confirmar desbloqueo" },
   };
 
+  // Chips de filtro rapido por estado.
+  const chipsEstado = [
+    { key: "estado", value: "", label: "Todos" },
+    { key: "estado", value: "PENDIENTE", label: "Pendientes" },
+    { key: "estado", value: "ACTIVO", label: "Activos" },
+    { key: "estado", value: "BLOQUEADO", label: "Bloqueados" },
+    { key: "estado", value: "INACTIVO", label: "Inactivos" },
+    { key: "estado", value: "RECHAZADO", label: "Rechazados" },
+  ];
+  const chipsRol = [
+    { key: "tipo_usuario", value: "", label: "Todos los roles" },
+    { key: "tipo_usuario", value: "ADMIN", label: "Admins" },
+    { key: "tipo_usuario", value: "COMUNERO", label: "Comuneros" },
+    { key: "tipo_usuario", value: "USUARIO", label: "Usuarios" },
+  ];
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / 20));
+
   return (
     <div>
       {error && <div className="admin-error">{error}</div>}
@@ -147,95 +204,128 @@ export default function AdminUsuarios() {
 
       <div className="admin-card mt-4">
         <div className="admin-card__header">
-          <h3 className="admin-card__title">Usuarios ({items.length})</h3>
+          <h3 className="admin-card__title">Usuarios</h3>
         </div>
         <div className="admin-card__body">
+          <FiltersBar
+            filters={filters}
+            setFilters={setFilters}
+            clearFilters={clearFilters}
+            chips={chipsEstado}
+            searchKey="search"
+            searchPlaceholder="Buscar por email, nombre o DNI..."
+            extra={
+              <select
+                className="admin-select"
+                value={filters.tipo_usuario || ""}
+                onChange={(e) => setFilters({ tipo_usuario: e.target.value, page: 1 })}
+                aria-label="Filtrar por rol"
+              >
+                {chipsRol.map((c) => (
+                  <option key={c.value || "__all__"} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            }
+          />
+
           {loading ? (
             <div className="admin-loading">Cargando...</div>
           ) : items.length === 0 ? (
-            <div className="admin-empty">No hay usuarios.</div>
+            <div className="admin-empty">
+              {Object.values(filters).some((v) => v && v !== 1)
+                ? "No hay usuarios con los filtros aplicados."
+                : "No hay usuarios."}
+            </div>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Nombre</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th>Registro</th>
-                  <th className="text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map(u => (
-                  <tr key={u.id}>
-                    <td className="font-semibold">{u.email}</td>
-                    <td>{u.nombre_completo || "-"}</td>
-                    <td>
-                      <span className={"admin-badge " + (
-                        u.tipo_usuario === "ADMIN"    ? "admin-badge--danger" :
-                        u.tipo_usuario === "COMUNERO" ? "admin-badge--info" :
-                                                        "admin-badge--gray"
-                      )}>
-                        {u.tipo_usuario}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={"admin-badge " + colorEstado(u.estado)}>
-                        {u.estado}
-                      </span>
-                    </td>
-                    <td className="text-mute">
-                      {u.fecha_registro ? new Date(u.fecha_registro).toLocaleDateString("es-PE") : "-"}
-                    </td>
-                    <td className="actions justify-end">
-                      {(u.estado === "PENDIENTE_OTP" || u.estado === "PENDIENTE_APROBACION") && (
-                        <>
-                          <button
-                            className="admin-btn admin-btn-sm admin-btn-success"
-                            onClick={() => abrirAccion(u, "aprobar")}
-                            title="Aprobar"
-                          >
-                            <FaUserSlash /> Aprobar
-                          </button>
+            <>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Registro</th>
+                    <th className="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map(u => (
+                    <tr key={u.id}>
+                      <td className="font-semibold">{u.email}</td>
+                      <td>{u.nombre_completo || "-"}</td>
+                      <td>
+                        <span className={"admin-badge " + (
+                          u.tipo_usuario === "ADMIN"    ? "admin-badge--danger" :
+                          u.tipo_usuario === "COMUNERO" ? "admin-badge--info" :
+                                                          "admin-badge--gray"
+                        )}>
+                          {u.tipo_usuario}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={"admin-badge " + colorEstado(u.estado)}>
+                          {u.estado}
+                        </span>
+                      </td>
+                      <td className="text-mute">
+                        {u.fecha_registro ? new Date(u.fecha_registro).toLocaleDateString("es-PE") : "-"}
+                      </td>
+                      <td className="actions justify-end">
+                        {(u.estado === "PENDIENTE_OTP" || u.estado === "PENDIENTE_APROBACION") && (
+                          <>
+                            <button
+                              className="admin-btn admin-btn-sm admin-btn-success"
+                              onClick={() => abrirAccion(u, "aprobar")}
+                              title="Aprobar"
+                            >
+                              <FaUserSlash /> Aprobar
+                            </button>
+                            <button
+                              className="admin-btn admin-btn-sm admin-btn-danger"
+                              onClick={() => abrirAccion(u, "rechazar")}
+                              title="Rechazar"
+                            >
+                              <FaBan /> Rechazar
+                            </button>
+                          </>
+                        )}
+                        {u.estado === "ACTIVO" && (
                           <button
                             className="admin-btn admin-btn-sm admin-btn-danger"
-                            onClick={() => abrirAccion(u, "rechazar")}
-                            title="Rechazar"
+                            onClick={() => abrirAccion(u, "bloquear")}
+                            title="Bloquear"
                           >
-                            <FaBan /> Rechazar
+                            <FaLock /> Bloquear
                           </button>
-                        </>
-                      )}
-                      {u.estado === "ACTIVO" && (
-                        <button
-                          className="admin-btn admin-btn-sm admin-btn-danger"
-                          onClick={() => abrirAccion(u, "bloquear")}
-                          title="Bloquear"
-                        >
-                          <FaLock /> Bloquear
+                        )}
+                        {u.estado === "BLOQUEADO" && (
+                          <button
+                            className="admin-btn admin-btn-sm admin-btn-success"
+                            onClick={() => abrirAccion(u, "desbloquear")}
+                            title="Desbloquear"
+                          >
+                            <FaLockOpen /> Desbloquear
+                          </button>
+                        )}
+                        <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(u)} title="Editar">
+                          <FaEdit />
                         </button>
-                      )}
-                      {u.estado === "BLOQUEADO" && (
-                        <button
-                          className="admin-btn admin-btn-sm admin-btn-success"
-                          onClick={() => abrirAccion(u, "desbloquear")}
-                          title="Desbloquear"
-                        >
-                          <FaLockOpen /> Desbloquear
+                        <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => eliminar(u)} title="Eliminar">
+                          <FaTrash />
                         </button>
-                      )}
-                      <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(u)} title="Editar">
-                        <FaEdit />
-                      </button>
-                      <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => eliminar(u)} title="Eliminar">
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <Pagination
+                page={filters.page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={(p) => setFilters({ page: p })}
+              />
+            </>
           )}
         </div>
       </div>

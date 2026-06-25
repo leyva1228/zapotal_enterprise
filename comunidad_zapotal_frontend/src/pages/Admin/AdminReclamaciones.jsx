@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   FaHistory, FaRedo, FaTrash, FaEdit, FaSearch, FaReply,
   FaCheck, FaExclamationCircle, FaPrint, FaSearchPlus, FaUserShield,
 } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import FiltersBar from "../../components/Admin/FiltersBar";
+import Pagination from "../../components/Admin/Pagination";
+import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 const ESTADOS = ["PENDIENTE", "EN_PROCESO", "RESUELTO"];
 const PRIORIDADES = [
@@ -51,23 +55,51 @@ export default function AdminReclamaciones() {
   const [textoRespuesta, setTextoRespuesta] = useState("");
   const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
 
+  // LOOP 6: sincronizar filtros con URL.
+  const [filters, setFilters, clearFilters] = useUrlFilters({
+    estado: { defaultValue: "" },
+    search: { defaultValue: "" },
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
+  const debouncedSearch = useDebouncedValue(filters.search, 350);
+
+  const abortRef = useRef(null);
+  const [totalItems, setTotalItems] = useState(0);
+
   const cargar = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     setError(""); setOk("");
     try {
-      const params = {};
-      if (filtroEstado) params.estado = filtroEstado;
-      if (busqueda) params.search = busqueda;
-      const { data } = await api.get("/libro-reclamaciones/", { params });
+      const params = { page: filters.page };
+      if (filters.estado) params.estado = filters.estado;
+      if (debouncedSearch) params.search = debouncedSearch;
+      const { data } = await api.get("/libro-reclamaciones/", { params, signal: controller.signal });
       setItems(extractList(data));
+      setTotalItems(data.count || 0);
     } catch (e) {
-      setError("No se pudieron cargar las reclamaciones.");
+      if (e.name !== "CanceledError" && e.name !== "AbortError") {
+        setError("No se pudieron cargar las reclamaciones.");
+      }
     } finally {
       setLoading(false);
     }
-  }, [filtroEstado, busqueda]);
+  }, [filters.page, filters.estado, debouncedSearch]);
 
   useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    if (filters.page !== 1) setFilters({ page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.estado, debouncedSearch]);
+
+  // Sincronizar URL con state local al montar.
+  useEffect(() => {
+    if (filters.estado) setFiltroEstado(filters.estado);
+    if (filters.search) setBusqueda(filters.search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const cambiarEstado = async (item, nuevoEstado) => {
     setError(""); setOk("");

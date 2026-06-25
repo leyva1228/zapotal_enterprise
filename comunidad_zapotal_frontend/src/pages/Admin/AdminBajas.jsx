@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FaTrashAlt, FaCheck, FaTimes, FaRedo, FaUserShield } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import FiltersBar from "../../components/Admin/FiltersBar";
+import Pagination from "../../components/Admin/Pagination";
+import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 
 function formatFecha(str) {
   if (!str) return "-";
@@ -19,29 +22,46 @@ function colorEstado(estado) {
 
 export default function AdminBajas() {
   const [items, setItems] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("PENDIENTE");
   const [modal, setModal] = useState({ open: false, item: null, accion: null });
   const [notas, setNotas] = useState("");
   const [saving, setSaving] = useState(false);
+  const abortRef = useRef(null);
 
-  const cargar = async () => {
+  const [filters, setFilters, clearFilters] = useUrlFilters({
+    estado: { defaultValue: "PENDIENTE" },
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
+
+  const cargar = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     setError(""); setOk("");
     try {
-      const params = filtroEstado ? { estado: filtroEstado } : {};
-      const { data } = await api.get("/solicitudes-baja/", { params });
+      const params = { page: filters.page };
+      if (filters.estado) params.estado = filters.estado;
+      const { data } = await api.get("/solicitudes-baja/", { params, signal: controller.signal });
       setItems(extractList(data));
+      setTotalItems(data.count || 0);
     } catch (e) {
-      setError("No se pudieron cargar las solicitudes.");
+      if (e.name !== "CanceledError" && e.name !== "AbortError") {
+        setError("No se pudieron cargar las solicitudes.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.page, filters.estado]);
 
-  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filtroEstado]);
+  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    if (filters.page !== 1) setFilters({ page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.estado]);
 
   const ejecutar = async () => {
     if (!modal.item) return;
@@ -71,32 +91,31 @@ export default function AdminBajas() {
         <div className="admin-card__header">
           <h3 className="admin-card__title">
             <FaUserShield className="mr-[6px]" />
-            Solicitudes de baja de cuenta ({items.length})
+            Solicitudes de baja de cuenta ({totalItems})
           </h3>
-          <div className="flex">
-            <select
-              className="admin-select min-w-[160px]"
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-            >
-              <option value="">Todas</option>
-              <option value="PENDIENTE">Pendientes</option>
-              <option value="APROBADA">Aprobadas</option>
-              <option value="RECHAZADA">Rechazadas</option>
-              <option value="CANCELADA">Canceladas</option>
-            </select>
-            <button className="admin-btn admin-btn-sm" onClick={cargar} disabled={loading}>
-              <FaRedo /> Recargar
-            </button>
-          </div>
         </div>
         <div className="admin-card__body">
-          {loading ? (
-            <div className="admin-loading">Cargando...</div>
-          ) : items.length === 0 ? (
-            <div className="admin-empty">No hay solicitudes con ese filtro.</div>
-          ) : (
-            <table className="admin-table">
+          <FiltersBar
+            filters={filters}
+            setFilters={setFilters}
+            clearFilters={clearFilters}
+            chips={[
+              { key: "estado", value: "PENDIENTE", label: "Pendientes" },
+              { key: "estado", value: "APROBADA", label: "Aprobadas" },
+              { key: "estado", value: "RECHAZADA", label: "Rechazadas" },
+              { key: "estado", value: "CANCELADA", label: "Canceladas" },
+              { key: "estado", value: "", label: "Todas" },
+            ]}
+            searchKey="search"
+            searchPlaceholder="Buscar por email o nombre..."
+          />
+            {loading ? (
+              <div className="admin-loading">Cargando...</div>
+            ) : items.length === 0 ? (
+              <div className="admin-empty">No hay solicitudes con ese filtro.</div>
+            ) : (
+              <>
+              <table className="admin-table">
               <thead>
                 <tr>
                   <th>Usuario</th>
@@ -145,10 +164,17 @@ export default function AdminBajas() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                </tbody>
+              </table>
+              <Pagination
+                page={filters.page}
+                totalPages={Math.max(1, Math.ceil(totalItems / 20))}
+                totalItems={totalItems}
+                onPageChange={(p) => setFilters({ page: p })}
+              />
+              </>
+            )}
+          </div>
       </div>
 
       <AdminModal

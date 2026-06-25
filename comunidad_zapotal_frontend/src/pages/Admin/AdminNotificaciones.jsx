@@ -9,6 +9,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import FiltersBar from "../../components/Admin/FiltersBar";
+import Pagination from "../../components/Admin/Pagination";
+import { useUrlFilters, parseBoolParam, parseIntParam } from "../../hooks/useUrlFilters";
 
 function formatFecha(str) {
   if (!str) return "-";
@@ -79,6 +82,22 @@ export default function AdminNotificaciones() {
   const [filtroTipo, setFiltroTipo] = useState("");
   // V2.3: modal de detalle con mensaje completo.
   const [detalle, setDetalle] = useState(null);
+
+  // LOOP 6: sincronizar filtros con URL.
+  const [filters, setFilters, clearFilters] = useUrlFilters({
+    leido: { defaultValue: null, parser: parseBoolParam },
+    tipo: { defaultValue: "" },
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
+
+  // Sincronizar URL con state local al montar.
+  useEffect(() => {
+    if (filters.leido === true) setFiltroLeido("leidas");
+    else if (filters.leido === false) setFiltroLeido("no_leidas");
+    else setFiltroLeido("");
+    if (filters.tipo) setFiltroTipo(filters.tipo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const intervalRef = useRef(null);
   const abortRef = useRef(null);
 

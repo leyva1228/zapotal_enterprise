@@ -1,33 +1,73 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   FaInbox, FaEnvelope, FaEnvelopeOpen, FaClock, FaCheck,
   FaSearch, FaFilter, FaTimes, FaReply, FaTrash, FaEye, FaSpinner,
   FaFlag, FaCircle, FaExclamationCircle, FaInfoCircle,
 } from 'react-icons/fa';
-import api from '../../api';
+import api, { extractList } from '../../api';
 import AdminModal from '../Admin/AdminModal';
+import FiltersBar from './FiltersBar';
+import Pagination from './Pagination';
+import { useUrlFilters, parseIntParam } from '../../hooks/useUrlFilters';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 /**
  * Inbox reutilizable de MensajeContacto.
- * Usado en /admin/contacto. La antigua tab "Mensajes" de AdminInstitucional
- * fue removida para evitar duplicacion.
+ * Usado en /admin/contacto.
+ *
+ * LOOP 2: filtros sincronizados con URL (?filtro, ?search, ?page)
+ * + filtros al backend (?respondido, ?leido) + paginacion real.
  */
 export default function AdminMensajes() {
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filtro, setFiltro] = useState('todos');
-  const [busqueda, setBusqueda] = useState('');
+  const [totalItems, setTotalItems] = useState(0);
   const [detalle, setDetalle] = useState(null);
+  const abortRef = useRef(null);
 
-  const cargar = () => {
-    setLoading(true);
-    api.get('/mensajes-contacto/').then((r) => {
-      setItems(r.data.results || r.data || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  };
+  const [filters, setFilters, clearFilters] = useUrlFilters({
+    filtro: { defaultValue: 'todos' },
+    search: { defaultValue: '' },
+    page: { defaultValue: 1, parser: parseIntParam },
+  });
 
-  React.useEffect(cargar, []);
+  const debouncedSearch = useDebouncedValue(filters.search, 350);
+
+  // Mapea el filtro UI a query params del backend.
+  const cargar = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const [loading, setLoading] = [false, () => {}];
+    void loading; void setLoading;
+    try {
+      const params = { page: filters.page };
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (filters.filtro === 'no_leidos') {
+        params.leido = false;
+        params.respondido = false;
+      } else if (filters.filtro === 'leidos') {
+        params.leido = true;
+        params.respondido = false;
+      } else if (filters.filtro === 'respondidos') {
+        params.respondido = true;
+      }
+      const r = await api.get('/mensajes-contacto/', { params, signal: controller.signal });
+      const data = r.data;
+      setItems(extractList(data));
+      setTotalItems(data.count || 0);
+    } catch (e) {
+      if (e.name !== 'CanceledError' && e.name !== 'AbortError') {
+        console.error('[AdminMensajes] error:', e);
+      }
+    }
+  }, [filters.page, filters.filtro, debouncedSearch]);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  useEffect(() => {
+    if (filters.page !== 1) setFilters({ page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.filtro, debouncedSearch]);
 
   const marcarLeido = async (m, e) => {
     e && e.stopPropagation();
@@ -69,25 +109,14 @@ export default function AdminMensajes() {
   const respond = items.filter((m) => m.respondido).length;
   const pendientes = items.filter((m) => m.leido && !m.respondido).length;
 
-  const itemsFiltrados = items
-    .filter((m) => {
-      if (filtro === 'no_leidos') return !m.leido;
-      if (filtro === 'leidos') return m.leido && !m.respondido;
-      if (filtro === 'respondidos') return m.respondido;
-      return true;
-    })
-    .filter((m) => {
-      if (!busqueda) return true;
-      const q = busqueda.toLowerCase();
-      return (
-        m.nombre.toLowerCase().includes(q) ||
-        m.email.toLowerCase().includes(q) ||
-        m.asunto.toLowerCase().includes(q) ||
-        m.mensaje.toLowerCase().includes(q)
-      );
-    });
+  const chips = [
+    { key: 'filtro', value: 'todos', label: `Todos (${total})` },
+    { key: 'filtro', value: 'no_leidos', label: `No leidos (${noLeidos})` },
+    { key: 'filtro', value: 'leidos', label: `Pendientes (${pendientes})` },
+    { key: 'filtro', value: 'respondidos', label: `Respondidos (${respond})` },
+  ];
 
-  if (loading) return <div className="admin-loading"><FaSpinner className="fa-spin" /> Cargando mensajes...</div>;
+  const totalPages = Math.max(1, Math.ceil(totalItems / 20));
 
   return (
     <div className="admin-mensajes">
@@ -95,7 +124,7 @@ export default function AdminMensajes() {
         <div className="admin-stat-card">
           <FaInbox className="admin-stat-card__icono" />
           <div>
-            <div className="admin-stat-card__valor">{total}</div>
+            <div className="admin-stat-card__valor">{totalItems}</div>
             <div className="admin-stat-card__label">Total</div>
           </div>
         </div>
@@ -103,148 +132,129 @@ export default function AdminMensajes() {
           <FaEnvelope className="admin-stat-card__icono" />
           <div>
             <div className="admin-stat-card__valor">{noLeidos}</div>
-            <div className="admin-stat-card__label">No leidos</div>
+            <div className="admin-stat-card__label">No leidos (pagina)</div>
           </div>
         </div>
         <div className="admin-stat-card admin-stat-card--info">
           <FaClock className="admin-stat-card__icono" />
           <div>
             <div className="admin-stat-card__valor">{pendientes}</div>
-            <div className="admin-stat-card__label">Pendientes</div>
+            <div className="admin-stat-card__label">Pendientes (pagina)</div>
           </div>
         </div>
         <div className="admin-stat-card admin-stat-card--success">
           <FaCheck className="admin-stat-card__icono" />
           <div>
             <div className="admin-stat-card__valor">{respond}</div>
-            <div className="admin-stat-card__label">Respondidos</div>
+            <div className="admin-stat-card__label">Respondidos (pagina)</div>
           </div>
         </div>
       </div>
 
-      <div className="admin-mensajes__herramientas">
-        <div className="admin-mensajes__busqueda">
-          <FaSearch />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, email, asunto o contenido..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="admin-input"
-          />
-          {busqueda && (
-            <button className="admin-btn admin-btn-sm" onClick={() => setBusqueda('')}>
-              <FaTimes />
-            </button>
-          )}
-        </div>
-        <div className="admin-mensajes__filtros">
-          <FaFilter />
-          {[
-            { id: 'todos', label: 'Todos' },
-            { id: 'no_leidos', label: 'No leidos' },
-            { id: 'leidos', label: 'Pendientes' },
-            { id: 'respondidos', label: 'Respondidos' },
-          ].map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setFiltro(f.id)}
-              className={`admin-btn admin-btn-sm ${filtro === f.id ? 'admin-btn-primary' : 'admin-btn-secondary'}`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <FiltersBar
+        filters={filters}
+        setFilters={setFilters}
+        clearFilters={clearFilters}
+        chips={chips}
+        searchKey="search"
+        searchPlaceholder="Buscar por nombre, email, asunto o contenido..."
+      />
 
-      {itemsFiltrados.length === 0 ? (
+      {items.length === 0 ? (
         <div className="admin-mensajes__vacio">
           <FaInbox />
-          <p>No hay mensajes {filtro !== 'todos' ? 'con este filtro' : 'aun'}.</p>
+          <p>No hay mensajes {filters.filtro !== 'todos' ? 'con este filtro' : 'aun'}.</p>
         </div>
       ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th style={{ width: 36 }}></th>
-              <th>Fecha</th>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Asunto</th>
-              <th>Estado</th>
-              <th className="text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {itemsFiltrados.map(m => (
-              <tr
-                key={m.id}
-                onClick={() => verDetalle(m)}
-                style={{
-                  background: m.leido ? '#fff' : '#fef9e7',
-                  cursor: 'pointer',
-                }}
-                title="Click para ver el mensaje completo"
-              >
-                <td>
-                  {m.leido ? (
-                    <FaEnvelopeOpen style={{ color: '#9ca3af' }} />
-                  ) : (
-                    <FaEnvelope style={{ color: '#d4a72c' }} />
-                  )}
-                </td>
-                <td className="text-mute">
-                  {new Date(m.fecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}
-                </td>
-                <td className="font-semibold">{m.nombre}</td>
-                <td><a href={`mailto:${m.email}`} onClick={(e) => e.stopPropagation()}>{m.email}</a></td>
-                <td>
-                  <span
-                    className={`admin-prioridad-dot admin-prioridad-dot--${(m.prioridad || 'MEDIA').toLowerCase()}`}
-                    title={`Prioridad: ${m.prioridad || 'MEDIA'}`}
-                    aria-label={`Prioridad ${m.prioridad || 'MEDIA'}`}
-                  />
-                  {m.asunto}
-                </td>
-                <td>
-                  {m.respondido ? (
-                    <span className="admin-badge admin-badge--ok"><FaCheck /> Respondido</span>
-                  ) : m.leido ? (
-                    <span className="admin-badge admin-badge--info">Leido</span>
-                  ) : (
-                    <span className="admin-badge admin-badge--warn">No leido</span>
-                  )}
-                </td>
-                <td className="actions justify-end" onClick={(e) => e.stopPropagation()}>
-                  <a
-                    className="admin-btn admin-btn-sm admin-btn-secondary"
-                    href={responderMailto(m)}
-                    title="Responder por correo"
-                  >
-                    <FaReply /> Responder
-                  </a>
-                  {!m.respondido && (
-                    <button
-                      className="admin-btn admin-btn-sm"
-                      onClick={(e) => marcarRespondido(m, e)}
-                      title="Marcar como respondido"
-                    >
-                      <FaCheck />
-                    </button>
-                  )}
-                  <button
-                    className="admin-btn admin-btn-sm admin-btn-danger"
-                    onClick={(e) => eliminar(m, e)}
-                    title="Eliminar"
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
+        <>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th style={{ width: 36 }}></th>
+                <th>Fecha</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Asunto</th>
+                <th>Estado</th>
+                <th className="text-right">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map(m => (
+                <tr
+                  key={m.id}
+                  onClick={() => verDetalle(m)}
+                  style={{
+                    background: m.leido ? '#fff' : '#fef9e7',
+                    cursor: 'pointer',
+                  }}
+                  title="Click para ver el mensaje completo"
+                >
+                  <td>
+                    {m.leido ? (
+                      <FaEnvelopeOpen style={{ color: '#9ca3af' }} />
+                    ) : (
+                      <FaEnvelope style={{ color: '#d4a72c' }} />
+                    )}
+                  </td>
+                  <td className="text-mute">
+                    {new Date(m.fecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}
+                  </td>
+                  <td className="font-semibold">{m.nombre}</td>
+                  <td><a href={`mailto:${m.email}`} onClick={(e) => e.stopPropagation()}>{m.email}</a></td>
+                  <td>
+                    <span
+                      className={`admin-prioridad-dot admin-prioridad-dot--${(m.prioridad || 'MEDIA').toLowerCase()}`}
+                      title={`Prioridad: ${m.prioridad || 'MEDIA'}`}
+                      aria-label={`Prioridad ${m.prioridad || 'MEDIA'}`}
+                    />
+                    {m.asunto}
+                  </td>
+                  <td>
+                    {m.respondido ? (
+                      <span className="admin-badge admin-badge--ok"><FaCheck /> Respondido</span>
+                    ) : m.leido ? (
+                      <span className="admin-badge admin-badge--info">Leido</span>
+                    ) : (
+                      <span className="admin-badge admin-badge--warn">No leido</span>
+                    )}
+                  </td>
+                  <td className="actions justify-end" onClick={(e) => e.stopPropagation()}>
+                    <a
+                      className="admin-btn admin-btn-sm admin-btn-secondary"
+                      href={responderMailto(m)}
+                      title="Responder por correo"
+                    >
+                      <FaReply /> Responder
+                    </a>
+                    {!m.respondido && (
+                      <button
+                        className="admin-btn admin-btn-sm"
+                        onClick={(e) => marcarRespondido(m, e)}
+                        title="Marcar como respondido"
+                      >
+                        <FaCheck />
+                      </button>
+                    )}
+                    <button
+                      className="admin-btn admin-btn-sm admin-btn-danger"
+                      onClick={(e) => eliminar(m, e)}
+                      title="Eliminar"
+                    >
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination
+            page={filters.page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={(p) => setFilters({ page: p })}
+          />
+        </>
       )}
 
       <AdminModal
