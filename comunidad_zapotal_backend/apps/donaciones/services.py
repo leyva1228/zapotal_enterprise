@@ -5,7 +5,11 @@ Por que este wrapper:
 1. Centraliza la configuracion del SDK (singleton con access token).
 2. Aisla la API de MP del codigo de vistas (testeable con mock).
 3. Convierte errores de MP en excepciones Python claras.
+4. Verificacion de firma de webhook (x-signature).
 """
+import hashlib
+import hmac
+import json
 import logging
 from decimal import Decimal
 from typing import Optional
@@ -15,6 +19,58 @@ from django.conf import settings
 
 
 logger = logging.getLogger(__name__)
+
+
+# IPs publicas de Mercado Pago para notificaciones webhook.
+# Fuente: https://www.mercadopago.com.pe/developer/es/docs/your-integrations/notifications/ipn
+# MPs pueden cambiar estas IPs. Revisar periodicamente.
+MERCADO_PAGO_IPS = frozenset({
+    '216.33.196.4',
+    '216.33.196.25',
+    '216.33.196.37',
+    '216.33.196.54',
+    '216.33.196.58',
+    '216.33.196.62',
+    '216.33.196.64',
+    '23.21.124.106',
+    '50.16.225.132',
+    '54.94.104.183',
+    '54.207.212.174',
+    '54.232.205.211',
+    '54.232.207.61',
+    '54.232.208.89',
+    '54.233.79.186',
+    '54.233.80.46',
+    '54.233.85.62',
+    '54.233.89.164',
+    '54.233.91.246',
+    '54.233.94.10',
+    '54.233.94.226',
+    '54.233.95.186',
+    '54.233.95.55',
+    '54.233.95.82',
+    '54.233.96.131',
+    '54.233.97.45',
+    '54.233.98.25',
+    '54.233.99.178',
+    '54.233.99.50',
+    '54.233.99.69',
+    '54.233.99.82',
+    '54.233.100.225',
+    '54.233.100.42',
+    '54.233.100.57',
+    '54.233.103.112',
+    '54.233.103.166',
+    '54.233.103.199',
+    '54.233.103.20',
+    '54.233.103.90',
+    '54.233.104.121',
+    '54.233.105.179',
+    '54.233.105.36',
+    '54.237.248.62',
+    '54.237.253.239',
+    '54.237.254.43',
+})
 
 
 class MercadoPagoError(Exception):
@@ -201,6 +257,65 @@ class MercadoPagoService:
             )
 
         return result.get("response", {})
+
+    @staticmethod
+    def verificar_firma_webhook(request_body: bytes, x_signature_header: str, secret: str) -> bool:
+        """
+        Verifica la firma HMAC-SHA256 de una notificacion webhook de MP.
+
+        El header x-signature tiene formato:
+          ts=<timestamp>,v1=<hash>
+
+        Pasos:
+          1. Extraer ts y v1 del header.
+          2. Construir el mensaje como: "id:<data.id>;ts:<timestamp>;"
+          3. Calcular HMAC-SHA256(secret, msg) y comparar con v1.
+
+        Returns:
+            True si la firma es valida, False en caso contrario.
+        """
+        if not x_signature_header or not secret:
+            return False
+
+        try:
+            partes = dict(p.split('=', 1) for p in x_signature_header.split(','))
+        except (ValueError, AttributeError):
+            return False
+
+        ts = partes.get('ts')
+        v1 = partes.get('v1')
+        if not ts or not v1:
+            return False
+
+        try:
+            data_id = json.loads(request_body).get('data', {}).get('id', '')
+        except (json.JSONDecodeError, AttributeError):
+            return False
+
+        msg = f"id:{data_id};ts:{ts};".encode('utf-8')
+        expected = hmac.new(secret.encode('utf-8'), msg, hashlib.sha256).hexdigest()
+
+        return hmac.compare_digest(expected, v1)
+
+    @staticmethod
+    def ip_permitida(ip: str) -> bool:
+        """
+        Valida si una IP esta en la lista de IPs conocidas de Mercado Pago.
+
+        En DEBUG=True permite 127.0.0.1 y ::1 para desarrollo local.
+        En produccion se puede override via settings.MERCADO_PAGO_WEBHOOK_ALLOWED_IPS.
+        """
+        if not ip:
+            return False
+
+        if settings.DEBUG and ip in ('127.0.0.1', '::1'):
+            return True
+
+        allowed_ips = getattr(settings, 'MERCADO_PAGO_WEBHOOK_ALLOWED_IPS', None)
+        if allowed_ips is not None:
+            return ip in allowed_ips
+
+        return ip in MERCADO_PAGO_IPS
 
     @staticmethod
     def mapear_estado_mp(mp_status: str) -> str:

@@ -3,7 +3,7 @@ Tests del modelo Donacion.
 """
 from decimal import Decimal
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from apps.accounts.factories import UsuarioFactory
 from apps.donaciones.models import Donacion
 
@@ -296,6 +296,7 @@ class ProcesarPagoAPITest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+@override_settings(MERCADO_PAGO_WEBHOOK_ALLOWED_IPS={'127.0.0.1', '::1'})
 class WebhookAPITest(TestCase):
     def test_webhook_tipo_invalido_ignora(self):
         from rest_framework.test import APIClient

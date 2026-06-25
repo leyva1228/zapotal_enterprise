@@ -54,9 +54,12 @@ class CloudflareR2Storage(S3Boto3Storage):
         """
         Retorna la URL publica del objeto en R2.
 
-        Sin firma porque el bucket es publico. El formato es:
-        `<endpoint>/<bucket>/<key>` o `<custom_domain>/<key>` si esta
-        configurado.
+        Orden de prioridad:
+        1. Si `CLOUDFLARE_R2_PUBLIC_DOMAIN` esta configurado (ej: pub-xxx.r2.dev
+           o un dominio custom), usarlo sin agregar el nombre del bucket.
+        2. Si no, usar el endpoint S3 interno con prefijo de bucket
+           (este caso requiere signed URLs y NO funciona desde el browser
+           sin autorizacion).
         """
         custom_domain = getattr(settings, 'CLOUDFLARE_R2_PUBLIC_DOMAIN', None)
         if custom_domain:
@@ -65,6 +68,8 @@ class CloudflareR2Storage(S3Boto3Storage):
                 base = f'https://{base}'
             return f'{base}/{name}'
 
+        # Fallback: endpoint S3 interno. NO usar para servir desde el browser
+        # porque requiere AWS Signature. Solo util para el backend Django.
         endpoint = settings.AWS_S3_ENDPOINT_URL.rstrip('/')
         bucket = settings.AWS_STORAGE_BUCKET_NAME
         return f'{endpoint}/{bucket}/{name}'

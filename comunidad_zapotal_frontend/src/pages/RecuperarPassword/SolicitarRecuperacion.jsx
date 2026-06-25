@@ -1,11 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { FaEnvelope, FaArrowRight, FaShieldAlt, FaLeaf } from 'react-icons/fa';
+import {
+  FaEnvelope, FaArrowRight, FaShieldAlt, FaLeaf,
+  FaSpinner, FaCheckCircle, FaTimes, FaExclamationTriangle,
+} from 'react-icons/fa';
 import Turnstile from '../../components/Turnstile';
 import './RecuperarPassword.css';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SolicitarRecuperacion() {
   const navigate = useNavigate();
@@ -13,7 +17,31 @@ export default function SolicitarRecuperacion() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [turnstileToken, setTurnstileToken] = useState('');
+  const [validacionEmail, setValidacionEmail] = useState({ estado: 'idle', sugerencia: null });
+  const debounceEmailRef = useRef(null);
   const turnstileRef = useRef(null);
+
+  const onEmailChange = (val) => {
+    setEmail(val);
+    if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+    if (!val || !EMAIL_REGEX.test(val.trim())) {
+      setValidacionEmail({ estado: 'idle', sugerencia: null });
+      return;
+    }
+    setValidacionEmail({ estado: 'validando' });
+    debounceEmailRef.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/validar-email/', { params: { email: val.trim() } });
+        setValidacionEmail({
+          estado: data.es_valido ? 'valido' : 'invalido',
+          sugerencia: data.did_you_mean || null,
+          motivo: data.motivo || null,
+        });
+      } catch {
+        setValidacionEmail({ estado: 'idle' });
+      }
+    }, 800);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,14 +91,38 @@ export default function SolicitarRecuperacion() {
           <p className="rp-sub">Te enviaremos un codigo de verificacion a tu correo.</p>
           <div className="rp-field">
             <label htmlFor="rp-email">Correo electronico</label>
-            <div className="rp-inp">
+            <div className={`rp-inp ${
+              validacionEmail.estado === 'valido' ? 'rp-inp--ok' :
+              validacionEmail.estado === 'invalido' ? 'rp-inp--warn' : ''
+            }`}>
               <FaEnvelope className="rp-ico" />
               <input
                 id="rp-email" type="email" placeholder="usuario@ejemplo.com"
-                value={email} onChange={(e) => setEmail(e.target.value)}
+                value={email} onChange={(e) => onEmailChange(e.target.value)}
                 required maxLength={120}
               />
+              <span className="rp-inp__status" aria-live="polite">
+                {validacionEmail.estado === 'validando' && <FaSpinner className="fa-spin" color="#6b7280" />}
+                {validacionEmail.estado === 'valido' && <FaCheckCircle color="#16a34a" />}
+                {validacionEmail.estado === 'invalido' && validacionEmail.motivo === 'catch-all' && (
+                  <FaExclamationTriangle color="#f59e0b" />
+                )}
+                {validacionEmail.estado === 'invalido' && validacionEmail.motivo !== 'catch-all' && (
+                  <FaTimes color="#dc2626" />
+                )}
+              </span>
             </div>
+            {validacionEmail.sugerencia && (
+              <span className="rp-email-sugerencia">
+                ¿Quizás quisiste decir:{' '}
+                <button
+                  type="button"
+                  onClick={() => onEmailChange(validacionEmail.sugerencia)}
+                >
+                  {validacionEmail.sugerencia}
+                </button>?
+              </span>
+            )}
           </div>
           {TURNSTILE_SITE_KEY && (
             <div className="rp-turnstile">

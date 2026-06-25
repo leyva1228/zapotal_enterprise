@@ -239,12 +239,37 @@ class DonacionesWebhookView(APIView):
     POST /api/v1/donaciones/webhook/
 
     Recibe notificaciones IPN de Mercado Pago. Idempotente.
-    En produccion, validar source IP contra las IPs de MP.
+    Seguridad: verifica firma HMAC-SHA256 (x-signature) y origen IP.
     """
     permission_classes = [AllowAny]
     throttle_classes = [WebhookRateThrottle]
 
     def post(self, request):
+        x_signature = request.META.get('HTTP_X_SIGNATURE', '')
+        x_request_id = request.META.get('HTTP_X_REQUEST_ID', '')
+        remote_ip = request.META.get('REMOTE_ADDR', '')
+
+        logger.info(
+            "Webhook MP: x-request-id=%s remote_ip=%s",
+            x_request_id, remote_ip,
+        )
+
+        secret = settings.MERCADO_PAGO_WEBHOOK_SECRET
+        if secret and not MercadoPagoService.verificar_firma_webhook(
+            request.body, x_signature, secret,
+        ):
+            logger.warning(
+                "Webhook MP: firma invalida ip=%s x-request-id=%s",
+                remote_ip, x_request_id,
+            )
+            return Response({'detail': 'Firma invalida.'}, status=403)
+
+        if not MercadoPagoService.ip_permitida(remote_ip):
+            logger.warning(
+                "Webhook MP: IP no permitida %s x-request-id=%s",
+                remote_ip, x_request_id,
+            )
+            return Response({'detail': 'IP no permitida.'}, status=403)
         mp_type = request.data.get('type')
         mp_id = request.data.get('data', {}).get('id')
 
@@ -263,6 +288,11 @@ class DonacionesWebhookView(APIView):
             logger.warning("Webhook MP: donacion no encontrada para mp_payment_id=%s", mp_payment_id)
             return Response({'detail': 'Donacion no encontrada en BD.'}, status=200)
 
+        notif_id = x_request_id or f"mp-{mp_payment_id}-{mp_id}"
+        if donacion.mp_notification_id == notif_id:
+            logger.info("Webhook MP: notificacion duplicada %s para donacion %s", notif_id, donacion.id)
+            return Response({'status': 'ok', 'duplicated': True})
+
         try:
             payment = MercadoPagoService.obtener_pago(mp_payment_id)
         except MercadoPagoError as e:
@@ -273,7 +303,7 @@ class DonacionesWebhookView(APIView):
         nuevo_estado = MercadoPagoService.mapear_estado_mp(mp_status)
 
         cambios = donacion.estado != nuevo_estado or donacion.mp_status_detail != payment.get('status_detail', '')
-        if cambios:
+        if cambios or not donacion.mp_notification_id:
             estado_anterior = donacion.estado
             donacion.estado = nuevo_estado
             donacion.mp_status = mp_status
@@ -282,6 +312,7 @@ class DonacionesWebhookView(APIView):
             donacion.mp_payment_type = payment.get('payment_type_id', donacion.mp_payment_type)
             donacion.mp_installments = payment.get('installments', donacion.mp_installments)
             donacion.mp_raw_response = payment
+            donacion.mp_notification_id = notif_id
             if nuevo_estado == 'APROBADO' and not donacion.aprobado_at:
                 donacion.aprobado_at = timezone.now()
             donacion.save()

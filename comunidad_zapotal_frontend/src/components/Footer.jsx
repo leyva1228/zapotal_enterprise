@@ -36,7 +36,8 @@ function Footer() {
           <h3>Institucional</h3>
           <ul>
             <li><Link to="/nosotros/historia">Nuestra historia</Link></li>
-            <li><Link to="/nosotros/conocenos">Conócenos</Link></li>
+            <li><Link to="/nosotros/conocenos">Conocenos</Link></li>
+            <li><Link to="/nosotros/marco-legal">Marco legal</Link></li>
           </ul>
           <div className="libro-reclamaciones-item">
             <Link to="/libro-reclamaciones" className="libro-reclamaciones-link">
@@ -47,6 +48,15 @@ function Footer() {
               />
             </Link>
           </div>
+        </div>
+
+        <div className="footer-section">
+          <h3>Legal</h3>
+          <ul>
+            <li><Link to="/terminos">Terminos y Condiciones</Link></li>
+            <li><Link to="/privacidad">Politica de Privacidad</Link></li>
+            <li><Link to="/cookies">Politica de Cookies</Link></li>
+          </ul>
         </div>
 
       </div>

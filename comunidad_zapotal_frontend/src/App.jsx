@@ -17,8 +17,14 @@ import Eventos from './pages/Eventos/Eventos';
 import DetalleEvento from './pages/Eventos/DetalleEvento';
 import NuestraHistoria from './pages/Nosotros/NuestraHistoria';
 import Conocenos from './pages/Nosotros/Conocenos';
+import MarcoLegalPage from './pages/Nosotros/MarcoLegalPage';
 import Autoridades from './components/Autoridades/Autoridades';
+import AutoridadesPage from './pages/Autoridades/AutoridadesPage';
 import Contacto from './components/Contacto/Contacto';
+import TerminosPage from './pages/Legal/TerminosPage';
+import PrivacidadPage from './pages/Legal/PrivacidadPage';
+import CookiesPage from './pages/Legal/CookiesPage';
+import BannerCookies from './components/Legal/BannerCookies';
 import LibroReclamaciones from './components/LibroReclamaciones/LibroReclamaciones';
 import Login from './pages/Login/Login';
 import Perfil from './pages/Perfil/Perfil';
@@ -37,6 +43,7 @@ import AdminNoticias from './pages/Admin/AdminNoticias';
 import AdminEventos from './pages/Admin/AdminEventos';
 import AdminCategorias from './pages/Admin/AdminCategorias';
 import AdminAutoridades from './pages/Admin/AdminAutoridades';
+import AdminComitesComunales from './pages/Admin/AdminComitesComunales';
 import AdminUsuarios from './pages/Admin/AdminUsuarios';
 import AdminComentarios from './pages/Admin/AdminComentarios';
 import AdminAuditoria from './pages/Admin/AdminAuditoria';
@@ -46,6 +53,7 @@ import AdminNotificaciones from './pages/Admin/AdminNotificaciones';
 import AdminBajas from './pages/Admin/AdminBajas';
 import AdminCms from './pages/Admin/AdminCms';
 import AdminDonaciones from './pages/Admin/AdminDonaciones';
+import AdminInstitucional from './pages/Admin/AdminInstitucional';
 import Buscar from './pages/Buscar/Buscar';
 
 import './App.css';
@@ -159,7 +167,12 @@ function Layout() {
         <Route path="/eventos/:id" element={<DetalleEvento />} />
         <Route path="/nosotros/historia" element={<NuestraHistoria />} />
         <Route path="/nosotros/conocenos" element={<Conocenos />} />
-        <Route path="/autoridades" element={<Autoridades />} />
+        <Route path="/nosotros/marco-legal" element={<MarcoLegalPage />} />
+        <Route path="/terminos" element={<TerminosPage />} />
+        <Route path="/privacidad" element={<PrivacidadPage />} />
+        <Route path="/cookies" element={<CookiesPage />} />
+        <Route path="/politica-cookies" element={<CookiesPage />} />
+        <Route path="/autoridades" element={<AutoridadesPage />} />
         <Route path="/contactanos" element={<Contacto />} />
         <Route path="/libro-reclamaciones" element={<LibroReclamaciones />} />
 
@@ -195,6 +208,7 @@ function Layout() {
           <Route path="eventos" element={<AdminEventos />} />
           <Route path="categorias" element={<AdminCategorias />} />
           <Route path="autoridades" element={<AdminAutoridades />} />
+          <Route path="comites-comunales" element={<AdminComitesComunales />} />
           <Route path="usuarios" element={<AdminUsuarios />} />
           <Route path="comentarios" element={<AdminComentarios />} />
           <Route path="auditoria" element={<AdminAuditoria />} />
@@ -204,6 +218,7 @@ function Layout() {
           <Route path="bajas" element={<AdminBajas />} />
           <Route path="cms" element={<AdminCms />} />
           <Route path="donaciones" element={<AdminDonaciones />} />
+          <Route path="institucional" element={<AdminInstitucional />} />
         </Route>
 
         <Route path="/donaciones" element={<Donaciones />} />
@@ -236,6 +251,7 @@ function App() {
       <ToastProvider>
         <BrowserRouter>
           <Layout />
+          <BannerCookies />
         </BrowserRouter>
       </ToastProvider>
     </AuthProvider>

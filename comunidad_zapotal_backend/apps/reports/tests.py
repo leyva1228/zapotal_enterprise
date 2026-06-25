@@ -1,55 +1,9 @@
-"""Tests del módulo reports (contacto y libro de reclamaciones)."""
+"""Tests del módulo reports (libro de reclamaciones).
+
+Los mensajes de contacto se prueban en apps/comunidad/tests/test_inbox_admin.py
+y test_seccion_contacto.py.
+"""
 import pytest
-
-
-@pytest.mark.django_db
-class TestContactoMensajeViewSet:
-    """Tests del ViewSet de mensajes de contacto."""
-
-    def test_create_public(self, api_client):
-        """POST /contacto-mensajes/ es público (cualquier visitante)."""
-        response = api_client.post(
-            '/api/v1/contacto-mensajes/',
-            {
-                'nombre': 'Visitante',
-                'email': 'visitante@example.com',
-                'asunto': 'Consulta',
-                'mensaje': 'Quisiera más información sobre...',
-            },
-            format='json',
-        )
-        assert response.status_code == 201
-
-    def test_list_requires_admin(self, api_client, regular_user):
-        """GET /contacto-mensajes/ requiere ser admin."""
-        api_client.force_authenticate(user=regular_user)
-        response = api_client.get('/api/v1/contacto-mensajes/')
-        assert response.status_code == 403
-
-    def test_list_as_admin_returns_200(self, api_client, admin_user):
-        """GET /contacto-mensajes/ como admin retorna 200."""
-        api_client.force_authenticate(user=admin_user)
-        response = api_client.get('/api/v1/contacto-mensajes/')
-        assert response.status_code == 200
-
-    def test_list_unauthenticated_returns_401(self, api_client):
-        """GET /contacto-mensajes/ sin autenticacion retorna 401."""
-        response = api_client.get('/api/v1/contacto-mensajes/')
-        assert response.status_code == 401
-
-    def test_create_public_still_works(self, api_client):
-        """POST /contacto-mensajes/ sigue siendo publico."""
-        response = api_client.post(
-            '/api/v1/contacto-mensajes/',
-            {
-                'nombre': 'Otro Visitante',
-                'email': 'otro@example.com',
-                'asunto': 'Otra consulta',
-                'mensaje': 'Otra consulta con suficiente detalle.',
-            },
-            format='json',
-        )
-        assert response.status_code == 201
 
 
 @pytest.mark.django_db
@@ -143,3 +97,32 @@ class TestLibroReclamacionViewSet:
         )
         assert response.status_code == 200
         assert response.json()['estado'] == 'EN_PROCESO'
+
+    def test_acepta_alias_legacy_frontend(self, api_client):
+        """El frontend legacy enviaba `nombres`+`apellidos`, `correo`,
+        `tipo_solicitud`, `asunto`+`descripcion`+`pedido`. El serializer
+        debe normalizar todo a los campos canonicos del modelo.
+        """
+        from apps.reports.models import LibroReclamacion
+        r = api_client.post(
+            '/api/v1/libro-reclamaciones/',
+            {
+                'nombres':  'Maria',
+                'apellidos': 'Perez Lopez',
+                'correo':   'maria@example.com',
+                'telefono': '987654321',
+                'direccion': 'Av. Principal 123',
+                'tipo_solicitud': 'RECLAMO',
+                'asunto':   'Asunto cualquiera',
+                'descripcion': 'Detalle extenso de la queja para validar.',
+                'pedido':   'Pedido adicional del usuario',
+                'dni':      '12345678',  # ignorado
+            },
+            format='json',
+        )
+        assert r.status_code == 201, r.content
+        rec = LibroReclamacion.objects.get(email='maria@example.com')
+        assert rec.nombre == 'Maria Perez Lopez'
+        assert rec.tipo == 'RECLAMO'
+        # El serializer prioriza 'descripcion' si viene del frontend
+        assert len(rec.descripcion) >= 10

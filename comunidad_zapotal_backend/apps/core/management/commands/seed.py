@@ -89,7 +89,7 @@ def descargar_archivo(url, timeout=30):
         response.raise_for_status()
         return BytesIO(response.content), response.headers.get('content-type', '')
     except Exception as e:
-        print(f'    ⚠️  No se pudo descargar {url}: {e}')
+        print(f'    [!]  No se pudo descargar {url}: {e}')
         return None, None
 
 
@@ -109,7 +109,7 @@ def guardar_imagen_desde_url(instance, field_name, url, default_filename='image.
         instance.save(update_fields=[field_name])  # Persistir el cambio
         return True
     except Exception as e:
-        print(f'    ⚠️  No se pudo guardar imagen: {e}')
+        print(f'    [!]  No se pudo guardar imagen: {e}')
         return False
 
 
@@ -124,7 +124,7 @@ def guardar_video_desde_url(instance, field_name, url, default_filename='video.m
         instance.save(update_fields=[field_name])  # Persistir el cambio
         return True
     except Exception as e:
-        print(f'    ⚠️  No se pudo guardar video: {e}')
+        print(f'    [!]  No se pudo guardar video: {e}')
         return False
 
 
@@ -159,15 +159,15 @@ class Command(BaseCommand):
             Noticia.objects.all().delete()
             Categoria.objects.all().delete()
             Autoridad.objects.all().delete()
-            ContactoMensaje.objects.all().delete()
             LibroReclamacion.objects.all().delete()
+            MensajeContacto.objects.all().delete()
             Usuario.objects.all().delete()
             Comunero.objects.all().delete()
 
         self.stdout.write(self.style.SUCCESS('Insertando datos seed...'))
 
         # ─── Comuneros ───
-        self.stdout.write('  → Comuneros...')
+        self.stdout.write('  -> Comuneros...')
         comuneros_data = [
             ('12345678', 'Juan Carlos', 'Perez Garcia'),
             ('23456789', 'Maria Elena', 'Lopez Ramirez'),
@@ -185,10 +185,14 @@ class Command(BaseCommand):
                           'estado': Comunero.EstadoComunero.ACTIVO},
             )
             comuneros.append(c)
-        self.stdout.write(f'    ✓ {len(comuneros)} comuneros')
+        self.stdout.write(f'    [OK] {len(comuneros)} comuneros')
 
         # ─── Usuarios ───
-        self.stdout.write('  → Usuarios...')
+        # Solo 2 tipos: ADMIN y COMUNERO. El "global" / invitado
+        # NO tiene cuenta en BD: lo maneja la auth anonima (AllowAny +
+        # sin JWT = no autenticado). Asi no se crean cuentas vacias
+        # sin Comunero FK (rompian el modelo porque COMUNERO requiere FK).
+        self.stdout.write('  -> Usuarios...')
         admin, _ = Usuario.objects.get_or_create(
             email='admin@zapotal.com',
             defaults={'tipo_usuario': 'ADMIN', 'estado': 'ACTIVO',
@@ -199,20 +203,34 @@ class Command(BaseCommand):
             admin.save()
         usuarios_comunes = []
         for i, c in enumerate(comuneros):
+            # Todos los Comuneros -> un Usuario tipo COMUNERO vinculado.
+            # Email canonico: comunero1@zapotal.com, comunero2@...
             u, _ = Usuario.objects.get_or_create(
                 email=f'comunero{i+1}@zapotal.com',
-                defaults={'tipo_usuario': 'COMUNERO' if i < 5 else 'USUARIO',
+                defaults={'tipo_usuario': 'COMUNERO',
                           'estado': 'ACTIVO',
-                          'comunero': c if i < 5 else None},
+                          'comunero': c},
             )
+            # Si el usuario ya existia con tipo USUARIO o sin Comunero
+            # FK (de un seed anterior), lo promovemos a COMUNERO y le
+            # asociamos el Comunero. Esto es idempotente.
+            updates = []
+            if u.tipo_usuario != 'COMUNERO':
+                u.tipo_usuario = 'COMUNERO'
+                updates.append('tipo_usuario')
+            if u.comunero_id != c.id:
+                u.comunero = c
+                updates.append('comunero')
             if not u.check_password('Comunero123'):
                 u.set_password('Comunero123')
-                u.save()
+                updates.append('password')
+            if updates:
+                u.save(update_fields=updates if 'password' not in updates else None)
             usuarios_comunes.append(u)
-        self.stdout.write(f'    ✓ {len(usuarios_comunes) + 1} usuarios')
+        self.stdout.write(f'    [OK] {len(usuarios_comunes) + 1} usuarios (1 ADMIN + {len(usuarios_comunes)} COMUNERO)')
 
         # ─── Categorías ───
-        self.stdout.write('  → Categorías...')
+        self.stdout.write('  -> Categorías...')
         categorias_data = [
             ('Agricultura', 'Noticias sobre producción agrícola'),
             ('Ganadería', 'Información sobre el sector ganadero'),
@@ -228,10 +246,10 @@ class Command(BaseCommand):
                 defaults={'descripcion': descripcion},
             )
             categorias.append(cat)
-        self.stdout.write(f'    ✓ {len(categorias)} categorías')
+        self.stdout.write(f'    [OK] {len(categorias)} categorías')
 
         # ─── Noticias con imágenes ───
-        self.stdout.write('  → Noticias con imágenes...')
+        self.stdout.write('  -> Noticias con imágenes...')
         noticias_data = [
             ('Cosecha de papa alcanza récord histórico este año',
              'La comunidad de Zapotal celebra una cosecha excepcional con un 30% más de producción respecto al año anterior. Los comuneros se preparan para el festival de agradecimiento.',
@@ -278,11 +296,11 @@ class Command(BaseCommand):
                 if guardar_imagen_desde_url(n, 'imagen', url_img):
                     self.stdout.write(f'      🖼️  Imagen para: {titulo[:40]}')
             noticias.append(n)
-        self.stdout.write(f'    ✓ {len(noticias)} noticias creadas')
+        self.stdout.write(f'    [OK] {len(noticias)} noticias creadas')
 
         # ─── Multimedia (videos) para las primeras 4 noticias ───
         if with_media:
-            self.stdout.write('  → Descargando videos...')
+            self.stdout.write('  -> Descargando videos...')
             for i, n in enumerate(noticias[:4]):
                 if not Multimedia.objects.filter(noticia=n, tipo=Multimedia.TipoMultimedia.VIDEO).exists():
                     m = Multimedia.objects.create(
@@ -308,7 +326,7 @@ class Command(BaseCommand):
                         m.save()
 
         # ─── Eventos ───
-        self.stdout.write('  → Eventos...')
+        self.stdout.write('  -> Eventos...')
         hoy = timezone.now()
         eventos_data = [
             ('Asamblea General Ordinaria',
@@ -338,10 +356,10 @@ class Command(BaseCommand):
                 if guardar_imagen_desde_url(e, 'imagen', url):
                     self.stdout.write(f'      🖼️  Evento: {titulo[:40]}')
             eventos.append(e)
-        self.stdout.write(f'    ✓ {len(eventos)} eventos')
+        self.stdout.write(f'    [OK] {len(eventos)} eventos')
 
         # ─── Comentarios ───
-        self.stdout.write('  → Comentarios...')
+        self.stdout.write('  -> Comentarios...')
         comentarios_data = [
             (noticias[0], usuarios_comunes[0], 'Excelente noticia, este año fue muy bueno para todos.'),
             (noticias[0], usuarios_comunes[1], 'Esperemos que el próximo año sea igual de bueno.'),
@@ -359,11 +377,11 @@ class Command(BaseCommand):
                 c.save()
                 comentarios_creados += 1
             except Exception as e:
-                self.stdout.write(f'      ⚠️  Comentario omitido: {e}')
-        self.stdout.write(f'    ✓ {comentarios_creados} comentarios')
+                self.stdout.write(f'      [!]  Comentario omitido: {e}')
+        self.stdout.write(f'    [OK] {comentarios_creados} comentarios')
 
         # ─── Reacciones ───
-        self.stdout.write('  → Reacciones...')
+        self.stdout.write('  -> Reacciones...')
         tipos_reaccion = [Reaccion.TipoReaccion.LIKE, Reaccion.TipoReaccion.DISLIKE, Reaccion.TipoReaccion.LIKE]
         reacciones_count = 0
         for i, noticia in enumerate(noticias[:6]):
@@ -375,10 +393,10 @@ class Command(BaseCommand):
                 )
                 if created:
                     reacciones_count += 1
-        self.stdout.write(f'    ✓ {reacciones_count} reacciones')
+        self.stdout.write(f'    [OK] {reacciones_count} reacciones')
 
         # ─── Autoridades ───
-        self.stdout.write('  → Autoridades...')
+        self.stdout.write('  -> Autoridades...')
         Autoridad.objects.get_or_create(
             comunero=comuneros[0],
             cargo='Presidente de la Comunidad',
@@ -404,10 +422,10 @@ class Command(BaseCommand):
                       'fecha_inicio': (hoy - timedelta(days=180)).date(),
                       'fecha_fin': (hoy + timedelta(days=185)).date()},
         )
-        self.stdout.write('    ✓ 4 autoridades')
+        self.stdout.write('    [OK] 4 autoridades')
 
         # ─── Mensajes ───
-        self.stdout.write('  → Mensajes...')
+        self.stdout.write('  -> Mensajes...')
         m1 = Mensaje.objects.get_or_create(
             remitente=usuarios_comunes[0],
             destinatario=admin,
@@ -428,10 +446,10 @@ class Command(BaseCommand):
             titulo=f'Nuevo mensaje de {admin.email}',
             defaults={'mensaje': m2.contenido[:100], 'tipo': 'mensaje'},
         )
-        self.stdout.write('    ✓ 2 mensajes y notificaciones')
+        self.stdout.write('    [OK] 2 mensajes y notificaciones')
 
         # ─── Notificaciones adicionales ───
-        self.stdout.write('  → Notificaciones...')
+        self.stdout.write('  -> Notificaciones...')
         Notificacion.objects.get_or_create(
             destinatario=usuarios_comunes[0],
             titulo='Nueva noticia publicada',
@@ -443,30 +461,31 @@ class Command(BaseCommand):
             defaults={'mensaje': f'Recuerda: {eventos[0].titulo} el {eventos[0].fecha.strftime("%d/%m/%Y")}',
                       'tipo': 'evento'},
         )
-        self.stdout.write('    ✓ Notificaciones adicionales')
+        self.stdout.write('    [OK] Notificaciones adicionales')
 
         # ─── Libro de Reclamaciones de ejemplo ───
-        self.stdout.write('  → Libro de Reclamaciones...')
+        self.stdout.write('  -> Libro de Reclamaciones...')
         LibroReclamacion.objects.get_or_create(
             email='consumidor@example.com',
             descripcion='Ejemplo de queja registrada en el sistema para fines de demostración.',
             defaults={'nombre': 'Consumidor Anónimo', 'telefono': '987654321',
                       'direccion': 'Av. Ejemplo 123', 'tipo': 'QUEJA'},
         )
-        self.stdout.write('    ✓ 1 reclamo de ejemplo')
+        self.stdout.write('    [OK] 1 reclamo de ejemplo')
 
         # ─── Mensaje de Contacto ───
-        self.stdout.write('  → Mensaje de contacto...')
-        ContactoMensaje.objects.get_or_create(
+        self.stdout.write('  -> Mensaje de contacto...')
+        from apps.comunidad.models_institucionales import MensajeContacto
+        MensajeContacto.objects.get_or_create(
             email='visitante@example.com',
             asunto='Consulta sobre servicios',
             mensaje='Quisiera más información sobre los servicios que ofrece la comunidad.',
             defaults={'nombre': 'Visitante Web'},
         )
-        self.stdout.write('    ✓ 1 mensaje de contacto')
+        self.stdout.write('    [OK] 1 mensaje de contacto')
 
         # ─── RESUMEN ───
-        self.stdout.write(self.style.SUCCESS('\n✅ SEED COMPLETADO'))
+        self.stdout.write(self.style.SUCCESS('\n[OK] SEED COMPLETADO'))
         self.stdout.write(f'   Comuneros:      {Comunero.objects.count()}')
         self.stdout.write(f'   Usuarios:       {Usuario.objects.count()}')
         self.stdout.write(f'   Categorías:     {Categoria.objects.count()}')
@@ -479,11 +498,11 @@ class Command(BaseCommand):
         self.stdout.write(f'   Mensajes:       {Mensaje.objects.count()}')
         self.stdout.write(f'   Notificaciones: {Notificacion.objects.count()}')
         self.stdout.write(f'   Reclamaciones:  {LibroReclamacion.objects.count()}')
-        self.stdout.write(f'   Contactos:      {ContactoMensaje.objects.count()}')
+        self.stdout.write(f'   Contactos:      {MensajeContacto.objects.count()}')
 
         if not with_media:
             self.stdout.write(self.style.WARNING(
-                '\n💡 Para descargar imágenes y videos de internet, ejecuta:'
+                '\n[i] Para descargar imagenes y videos de internet, ejecuta:'
             ))
             self.stdout.write(self.style.WARNING(
                 '   python manage.py seed --with-media'

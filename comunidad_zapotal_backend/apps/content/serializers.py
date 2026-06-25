@@ -136,14 +136,61 @@ class NoticiaSerializer(serializers.ModelSerializer):
 
 
 class NoticiaEscrituraSerializer(serializers.ModelSerializer):
-    """Serializer para crear/actualizar noticias (sin nested)."""
+    """Serializer para crear/actualizar noticias (sin nested).
+
+    Devuelve `imagen_url` ademas de `imagen` para que el frontend
+    (AdminNoticias.jsx) reciba la URL absoluta del archivo subido
+    en la misma respuesta del POST/PATCH y pueda previsualizar
+    sin tener que recargar la lista.
+    """
+    imagen_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Noticia
         fields = [
             'id', 'titulo', 'contenido', 'resumen', 'imagen',
-            'estado', 'categoria',
+            'imagen_url', 'estado', 'categoria',
         ]
         read_only_fields = ['id']
+
+    def get_imagen_url(self, obj):
+        """URL absoluta: externa si imagen_url, sino el archivo subido."""
+        if obj.imagen_url:
+            return obj.imagen_url
+        request = self.context.get('request')
+        if obj.imagen and request:
+            return request.build_absolute_uri(obj.imagen.url)
+        if obj.imagen:
+            return obj.imagen.url
+        return None
+
+
+class EventoEscrituraSerializer(serializers.ModelSerializer):
+    """Serializer para crear/actualizar eventos (sin nested).
+
+    Mismo patron que NoticiaEscrituraSerializer: incluye `imagen_url`
+    en la respuesta del POST/PATCH para que el admin panel pueda
+    mostrar la URL absoluta de la imagen recien subida.
+    """
+    imagen_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Evento
+        fields = [
+            'id', 'titulo', 'descripcion', 'fecha', 'lugar',
+            'imagen', 'imagen_url',
+        ]
+        read_only_fields = ['id']
+
+    def get_imagen_url(self, obj):
+        if obj.imagen_url:
+            return obj.imagen_url
+        request = self.context.get('request')
+        if obj.imagen and request:
+            return request.build_absolute_uri(obj.imagen.url)
+        if obj.imagen:
+            return obj.imagen.url
+        return None
 
 
 class EventoSerializer(serializers.ModelSerializer):

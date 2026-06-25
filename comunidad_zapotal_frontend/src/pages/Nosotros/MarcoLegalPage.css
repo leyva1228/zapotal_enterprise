@@ -1,0 +1,62 @@
+.ml-page {
+  min-height: 100vh;
+  background: #f5f7f5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1a2620;
+}
+.ml-loading, .ml-error {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  min-height: 50vh; font-size: 16px; color: #6b7c72;
+}
+.ml-error { color: #b91c1c; }
+.ml-spin { animation: ml-spin 1s linear infinite; }
+@keyframes ml-spin { to { transform: rotate(360deg); } }
+
+.ml-hero {
+  background: linear-gradient(135deg, #0a3d1f 0%, #0f5c2e 60%, #1a7a42 100%);
+  color: #fff;
+  padding: 60px 20px 80px;
+  text-align: center;
+}
+.ml-hero-content { max-width: 800px; margin: 0 auto; }
+.ml-hero-icon { font-size: 56px; color: #d4a72c; margin-bottom: 12px; }
+.ml-hero h1 { font-size: 36px; font-weight: 800; margin: 0 0 12px; }
+.ml-hero p { font-size: 17px; opacity: 0.9; line-height: 1.5; }
+
+.ml-container { max-width: 1100px; margin: -40px auto 40px; padding: 0 20px; }
+
+.ml-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.ml-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e6e2;
+  border-left: 4px solid #d4a72c;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.ml-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+.ml-card__header {
+  display: flex; align-items: flex-start; gap: 14px;
+  margin-bottom: 14px;
+}
+.ml-card__icon { font-size: 32px; color: #0a3d1f; flex-shrink: 0; }
+.ml-card__title { font-size: 16px; font-weight: 700; color: #0a3d1f; margin: 0 0 4px; }
+.ml-card__norma { font-size: 12px; color: #b8972a; font-weight: 600; margin: 0; }
+.ml-card__descripcion { font-size: 14px; color: #1a2620; line-height: 1.6; margin: 0 0 14px; }
+.ml-card__link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: #d4a72c; text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px dashed #d4a72c;
+  padding-bottom: 2px;
+}
+.ml-card__link:hover { color: #0a3d1f; border-bottom-color: #0a3d1f; }

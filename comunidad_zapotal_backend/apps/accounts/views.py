@@ -66,6 +66,17 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     search_fields = ['email']
     ordering_fields = ['fecha_registro', 'email']
 
+    def get_permissions(self):
+        """Relaja el permiso de retrieve/update/partial_update para que un
+        usuario autenticado pueda ver/editar SU propio perfil (foto,
+        telefono, etc.) sin ser admin. `get_object` valida luego que el
+        target sea el propio usuario o admin. List/destroy siguen siendo
+        admin-only.
+        """
+        if self.action in ('retrieve', 'update', 'partial_update'):
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
+
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return UsuarioEscrituraSerializer
@@ -82,7 +93,11 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         return qs.filter(id=user.id) if user.is_authenticated else qs.none()
 
     def get_object(self):
-        """Permite a un usuario ver/editar su propio perfil sin ser ADMIN."""
+        """Permite a un usuario ver/editar su propio perfil sin ser ADMIN.
+        `get_permissions` ya valida que solo los autenticados pueden llegar
+        aca en update/partial_update. Aqui confirmamos que el target es
+        el propio user (o admin).
+        """
         obj = super().get_object()
         user = self.request.user
         if user.is_authenticated and (
@@ -92,11 +107,12 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         ):
             return obj
         from rest_framework.exceptions import PermissionDenied
-        raise PermissionDenied('Solo puedes ver tu propio perfil.')
+        raise PermissionDenied('Solo puedes ver/editar tu propio perfil.')
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         nuevo_estado = request.data.get('estado')
+        estado_anterior = instance.estado
         if (nuevo_estado == Usuario.EstadoUsuario.ACTIVO
                 and instance.estado == Usuario.EstadoUsuario.PENDIENTE_OTP):
             return Response(
@@ -106,7 +122,59 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        return super().partial_update(request, *args, **kwargs)
+        response = super().partial_update(request, *args, **kwargs)
+        # Notificaciones internas: aprobacion, rechazo, bloqueo, desbloqueo.
+        self._notificar_cambio_estado(instance, estado_anterior, nuevo_estado, actor_id=request.user.id)
+        return response
+
+    def _notificar_cambio_estado(self, instance, estado_anterior, nuevo_estado, actor_id=None):
+        """Crea Notificacion para el usuario afectado y notifica a otros admins."""
+        from apps.accounts.models import Usuario
+        from apps.messaging.models import Notificacion
+        # No notificar si no hubo cambio de estado
+        if not nuevo_estado or estado_anterior == nuevo_estado:
+            return
+        tipo_map = {
+            Usuario.EstadoUsuario.ACTIVO: 'aprobacion_cuenta',
+            Usuario.EstadoUsuario.RECHAZADO: 'rechazo_cuenta',
+            Usuario.EstadoUsuario.BLOQUEADO: 'cuenta_bloqueada',
+            Usuario.EstadoUsuario.INACTIVO: 'cuenta_inactivada',
+        }
+        tipo = tipo_map.get(nuevo_estado)
+        if not tipo:
+            return
+        titulo_map = {
+            'aprobacion_cuenta': 'Tu cuenta fue aprobada',
+            'rechazo_cuenta': 'Tu solicitud de cuenta fue rechazada',
+            'cuenta_bloqueada': 'Tu cuenta fue bloqueada',
+            'cuenta_inactivada': 'Tu cuenta fue inactivada',
+        }
+        # 1) Notificar al usuario afectado
+        Notificacion.objects.create(
+            destinatario=instance,
+            titulo=titulo_map[tipo],
+            mensaje=f'Estimado/a {instance.email}, el estado de tu cuenta cambio a {nuevo_estado}.',
+            tipo=tipo,
+            url_destino='/cuenta',
+        )
+        # 2) Notificar a otros admins del cambio (excluyendo al actor que hizo el cambio)
+        admins = Usuario.objects.filter(tipo_usuario='ADMIN', estado='ACTIVO')
+        if actor_id is not None:
+            admins = admins.exclude(id=actor_id)
+        admin_notifs = [
+            Notificacion(
+                destinatario=admin,
+                titulo=f'Admin: cuenta de {instance.email} -> {nuevo_estado}',
+                mensaje=f'El estado cambio de {estado_anterior} a {nuevo_estado}.',
+                tipo='info',
+                url_destino=f'/admin/usuarios?estado={nuevo_estado}',
+                referencia_tipo='USUARIO',
+                referencia_id=instance.id,
+            )
+            for admin in admins
+        ]
+        if admin_notifs:
+            Notificacion.objects.bulk_create(admin_notifs, batch_size=50)
 
 
 def _build_usuario_payload(user, request=None):

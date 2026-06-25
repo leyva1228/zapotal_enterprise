@@ -544,3 +544,101 @@ body,
     font-size: 1.5rem;
   }
 }
+
+.libro-input-with-icon { position: relative; display: flex; align-items: center; }
+.libro-input-with-icon input { flex: 1; padding-right: 36px; }
+.libro-input__status { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; display: inline-flex; }
+.libro-input--ok input { border-color: #16a34a; }
+.libro-input--warn input { border-color: #f59e0b; }
+.libro-email-sugerencia { display: block; margin-top: 4px; color: #b45309; font-size: 12px; }
+.libro-email-sugerencia button { background: none; border: 0; color: #1f3b34; text-decoration: underline; cursor: pointer; padding: 0; font-size: inherit; }
+
+.libro-constancia {
+  margin-top: 24px;
+  padding: 24px;
+  background: #f0fdf4;
+  border: 2px solid #16a34a;
+  border-radius: 12px;
+  text-align: center;
+}
+.libro-constancia__icono {
+  font-size: 48px;
+  color: #16a34a;
+  margin-bottom: 8px;
+}
+.libro-constancia h3 {
+  color: #0a3d1f;
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+.libro-constancia p {
+  margin: 4px 0;
+  color: #1f2937;
+  font-size: 14px;
+}
+.libro-constancia__linea {
+  margin: 8px 0;
+  padding: 4px 8px;
+  text-align: left;
+}
+.libro-constancia__linea code {
+  background: #fff;
+  border: 1px solid #16a34a;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'Courier New', monospace;
+  color: #0a3d1f;
+}
+.libro-constancia__botones {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.libro-constancia__btn {
+  padding: 8px 16px;
+  background: #16a34a;
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.libro-constancia__btn--secundario {
+  background: transparent;
+  color: #16a34a;
+  border: 1px solid #16a34a;
+}
+.libro-constancia__btn:hover {
+  opacity: 0.9;
+}
+.libro-texto-legal {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #92400e;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.libro-error-email {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  color: #991b1b;
+  font-size: 13px;
+}
+@media print {
+  .libro-constancia__botones { display: none; }
+  .libro-constancia { border-width: 1px; }
+  .libro-texto-legal { display: none; }
+}

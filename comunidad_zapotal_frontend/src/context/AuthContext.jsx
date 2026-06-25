@@ -20,8 +20,22 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
 
   const setAuth = useCallback((payload) => {
-    SessionStore.set(payload?.user ?? null, payload?.access ?? null, payload?.refresh ?? null);
-    setSession({ user: payload?.user ?? null, token: payload?.access ?? null });
+    // Semantica 3-way (definida en api.js):
+    //   user/access/refresh: undefined -> preservar, null -> borrar, valor -> setear
+    const newUser = payload?.user === undefined ? undefined : (payload?.user ?? null);
+    const newAccess = payload?.access === undefined ? undefined : (payload?.access ?? null);
+    const newRefresh = payload?.refresh === undefined ? undefined : (payload?.refresh ?? null);
+
+    SessionStore.set(newUser, newAccess, newRefresh);
+
+    // Actualizar el state de React: si no se pasaron tokens,
+    // preservar los actuales leyendo del sessionStorage.
+    setSession((prev) => ({
+      user: newUser === undefined ? prev.user : newUser,
+      token: newAccess === undefined
+        ? SessionStore.getToken()
+        : (newAccess || null),
+    }));
   }, []);
 
   const clearAuth = useCallback(async () => {

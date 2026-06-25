@@ -32,10 +32,31 @@ function _getRefresh() {
 }
 
 function _setSession(user, access, refresh) {
-  if (user) sessionStorage.setItem('usuario', JSON.stringify(user));
-  else sessionStorage.removeItem('usuario');
-  if (access) sessionStorage.setItem('token', access);
-  if (refresh) sessionStorage.setItem('refresh', refresh);
+  // Semantica explicita (3-way):
+  //   undefined -> no tocar (preservar valor actual)
+  //   null      -> borrar (logout intencional)
+  //   valor     -> setear
+  if (user !== undefined) {
+    if (user === null) {
+      sessionStorage.removeItem('usuario');
+    } else {
+      sessionStorage.setItem('usuario', JSON.stringify(user));
+    }
+  }
+  if (access !== undefined) {
+    if (access) {
+      sessionStorage.setItem('token', access);
+    } else {
+      sessionStorage.removeItem('token');
+    }
+  }
+  if (refresh !== undefined) {
+    if (refresh) {
+      sessionStorage.setItem('refresh', refresh);
+    } else {
+      sessionStorage.removeItem('refresh');
+    }
+  }
   // Limpia keys de auth en localStorage (sesion por pestana)
   try {
     localStorage.removeItem('usuario');
@@ -46,10 +67,7 @@ function _setSession(user, access, refresh) {
 }
 
 function _clearSession() {
-  sessionStorage.removeItem('usuario');
-  sessionStorage.removeItem('token');
-  sessionStorage.removeItem('refresh');
-  sessionStorage.removeItem('accionPendiente');
+  _setSession(null, null, null);
 }
 
 api.interceptors.request.use((config) => {

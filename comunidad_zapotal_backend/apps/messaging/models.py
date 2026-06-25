@@ -37,6 +37,7 @@ class Notificacion(models.Model):
         RECHAZO_CUENTA = 'rechazo_cuenta', 'Rechazo de cuenta'
         CUENTA_BLOQUEADA = 'cuenta_bloqueada', 'Cuenta bloqueada'
         CUENTA_DESBLOQUEADA = 'cuenta_desbloqueada', 'Cuenta desbloqueada'
+        CUENTA_INACTIVADA = 'cuenta_inactivada', 'Cuenta inactivada'
         NUEVA_NOTICIA = 'nueva_noticia', 'Nueva noticia'
         NUEVO_EVENTO = 'nuevo_evento', 'Nuevo evento'
         NUEVA_SOLICITUD_BAJA = 'nueva_solicitud_baja', 'Nueva solicitud de baja'
@@ -44,6 +45,11 @@ class Notificacion(models.Model):
         SOLICITUD_BAJA_RECHAZADA = 'solicitud_baja_rechazada', 'Solicitud de baja rechazada'
         SOLICITUD_BAJA_CANCELADA = 'solicitud_baja_cancelada', 'Solicitud de baja cancelada'
         COMENTARIO_MODERADO = 'comentario_moderado', 'Comentario moderado'
+        # Nuevos tipos (Loop 3.4)
+        MENSAJE_CONTACTO = 'nuevo_mensaje_contacto', 'Nuevo mensaje de contacto'
+        NUEVO_RECLAMO = 'nuevo_reclamo', 'Nuevo reclamo'
+        RECLAMO_ESTADO_CAMBIADO = 'reclamo_estado_cambiado', 'Reclamo - estado cambiado'
+        MENSAJE = 'mensaje', 'Mensaje interno'
 
     class ReferenciaTipo(models.TextChoices):
         NOTICIA = 'NOTICIA', 'Noticia'
@@ -65,8 +71,14 @@ class Notificacion(models.Model):
     )
     fecha = models.DateTimeField('Fecha', auto_now_add=True, db_index=True)
     leido = models.BooleanField('Leido', default=False)
-    tipo = models.CharField('Tipo', max_length=50, blank=True, default=Tipo.INFO)
-    url_destino = models.URLField('URL de destino', blank=True, default='', max_length=500)
+    tipo = models.CharField(
+        'Tipo', max_length=50,
+        choices=Tipo.choices,
+        blank=True, default=Tipo.INFO,
+    )
+    url_destino = models.URLField(
+        'URL de destino', blank=True, default='', max_length=2000,
+    )
     referencia_tipo = models.CharField(
         'Tipo de referencia',
         max_length=20,

@@ -1,20 +1,6 @@
 from django.contrib import admin
-from .models import ContactoMensaje, LibroReclamacion
+from .models import LibroReclamacion
 from apps.core.admin_site import custom_admin_site
-
-
-@admin.register(ContactoMensaje, site=custom_admin_site)
-class ContactoMensajeAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'email', 'asunto', 'fecha']
-    list_filter = ['fecha']
-    search_fields = ['nombre', 'email', 'asunto', 'mensaje']
-    ordering = ['-fecha']
-    readonly_fields = ['fecha']
-    list_per_page = 30
-
-    def has_add_permission(self, request):
-        """No permitir crear desde admin - solo desde API pública."""
-        return False
 
 
 @admin.register(LibroReclamacion, site=custom_admin_site)

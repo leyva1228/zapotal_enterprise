@@ -60,6 +60,10 @@ class Donacion(models.Model):
     mp_payment_method = models.CharField(max_length=50, blank=True, verbose_name='MP payment_method_id')
     mp_payment_type = models.CharField(max_length=50, blank=True, verbose_name='MP payment_type_id')
     mp_installments = models.IntegerField(null=True, blank=True)
+    mp_notification_id = models.CharField(
+        max_length=200, null=True, blank=True, unique=True, db_index=True,
+        verbose_name='ID de notificacion MP (x-request-id o data.id)',
+    )
     mp_raw_response = models.JSONField(default=dict, blank=True, verbose_name='Respuesta cruda de MP')
 
     ip_origen = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP de origen')

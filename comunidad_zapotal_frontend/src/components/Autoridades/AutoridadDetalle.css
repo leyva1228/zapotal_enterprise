@@ -1,0 +1,319 @@
+/* ============================================
+   AutoridadDetalle - Modal responsive
+   ============================================ */
+
+.ad-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  animation: ad-fade-in 0.2s ease;
+}
+
+@keyframes ad-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ad-modal {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  max-height: 92vh;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: ad-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ad-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@media (min-width: 768px) {
+  .ad-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+  .ad-modal {
+    max-height: 88vh;
+    border-radius: 16px;
+  }
+}
+
+/* HEADER */
+.ad-header {
+  position: relative;
+  padding: 24px 24px 28px;
+  background: linear-gradient(135deg, #0a3d1f 0%, #0f5c2e 60%, #1a7a42 100%);
+  color: #fff;
+}
+
+.ad-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  z-index: 2;
+}
+
+.ad-close:hover { background: rgba(255, 255, 255, 0.3); }
+
+.ad-header-content {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.ad-foto-wrap {
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--au-green-soft, #e8f4ec);
+  overflow: hidden;
+  border: 4px solid #fff;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+.ad-foto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+}
+
+.ad-foto-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a7a42 0%, #0f5c2e 100%);
+}
+
+.ad-iniciales {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: #fff;
+  position: relative;
+}
+
+.ad-iniciales::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 2px;
+  background: #b8972a;
+}
+
+.ad-header-info { flex: 1; min-width: 0; }
+
+.ad-nivel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(184, 151, 42, 0.3);
+  border: 1px solid rgba(184, 151, 42, 0.5);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f4d76e;
+  margin-bottom: 8px;
+}
+
+.ad-header-info h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  word-wrap: break-word;
+}
+
+.ad-cargo {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ad-sexo { font-size: 14px; }
+.ad-sexo--femenino  { color: #f9a8d4; }
+.ad-sexo--masculino { color: #93c5fd; }
+
+/* BODY */
+.ad-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: #fafbfa;
+}
+
+.ad-section {
+  background: #fff;
+  border: 1px solid #e8ece9;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.ad-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0a3d1f;
+}
+
+.ad-section h3 svg {
+  color: #b8972a;
+  font-size: 14px;
+}
+
+.ad-descripcion {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #2a3530;
+}
+
+.ad-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.ad-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ad-info-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7c72;
+}
+
+.ad-info-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2620;
+}
+
+.ad-tiempo-restante {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  color: #78350f;
+  font-size: 14px;
+}
+
+.ad-tiempo-restante svg { color: #b45309; font-size: 18px; }
+
+.ad-tiempo-restante strong { font-weight: 800; }
+
+.ad-proxima {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #ecfdf5;
+  border-radius: 6px;
+  color: #065f46;
+  font-size: 13px;
+}
+
+.ad-proxima strong { color: #047857; }
+
+.ad-contacto {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f0f9f4;
+  color: #0a3d1f;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #d4ebe0;
+  transition: all 0.15s;
+  word-break: break-all;
+}
+
+.ad-contacto:hover {
+  background: #0a3d1f;
+  color: #fff;
+  border-color: #0a3d1f;
+}
+
+.ad-partida {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fef9e7;
+  border-left: 4px solid #b8972a;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #4a3b00;
+  word-break: break-all;
+}
+
+.ad-partida svg { color: #b8972a; flex-shrink: 0; }
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .ad-header { padding: 20px 18px 24px; }
+  .ad-header-content { gap: 14px; }
+  .ad-foto-wrap { width: 80px; height: 80px; }
+  .ad-header-info h2 { font-size: 19px; }
+  .ad-cargo { font-size: 12px; }
+  .ad-body { padding: 16px; }
+  .ad-section { padding: 14px 16px; }
+}

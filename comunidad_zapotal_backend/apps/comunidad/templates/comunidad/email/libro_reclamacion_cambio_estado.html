@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Actualizacion de su reclamo</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; line-height: 1.6;">
+  <div style="background: #d97706; color: #fff; padding: 16px 20px; border-radius: 8px 8px 0 0;">
+    <h1 style="margin: 0; font-size: 20px;">Actualizacion de su reclamo {{ reclamo.numero_reclamo }}</h1>
+  </div>
+  <div style="background: #fff; border: 1px solid #e5e7eb; border-top: 0; padding: 24px; border-radius: 0 0 8px 8px;">
+    <p>Estimado/a <strong>{{ reclamo.nombre }}</strong>,</p>
+    <p>Le informamos que su reclamo <strong>{{ reclamo.numero_reclamo }}</strong> ha cambiado de estado:</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <span style="display: inline-block; padding: 8px 16px; background: #f3f4f6; border-radius: 6px; color: #6b7280; font-weight: 500;">{{ estado_anterior }}</span>
+      <span style="margin: 0 12px; color: #6b7280;">&rarr;</span>
+      <span style="display: inline-block; padding: 8px 16px; background: #d1fae5; border-radius: 6px; color: #065f46; font-weight: 700;">{{ estado_nuevo }}</span>
+    </div>
+    {% if estado_nuevo == 'RESUELTO' %}
+    <p>Su reclamo ha sido <strong>resuelto</strong>. Si requiere mas informacion, puede responder a este correo.</p>
+    {% elif estado_nuevo == 'EN_PROCESO' %}
+    <p>Su reclamo esta siendo <strong>atendido</strong> por nuestro equipo. Le notificaremos cuando tengamos una respuesta definitiva.</p>
+    {% endif %}
+    <p style="color: #6b7280; font-size: 12px; margin-top: 24px;">
+      Plazo legal de respuesta: {{ reclamo.plazo_respuesta|date:"d/m/Y" }} (30 dias habiles, Ley 29571).
+    </p>
+    <p style="color: #6b7280; font-size: 12px; margin-top: 16px;">
+      Atentamente,<br>
+      <strong>{{ comunidad_nombre }}</strong>
+    </p>
+  </div>
+</body>
+</html>

@@ -68,40 +68,45 @@ function Autoridades() {
       {/* TARJETAS DE AUTORIDADES */}
       <div className="autoridades-grid">
 
-        {autoridades.map((autoridad) => (
-          <article
-            className="autoridad-card"
-            key={autoridad.id}
-          >
-            <div className="autoridad-imagen">
-              <img
-                src={autoridad.foto_url}
-                alt={`${autoridad.nombres} ${autoridad.apellidos}`}
-                onError={(e) => {
-                  e.target.src = '/images/default-avatar.jpg';
-                }}
-              />
-            </div>
+        {autoridades.map((autoridad) => {
+          const nombreCompleto = `${autoridad.nombres || ''} ${autoridad.apellidos || ''}`.trim();
+          const iniciales = (autoridad.nombres?.[0] || '') + (autoridad.apellidos?.[0] || '');
+          return (
+            <article className="autoridad-card" key={autoridad.id}>
+              <div className="autoridad-imagen">
+                {autoridad.foto_url ? (
+                  <img
+                    src={autoridad.foto_url}
+                    alt={nombreCompleto || 'Autoridad'}
+                    loading="lazy"
+                    onError={(e) => {
+                      // Si la URL falla, mostramos un placeholder con iniciales
+                      e.target.style.display = 'none';
+                      e.target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`autoridad-placeholder ${autoridad.foto_url ? 'hidden' : ''}`}
+                  aria-hidden="true"
+                >
+                  <span className="autoridad-placeholder-iniciales">
+                    {iniciales || '?'}
+                  </span>
+                </div>
+              </div>
 
-            <div className="autoridad-info">
-
-              <span className="autoridad-cargo">
-                {autoridad.cargo}
-              </span>
-
-              <h3>
-                {autoridad.nombres} {autoridad.apellidos}
-              </h3>
-
-              <div className="autoridad-linea"></div>
-
-              <p className="autoridad-periodo">
-                Periodo: {autoridad.periodo}
-              </p>
-
-            </div>
-          </article>
-        ))}
+              <div className="autoridad-info">
+                <span className="autoridad-cargo">{autoridad.cargo}</span>
+                <h3>{nombreCompleto || 'Sin nombre'}</h3>
+                <div className="autoridad-linea"></div>
+                {autoridad.periodo && (
+                  <p className="autoridad-periodo">Periodo: {autoridad.periodo}</p>
+                )}
+              </div>
+            </article>
+          );
+        })}
 
       </div>
 

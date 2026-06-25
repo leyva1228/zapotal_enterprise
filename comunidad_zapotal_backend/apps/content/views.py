@@ -8,8 +8,8 @@ from apps.core.permissions import IsAdminOrReadOnly, IsComuneroOrAdmin, IsAdminU
 from .models import Noticia, Categoria, Evento, Multimedia, Comentario, Reaccion
 from .serializers import (
     NoticiaSerializer, NoticiaEscrituraSerializer, NoticiaRelacionadaSerializer,
-    CategoriaSerializer, EventoSerializer, MultimediaSerializer,
-    ComentarioSerializer, ReaccionSerializer,
+    CategoriaSerializer, EventoSerializer, EventoEscrituraSerializer,
+    MultimediaSerializer, ComentarioSerializer, ReaccionSerializer,
 )
 
 
@@ -106,6 +106,11 @@ class EventoViewSet(viewsets.ModelViewSet):
     filterset_fields = ['fecha', 'lugar']
     search_fields = ['titulo', 'descripcion', 'lugar']
     ordering_fields = ['fecha', 'titulo']
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return EventoEscrituraSerializer
+        return EventoSerializer
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:

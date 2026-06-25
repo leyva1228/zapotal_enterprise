@@ -113,21 +113,69 @@
 }
 
 .autoridad-imagen {
+  position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: var(--au-gris-claro);
+  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 100%);
 }
 
+/* Imagen real (cuando hay URL) */
 .autoridad-imagen img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 25%;
   transition: transform 0.3s ease;
 }
 
 .autoridad-card:hover .autoridad-imagen img {
   transform: scale(1.03);
+}
+
+/* Placeholder con iniciales (cuando no hay imagen o falla) */
+.autoridad-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 60%, #0a3d1f 100%);
+  color: #fff;
+  font-family: var(--au-font-serif);
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  user-select: none;
+  transition: transform 0.3s ease;
+}
+
+.autoridad-card:hover .autoridad-placeholder {
+  transform: scale(1.03);
+}
+
+.autoridad-placeholder-iniciales {
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+.autoridad-placeholder-iniciales::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 3px;
+  background: #b8972a;
+  border-radius: 2px;
+}
+
+.autoridad-placeholder.hidden {
+  display: none;
 }
 
 .autoridad-info {

@@ -12,7 +12,7 @@ from factory.django import DjangoModelFactory
 from apps.accounts.models import Usuario, Comunero
 from apps.content.models import Noticia, Categoria, Evento, Comentario, Reaccion
 from apps.messaging.models import Mensaje, Notificacion
-from apps.reports.models import ContactoMensaje, LibroReclamacion
+from apps.reports.models import LibroReclamacion
 
 
 class UsuarioFactory(DjangoModelFactory):
@@ -120,16 +120,6 @@ class NotificacionFactory(DjangoModelFactory):
     mensaje = factory.Faker('text', max_nb_chars=100, locale='es_ES')
     tipo = 'info'
     leido = False
-
-
-class ContactoMensajeFactory(DjangoModelFactory):
-    class Meta:
-        model = ContactoMensaje
-
-    nombre = factory.Faker('name', locale='es_ES')
-    email = factory.Faker('email')
-    asunto = factory.Faker('sentence', locale='es_ES')
-    mensaje = factory.Faker('paragraph', locale='es_ES')
 
 
 class LibroReclamacionFactory(DjangoModelFactory):

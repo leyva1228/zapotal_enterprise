@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaTachometerAlt, FaNewspaper, FaCalendarAlt, FaTags, FaUsers,
   FaUserShield, FaCommentDots, FaSignOutAlt, FaUser, FaChevronLeft, FaHome,
   FaHistory, FaEnvelope, FaBell, FaChevronDown, FaChevronRight,
   FaInbox, FaFlag, FaCog, FaListAlt, FaArchive, FaCheckCircle, FaUserCheck,
-  FaHandHoldingHeart, FaMoneyBillWave,
+  FaHandHoldingHeart, FaMoneyBillWave, FaLandmark, FaBuilding, FaUserTie,
+  FaChartPie, FaGavel,
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api';
 import './AdminLayout.css';
 
 const MENU_GROUPS = [
@@ -55,9 +57,21 @@ const MENU_GROUPS = [
     title: 'Contenido',
     icon: <FaListAlt />,
     items: [
-      { to: '/admin/autoridades', label: 'Autoridades', icon: <FaUsers /> },
       { to: '/admin/bajas', label: 'Solicitudes de baja', icon: <FaUserShield /> },
       { to: '/admin/cms', label: 'CMS', icon: <FaCog /> },
+      { to: '/admin/institucional', label: 'Institucional', icon: <FaCog /> },
+    ],
+  },
+  {
+    id: 'autoridades',
+    title: 'Autoridades',
+    icon: <FaLandmark />,
+    items: [
+      { to: '/admin/autoridades', label: 'Directiva Comunal',  icon: <FaUsers />,    nivel: 'COMUNAL' },
+      { to: '/admin/autoridades', label: 'Municipalidad C.P.', icon: <FaBuilding />, nivel: 'MUNICIPAL' },
+      { to: '/admin/autoridades', label: 'Autoridad Politica', icon: <FaUserTie />,  nivel: 'POLITICO' },
+      { to: '/admin/comites-comunales', label: 'Comites Comunales', icon: <FaGavel /> },
+      { to: '/admin/autoridades', label: 'Estadisticas',       icon: <FaChartPie />, nivel: '__STATS__' },
     ],
   },
   {
@@ -65,7 +79,7 @@ const MENU_GROUPS = [
     title: 'Mensajeria',
     icon: <FaEnvelope />,
     items: [
-      { to: '/admin/notificaciones', label: 'Notificaciones', icon: <FaBell /> },
+      { to: '/admin/notificaciones', label: 'Notificaciones', icon: <FaBell />, badgeKey: 'notif' },
       { to: '/admin/contacto', label: 'Contacto', icon: <FaEnvelope /> },
       { to: '/admin/reclamaciones', label: 'Reclamaciones', icon: <FaInbox /> },
     ],
@@ -101,6 +115,29 @@ export default function AdminLayout() {
     return inicial;
   });
   const { user, clearAuth } = useAuth();
+  const [notifNoLeidas, setNotifNoLeidas] = useState(0);
+
+  useEffect(() => {
+    let cancelado = false;
+    const cargar = async () => {
+      try {
+        const { data } = await api.get('/notificaciones/no-leidas/count/');
+        if (!cancelado) setNotifNoLeidas(data.count || 0);
+      } catch {
+        /* silencioso: badge no aparece */
+      }
+    };
+    cargar();
+    const id = setInterval(cargar, 30000);
+    // Loop 3.6: decrementar inmediatamente cuando se marca leida en otra pagina.
+    const handler = () => cargar();
+    window.addEventListener('notificaciones:actualizadas', handler);
+    return () => {
+      cancelado = true;
+      clearInterval(id);
+      window.removeEventListener('notificaciones:actualizadas', handler);
+    };
+  }, []);
 
   const toggleGrupo = (id) => setAbiertos((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -117,8 +154,10 @@ export default function AdminLayout() {
     if (item.estado)      params.set('estado', item.estado);
     if (item.estadoNoticia) params.set('estadoNoticia', item.estadoNoticia);
     if (item.state)       params.set('state', item.state);
+    if (item.nivel)       params.set('nivel', item.nivel);
     const search = params.toString();
     const to = search ? `${item.to}?${search}` : item.to;
+    const badge = item.badgeKey === 'notif' && notifNoLeidas > 0 ? notifNoLeidas : null;
 
     return (
       <NavLink
@@ -131,6 +170,9 @@ export default function AdminLayout() {
       >
         <span className="admin-sidebar__subicon">{item.icon}</span>
         {!collapsed && <span>{item.label}</span>}
+        {!collapsed && badge !== null && (
+          <span className="admin-sidebar__badge admin-sidebar__badge--warn">{badge}</span>
+        )}
       </NavLink>
     );
   };

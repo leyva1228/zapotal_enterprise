@@ -58,6 +58,32 @@ def registro_iniciar(request):
             )
 
     token = data.get('turnstile_token', '')
+    # Validacion ZeroBounce del email (fail-open) — corre ANTES de Turnstile
+    # para evitar que spammers consuman cuota de Turnstile con emails basura.
+    from apps.comunidad.zerobounce import validar_email as zb_validar
+    email = data['email'].strip().lower()
+    zb_resultado = zb_validar(email, ip_address=get_client_ip(request))
+    if not zb_resultado.es_valido:
+        log_audit_event(
+            accion='REG_ZB_BLOCK',
+            ip_address=get_client_ip(request),
+            metadata={
+                'email_dominio': email.split('@')[1] if '@' in email else '?',
+                'sub_status': zb_resultado.sub_status,
+                'status': zb_resultado.status,
+            },
+        )
+        detail = zb_resultado.motivo or 'El correo electronico no es valido.'
+        if zb_resultado.did_you_mean:
+            detail = f'{detail} Sugerencia: {zb_resultado.did_you_mean}.'
+        return Response(
+            {
+                'detail': detail,
+                'code': 'EMAIL_INVALID',
+                'sub_status': zb_resultado.sub_status,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     if not TurnstileService.verify(token, get_client_ip(request)):
         return Response(
             {'detail': 'Verificacion antibot fallida.'},
@@ -83,7 +109,7 @@ def registro_iniciar(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    email = data['email'].strip().lower()
+    email = email  # ya normalizado arriba despues de ZeroBounce
     existing_user = Usuario.objects.filter(email=email).first()
     if existing_user is not None:
         if existing_user.estado == Usuario.EstadoUsuario.PENDIENTE_OTP:
@@ -100,7 +126,8 @@ def registro_iniciar(request):
                 'canal': 'EMAIL',
                 'mensaje': 'Tu cuenta esta en verificacion. Te enviamos un nuevo codigo.',
                 'cooldown_reenvio': OTPService.COOLDOWN_REENVIO_SEGUNDOS,
-                'dev_otp': envio_result.get('codigo') if envio_result.get('codigo') else None,
+                'dev_otp': envio_result.get('dev_otp') if envio_result.get('dev_otp') else None,
+                'dev_otp_code': envio_result.get('dev_otp') if envio_result.get('dev_otp') else None,
                 'resend': True,
             }, status=status.HTTP_200_OK)
         # Ya registrado y en otro estado (PENDIENTE_APROBACION, ACTIVO, etc.)
@@ -171,6 +198,8 @@ def registro_verificar_otp(request):
     POST /api/v1/registro/verificar-otp/
     Verifica el codigo OTP; pasa al estado PENDIENTE_APROBACION.
     """
+    import logging
+    logger = logging.getLogger(__name__)
     data = request.data
     usuario_id = data.get('usuario_id')
     codigo = data.get('codigo')
@@ -186,44 +215,62 @@ def registro_verificar_otp(request):
         OTPService.verificar(usuario, OTPVerification.TipoOTP.REGISTRO, codigo, get_client_ip(request))
     except ValidationError as exc:
         return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        logger.exception('Error inesperado en OTPService.verificar para usuario %s: %s', usuario_id, exc)
+        return Response(
+            {'detail': f'Error al verificar el codigo: {type(exc).__name__}.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
-    with transaction.atomic():
-        usuario.estado = Usuario.EstadoUsuario.PENDIENTE_APROBACION
-        usuario.email_verificado = True
-        usuario.save(update_fields=['estado', 'email_verificado'])
-        PendingApproval.objects.update_or_create(
+    # Si llegamos aquí, el codigo fue valido. Promover usuario.
+    try:
+        with transaction.atomic():
+            usuario.estado = Usuario.EstadoUsuario.PENDIENTE_APROBACION
+            usuario.email_verificado = True
+            usuario.save(update_fields=['estado', 'email_verificado'])
+            PendingApproval.objects.update_or_create(
+                usuario=usuario,
+                defaults={
+                    'datos_registro': {
+                        'email': usuario.email,
+                        'dni': usuario.comunero.dni if usuario.comunero else None,
+                        'nombres': usuario.comunero.nombres if usuario.comunero else '',
+                        'apellidos': usuario.comunero.apellidos if usuario.comunero else '',
+                    },
+                    'ip_registro': get_client_ip(request) or '0.0.0.0',
+                    'user_agent_registro': (request.META.get('HTTP_USER_AGENT', '') or '')[:255],
+                },
+            )
+
+        # Notificar a admins
+        from apps.accounts.models import Usuario as U
+        admins = U.objects.filter(tipo_usuario='ADMIN', estado='ACTIVO')
+        from apps.messaging.models import Notificacion
+        for admin in admins:
+            Notificacion.objects.create(
+                destinatario=admin,
+                titulo=f'Nueva solicitud de registro: {usuario.email}',
+                mensaje='Hay un nuevo usuario pendiente de aprobacion.',
+                tipo=Notificacion.Tipo.INFO,
+                url_destino='/admin/usuarios',
+                referencia_tipo=Notificacion.ReferenciaTipo.USUARIO,
+                referencia_id=usuario.id,
+            )
+
+        log_audit_event(
             usuario=usuario,
-            defaults={'datos_registro': {
-                'email': usuario.email,
-                'dni': usuario.comunero.dni if usuario.comunero else None,
-                'nombres': usuario.comunero.nombres if usuario.comunero else '',
-                'apellidos': usuario.comunero.apellidos if usuario.comunero else '',
-            }},
+            accion='OTP_VERIFIED',
+            modelo_afectado='Usuario',
+            objeto_id=str(usuario.id),
+            descripcion='OTP de registro verificado',
+            request=request,
         )
-
-    # Notificar a admins
-    from apps.accounts.models import Usuario as U
-    admins = U.objects.filter(tipo_usuario='ADMIN', estado='ACTIVO')
-    from apps.messaging.models import Notificacion
-    for admin in admins:
-        Notificacion.objects.create(
-            destinatario=admin,
-            titulo=f'Nueva solicitud de registro: {usuario.email}',
-            mensaje='Hay un nuevo usuario pendiente de aprobacion.',
-            tipo=Notificacion.Tipo.INFO,
-            url_destino='/admin/usuarios',
-            referencia_tipo=Notificacion.ReferenciaTipo.USUARIO,
-            referencia_id=usuario.id,
+    except Exception as exc:
+        logger.exception('Error inesperado al promover usuario %s despues de OTP valido: %s', usuario_id, exc)
+        return Response(
+            {'detail': f'OTP valido pero fallo la activacion: {type(exc).__name__}. Contacta al administrador.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
-    log_audit_event(
-        usuario=usuario,
-        accion='OTP_VERIFIED',
-        modelo_afectado='Usuario',
-        objeto_id=str(usuario.id),
-        descripcion='OTP de registro verificado',
-        request=request,
-    )
 
     return Response({
         'success': True,
@@ -461,6 +508,27 @@ def password_reset_request(request):
     email = (data.get('email') or '').strip().lower()
     if not email:
         return Response({'detail': 'Falta email.'}, status=status.HTTP_400_BAD_REQUEST)
+    # Validacion ZeroBounce con anti-enumeracion: si el email es invalido,
+    # retornamos 200 igual pero NO enviamos OTP.
+    from apps.comunidad.zerobounce import validar_email as zb_validar
+    zb_resultado = zb_validar(email, ip_address=get_client_ip(request))
+    if not zb_resultado.es_valido:
+        logger.info(
+            'Password reset bloqueado por ZeroBounce: dominio=%s sub=%s',
+            email.split('@')[1] if '@' in email else '?',
+            zb_resultado.sub_status,
+        )
+        log_audit_event(
+            accion='PASSRESET_ZB_BLOCK',
+            ip_address=get_client_ip(request),
+            metadata={
+                'email_dominio': email.split('@')[1] if '@' in email else '?',
+                'sub_status': zb_resultado.sub_status,
+                'status': zb_resultado.status,
+            },
+        )
+        # Anti-enumeracion: respuesta generica.
+        return Response({'success': True, 'detail': 'Si el email existe, enviamos un codigo.'})
     user = Usuario.objects.filter(email=email).first()
     if user:
         try:

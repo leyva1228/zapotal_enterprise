@@ -95,14 +95,27 @@ class UsuarioEscrituraSerializer(serializers.ModelSerializer):
         write_only=True, required=False, min_length=6,
         style={'input_type': 'password'}
     )
+    foto_perfil_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Usuario
         fields = [
             'id', 'comunero', 'email', 'password',
-            'tipo_usuario', 'estado', 'foto_perfil',
+            'tipo_usuario', 'estado', 'foto_perfil', 'foto_perfil_url',
         ]
         read_only_fields = ['id']
+
+    def get_foto_perfil_url(self, obj):
+        """Devuelve la URL absoluta del foto_perfil. None si no hay foto.
+        Critico: el frontend hace `<img src={foto_perfil_url}>` y un path
+        relativo ('usuarios/perfiles/perrito.png') no se carga en el browser.
+        """
+        request = self.context.get('request')
+        if obj.foto_perfil and request:
+            return request.build_absolute_uri(obj.foto_perfil.url)
+        if obj.foto_perfil:
+            return obj.foto_perfil.url
+        return None
 
     def validate_password(self, value):
         if value and len(value) < 6:

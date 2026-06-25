@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'apps.core.middleware.AuditMiddleware',
+    'apps.core.middleware.ContentSecurityPolicyMiddleware',
 ]
 
 ROOT_URLCONF = 'zapotal_config.urls'
@@ -132,6 +133,8 @@ if USE_CLOUDFLARE_R2:
         'BACKEND': 'apps.core.storage_backends.CloudflareR2Storage',
     }
 
+MERCADO_PAGO_WEBHOOK_SECRET = config('MERCADO_PAGO_WEBHOOK_SECRET', default='')
+
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:5173,http://localhost:3000',
@@ -152,6 +155,21 @@ SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 CSRF_COOKIE_HTTPONLY = True
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+CONTENT_SECURITY_POLICY = config(
+    'CONTENT_SECURITY_POLICY',
+    default=(
+        "default-src 'self'; "
+        "script-src 'self' https://mpago.la https://sdk.mercadopago.pe 'unsafe-inline'; "
+        "style-src 'self' https://mpago.la https://sdk.mercadopago.pe 'unsafe-inline'; "
+        "frame-src 'self' https://sdk.mercadopago.pe; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://mpago.la https://api.mercadopago.com; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    ),
+)
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -344,7 +362,52 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     **REST_FRAMEWORK.get('DEFAULT_THROTTLE_RATES', {}),
     'donaciones': '5/min',
     'donaciones_webhook': '30/min',
-}
+    'contacto': '5/hour',
+    'validar_email': '20/hour',
+    'contacto_por_email': '3/15min',
+    'libro_por_email': '2/1hour',
+  }
+
+# URL del panel admin del frontend (para los enlaces en emails).
+FRONTEND_ADMIN_URL = config('FRONTEND_ADMIN_URL', default='/admin/mensajes')
+
+# ===== Destino de notificaciones =====
+# Override temporal del buzon destino para los formularios publicos
+# (Contacto y Libro de Reclamaciones). Se usa mientras el dominio
+# comunidadzapotal.gob.pe no este operativo. Cuando se configure
+# el correo institucional, vaciar esta variable (string vacio) o
+# eliminar la entrada en .env y el helper caera al fallback
+# ConfiguracionComunidad.email_contacto + ADMIN_EMAILS.
+EMAIL_DESTINO_TEMPORAL = config(
+    'EMAIL_DESTINO_TEMPORAL',
+    default='john.leyva@tecsup.edu.pe',
+)
+
+# ===== ZeroBounce (validacion de email) =====
+# Freemium: 100 validaciones gratis/mes. Cada llamada consume 1 credito
+# excepto cuando el status es "unknown" (no consume). Si la API key
+# esta vacia, el helper cae a "fail-open": acepta todos los emails
+# sin validar (modo degradado). Activar ZEROBOUNCE_SANDBOX=True para
+# usar emails de prueba sin consumir creditos.
+ZEROBOUNCE_API_KEY = config('ZEROBOUNCE_API_KEY', default='')
+ZEROBOUNCE_API_URL = config(
+    'ZEROBOUNCE_API_URL',
+    default='https://api.zerobounce.net/v2',
+)
+ZEROBOUNCE_TIMEOUT = config('ZEROBOUNCE_TIMEOUT', default=10, cast=int)
+ZEROBOUNCE_SANDBOX = config('ZEROBOUNCE_SANDBOX', default='False', cast=bool)
+ZEROBOUNCE_CACHE_TTL = config(
+    'ZEROBOUNCE_CACHE_TTL',
+    default=86400 * 7,  # 7 dias
+    cast=int,
+)
+# Si True, rechaza emails que ZeroBounce marque como invalidos.
+# Si False, los marca como sospechoso pero deja pasar (modo warning).
+ZEROBOUNCE_BLOQUEAR_INVALIDOS = config(
+    'ZEROBOUNCE_BLOQUEAR_INVALIDOS',
+    default='True',
+    cast=bool,
+)
 
 ADMIN_EMAILS = config(
     'ADMIN_EMAILS',

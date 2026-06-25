@@ -4,7 +4,7 @@ import api from '../../api';
 import {
   FaUser, FaEnvelope, FaIdCard, FaLock, FaEye, FaEyeSlash,
   FaUserPlus, FaLeaf, FaShieldAlt, FaCheckCircle, FaRedo,
-  FaArrowRight, FaCheck, FaTimes, FaKey,
+  FaArrowRight, FaCheck, FaTimes, FaKey, FaSpinner, FaExclamationTriangle,
 } from 'react-icons/fa';
 import Turnstile from '../../components/Turnstile';
 import OTPInput from '../../components/OTPInput';
@@ -39,6 +39,10 @@ export default function Registro() {
   const [turnstileToken, setTurnstileToken] = useState('');
   const turnstileRef = useRef(null);
 
+  // ZeroBounce live validation
+  const [validacionEmail, setValidacionEmail] = useState({ estado: 'idle', sugerencia: null });
+  const debounceEmailRef = useRef(null);
+
   const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
   const setField = (field) => (e) => {
@@ -47,6 +51,28 @@ export default function Registro() {
       : sanitize(e.target.value);
     setForm((prev) => ({ ...prev, [field]: val }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+    if (field === 'email') onEmailChangeValidacion(val);
+  };
+
+  const onEmailChangeValidacion = (val) => {
+    if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+    if (!val || !val.includes('@') || !EMAIL_REGEX.test(val.trim())) {
+      setValidacionEmail({ estado: 'idle', sugerencia: null });
+      return;
+    }
+    setValidacionEmail({ estado: 'validando' });
+    debounceEmailRef.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/validar-email/', { params: { email: val.trim() } });
+        setValidacionEmail({
+          estado: data.es_valido ? 'valido' : 'invalido',
+          sugerencia: data.did_you_mean || null,
+          motivo: data.motivo || null,
+        });
+      } catch {
+        setValidacionEmail({ estado: 'idle' });
+      }
+    }, 800);
   };
 
   const validate = () => {
@@ -246,13 +272,40 @@ export default function Registro() {
 
               <div className="rg-field">
                 <label htmlFor="rg-email">Correo electronico</label>
-                <div className={`rg-inp ${errors.email ? 'rg-inp--error' : ''}`}>
+                <div className={`rg-inp ${errors.email ? 'rg-inp--error' : ''} ${
+                  validacionEmail.estado === 'valido' ? 'rg-inp--ok' :
+                  validacionEmail.estado === 'invalido' ? 'rg-inp--warn' : ''
+                }`}>
                   <FaEnvelope className="rg-ico" />
                   <input id="rg-email" type="email" placeholder="usuario@ejemplo.com"
                     value={form.email} onChange={setField('email')}
                     autoComplete="email" maxLength={120} />
+                  <span className="rg-inp__status" aria-live="polite">
+                    {validacionEmail.estado === 'validando' && <FaSpinner className="fa-spin" color="#6b7280" />}
+                    {validacionEmail.estado === 'valido' && <FaCheckCircle color="#16a34a" />}
+                    {validacionEmail.estado === 'invalido' && validacionEmail.motivo === 'catch-all' && (
+                      <FaExclamationTriangle color="#f59e0b" />
+                    )}
+                    {validacionEmail.estado === 'invalido' && validacionEmail.motivo !== 'catch-all' && (
+                      <FaTimes color="#dc2626" />
+                    )}
+                  </span>
                 </div>
                 {errors.email && <span className="rg-field-error" role="alert">{errors.email}</span>}
+                {validacionEmail.sugerencia && (
+                  <span className="rg-email-sugerencia">
+                    ¿Quizás quisiste decir:{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm((prev) => ({ ...prev, email: validacionEmail.sugerencia }));
+                        onEmailChangeValidacion(validacionEmail.sugerencia);
+                      }}
+                    >
+                      {validacionEmail.sugerencia}
+                    </button>?
+                  </span>
+                )}
               </div>
 
               <div className="rg-row">

@@ -3,6 +3,8 @@ Service layer para el módulo de mensajería.
 """
 import logging
 
+from django.contrib.auth import get_user_model
+
 from .models import Mensaje, Notificacion
 
 logger = logging.getLogger(__name__)
@@ -65,3 +67,35 @@ class NotificacionService:
         """Marca todas las notificaciones del usuario como leídas."""
         count = Notificacion.objects.filter(destinatario=usuario, leido=False).update(leido=True)
         return count
+
+
+def notificar_todos_los_admins(
+    tipo: str, titulo: str, mensaje: str, url_destino: str = '',
+) -> int:
+    """V2.2: crea una notificacion para cada admin activo del sistema.
+
+    Utilizado por comandos automaticos (cron) que necesitan
+    informar a todos los administradores (ej. reclamos vencidos).
+
+    Returns: cantidad de notificaciones creadas.
+    """
+    User = get_user_model()
+    admins = User.objects.filter(
+        tipo_usuario='ADMIN', estado='ACTIVO', is_active=True,
+    )
+    notifs = [
+        Notificacion(
+            destinatario=a,
+            tipo=tipo,
+            titulo=titulo,
+            mensaje=mensaje,
+            url_destino=url_destino[:2000] if url_destino else '',
+        )
+        for a in admins
+    ]
+    created = Notificacion.objects.bulk_create(notifs)
+    logger.info(
+        '%d notificacion(es) creadas para admins (tipo=%s)',
+        len(created), tipo,
+    )
+    return len(created)

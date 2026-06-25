@@ -60,7 +60,7 @@ class TestOTPService:
             OTPService.verificar(
                 regular_user, OTPVerification.TipoOTP.REGISTRO, '123456'
             )
-        assert 'expirado' in str(exc.value).lower()
+        assert 'expir' in str(exc.value).lower()
 
     def test_max_intentos(self, regular_user):
         result = _generar(regular_user)
@@ -73,7 +73,10 @@ class TestOTPService:
             )
         assert 'intentos' in str(exc.value).lower()
 
-    def test_invalidar_otp_anterior(self, regular_user):
+    def test_otp_anterior_no_se_invalida_al_generar_nuevo(self, regular_user):
+        """Antes se invalidaban todos los OTPs al generar uno nuevo (causaba race
+        condition con emails lentos). Ahora el anterior permanece valido hasta
+        que el usuario lo use o expire solo."""
         result1 = _generar(regular_user)
         otp1 = result1['otp']
         # Forzar que el cooldown de 60s haya expirado
@@ -82,8 +85,52 @@ class TestOTPService:
         result2 = _generar(regular_user)
         otp2 = result2['otp']
         otp1.refresh_from_db()
-        assert otp1.usado is True
+        # El primero NO se marca como usado al generar el segundo
+        assert otp1.usado is False
+        # El segundo es el unico nuevo y activo
         assert otp2.usado is False
+        # Ambos coexisten hasta que uno se use o expire
+        assert otp1.id != otp2.id
+
+    def test_codigo_de_otp_anterior_tambien_valida(self, regular_user):
+        """Si el usuario tiene multiples OTPs (race condition de email lento),
+        puede usar CUALQUIERA de los codigos recibidos, no solo el ultimo."""
+        result1 = _generar(regular_user)
+        codigo1 = result1['codigo']
+        # Forzar cooldown expirado
+        result1['otp'].creado_en = timezone.now() - timedelta(seconds=120)
+        result1['otp'].save()
+        result2 = _generar(regular_user)
+        codigo2 = result2['codigo']
+
+        # Verificar con el codigo del primer OTP (mas viejo)
+        assert OTPService.verificar(regular_user, OTPVerification.TipoOTP.REGISTRO, codigo1) is True
+
+        # El segundo OTP ya debe estar marcado como usado (cascade al verificar)
+        result2['otp'].refresh_from_db()
+        assert result2['otp'].usado is True
+
+    def test_codigo_incorrecto_no_consume_otros_otps(self, regular_user):
+        """Si el codigo es incorrecto, solo incrementa intentos del mas reciente.
+        Los demas OTPs siguen siendo usables."""
+        result1 = _generar(regular_user)
+        result1['otp'].creado_en = timezone.now() - timedelta(seconds=120)
+        result1['otp'].save()
+        result2 = _generar(regular_user)
+        codigo2 = result2['codigo']
+
+        # 1 intento fallido
+        with pytest.raises(ValidationError) as exc:
+            OTPService.verificar(regular_user, OTPVerification.TipoOTP.REGISTRO, '000000')
+        assert 'incorrecto' in str(exc.value).lower()
+
+        # El OTP 1 sigue valido y sin intentos incrementados
+        result1['otp'].refresh_from_db()
+        assert result1['otp'].intentos == 0
+        assert result1['otp'].usado is False
+
+        # Pero el codigo 2 aun funciona
+        assert OTPService.verificar(regular_user, OTPVerification.TipoOTP.REGISTRO, codigo2) is True
 
     def test_generar_devuelve_codigo_en_dev(self, regular_user, settings):
         settings.DEBUG = True

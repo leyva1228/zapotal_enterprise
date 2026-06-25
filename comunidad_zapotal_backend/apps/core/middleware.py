@@ -1,7 +1,9 @@
 """
 Middleware de auditoria: registra POST/PUT/PATCH/DELETE autenticados exitosos.
+Middleware CSP: Content-Security-Policy para Mercado Pago Brick SDK.
 """
 import logging
+from django.conf import settings
 from apps.core.utils import log_audit_event
 
 logger = logging.getLogger(__name__)
@@ -46,4 +48,26 @@ class AuditMiddleware:
                 )
         except Exception as exc:  # noqa: BLE001
             logger.exception('AuditMiddleware fallo: %s', exc)
+        return response
+
+
+class ContentSecurityPolicyMiddleware:
+    """
+    Agrega header Content-Security-Policy a todas las respuestas.
+
+    Permite los dominios necesarios para Mercado Pago Brick SDK:
+      - mpago.la (SDK JS, estilos)
+      - www.mercadopago.com.pe (API)
+      - sdk.mercadopago.pe (Brick SDK)
+    Mantiene restricciones para XSS.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        csp = getattr(settings, 'CONTENT_SECURITY_POLICY', None)
+        if csp:
+            response['Content-Security-Policy'] = csp
         return response

@@ -6,14 +6,10 @@
   overflow: hidden;
 }
 
-/* HERO */
+/* ══════════════════ HERO ══════════════════ */
 .conocenos-hero {
   height: 560px;
-  background-image: linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.68),
-      rgba(0, 0, 0, 0.25)
-    ),
+  background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.25)),
     url("/img/Conocenos/conocenos.png");
   background-size: cover;
   background-position: center;
@@ -48,123 +44,348 @@
   line-height: 1.7;
 }
 
-/* INFO CARDS */
-.conocenos-info {
+/* ══════════════════ MISION Y VISION ══════════════════ */
+.conocenos-mv {
   max-width: 1150px;
-  margin: -70px auto 90px;
+  margin: -70px auto 80px;
   padding: 0 35px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 28px;
   position: relative;
   z-index: 2;
 }
 
-.info-card {
+.mv-card {
   background: white;
-  padding: 35px;
-  border-radius: 24px;
-  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.13);
-  transition: 0.35s ease;
+  padding: 36px 32px;
+  border-radius: 20px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.10);
+  border-top: 5px solid #1f7a32;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
   animation: fadeUp 1s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.info-card:hover {
-  transform: translateY(-12px) scale(1.02);
+.mv-card::before {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(31, 122, 50, 0.10) 0%, transparent 70%);
+  top: -50px;
+  right: -50px;
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.info-card h2 {
-  font-size: 27px;
-  margin-bottom: 14px;
+.mv-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 26px 52px rgba(0, 0, 0, 0.16);
+}
+
+.mv-icon {
+  font-size: 36px;
   color: #1f7a32;
+  margin-bottom: 12px;
+  display: inline-block;
 }
 
-.info-card p {
-  font-size: 16px;
+.mv-card h2 {
+  font-size: 26px;
+  margin: 0 0 14px;
+  color: #1f7a32;
+  font-weight: 700;
+}
+
+.mv-card p {
+  font-size: 15.5px;
   line-height: 1.7;
   color: #444;
+  margin: 0;
 }
 
-/* FINAL */
+/* ══════════════════ VALORES ══════════════════ */
+.conocenos-valores {
+  max-width: 1200px;
+  margin: 0 auto 90px;
+  padding: 0 35px;
+}
+
+.conocenos-valores > h2 {
+  text-align: center;
+  font-size: 36px;
+  color: #1a2620;
+  margin: 0 0 12px;
+}
+
+.conocenos-valores > h2::after {
+  content: "";
+  display: block;
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #1f7a32, #d4a72c);
+  margin: 14px auto 0;
+  border-radius: 2px;
+}
+
+.valores-grid {
+  margin-top: 50px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.valor-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  border: 1px solid #e8e6db;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.valor-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.12);
+  border-color: #1f7a32;
+}
+
+.valor-icon {
+  font-size: 38px;
+  color: #1f7a32;
+  background: linear-gradient(135deg, #e8f5d7, #d4a72c33);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.valor-card h3 {
+  font-size: 18px;
+  color: #1a2620;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.valor-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+}
+
+/* ══════════════════ UBICACION ══════════════════ */
+.conocenos-ubicacion {
+  max-width: 1100px;
+  margin: 0 auto 90px;
+  padding: 40px 35px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8e6db;
+}
+
+.conocenos-ubicacion h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 28px;
+  color: #1f7a32;
+  margin: 0 0 24px;
+}
+
+.conocenos-ubicacion h2 svg { color: #1f7a32; }
+
+.conocenos-ubicacion dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 14px 24px;
+  margin: 0;
+  font-size: 15px;
+}
+
+.conocenos-ubicacion dt {
+  font-weight: 700;
+  color: #1f7a32;
+  letter-spacing: 0.3px;
+  padding-right: 8px;
+  white-space: nowrap;
+}
+
+.conocenos-ubicacion dd {
+  margin: 0;
+  color: #1a2620;
+  line-height: 1.5;
+}
+
+/* ══════════════════ GALERIA ══════════════════ */
+.conocenos-galeria {
+  max-width: 1200px;
+  margin: 0 auto 90px;
+  padding: 0 35px;
+}
+
+.conocenos-galeria > h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 32px;
+  color: #1a2620;
+  margin: 0 0 36px;
+}
+
+.conocenos-galeria > h2 svg { color: #1f7a32; }
+
+.galeria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.galeria-item {
+  margin: 0;
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.galeria-item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14);
+}
+
+.galeria-item img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s ease;
+}
+
+.galeria-item:hover img {
+  transform: scale(1.06);
+}
+
+.galeria-placeholder {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #1f7a32, #0a3d1f);
+  color: #e8f5d7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  padding: 18px;
+}
+
+.galeria-item figcaption {
+  padding: 14px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.galeria-item figcaption strong {
+  font-size: 15px;
+  color: #1a2620;
+  font-weight: 700;
+}
+
+.galeria-item figcaption span {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* ══════════════════ CTA FINAL ══════════════════ */
 .conocenos-final {
   max-width: 1200px;
   margin: 0 auto 100px;
-  padding: 0 35px;
+  padding: 50px 40px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 65px;
+  gap: 50px;
   align-items: center;
+  background: linear-gradient(135deg, #1a6b5e 0%, #0c2b26 100%);
+  color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(12, 43, 38, 0.25);
 }
 
 .conocenos-final h2 {
-  font-size: 42px;
+  font-size: 38px;
   line-height: 1.2;
-  margin-bottom: 18px;
+  margin: 0 0 18px;
+  color: #ffffff;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 .conocenos-final p {
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.8;
-  color: #444;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
 }
 
 .conocenos-final img {
   width: 100%;
-  height: 360px;
+  height: 280px;
   object-fit: cover;
-  border-radius: 28px;
-  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.30);
   transition: transform 0.8s ease;
 }
 
 .conocenos-final img:hover {
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
-/* ANIMACIONES */
+/* ══════════════════ ANIMACIONES ══════════════════ */
 @keyframes entradaSuave {
-  from {
-    opacity: 0;
-    transform: translateX(-45px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-45px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(35px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(35px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes movimientoFondo {
-  from {
-    background-position: center;
-  }
-  to {
-    background-position: center 18%;
-  }
+  from { background-position: center; }
+  to   { background-position: center 18%; }
 }
 
-/* RESPONSIVE */
+/* ══════════════════ RESPONSIVE ══════════════════ */
 @media (max-width: 900px) {
-  .conocenos-info,
-  .conocenos-final {
-    grid-template-columns: 1fr;
-  }
+  .conocenos-mv { grid-template-columns: 1fr; }
+  .conocenos-final { grid-template-columns: 1fr; padding: 35px 28px; gap: 30px; }
+  .conocenos-final h2 { font-size: 30px; }
+  .conocenos-card h1 { font-size: 42px; }
+  .conocenos-info { margin-top: 50px; }
+  .conocenos-ubicacion dl { grid-template-columns: 1fr; gap: 6px 0; }
+  .conocenos-ubicacion dt { padding-right: 0; }
+}
 
-  .conocenos-card h1 {
-    font-size: 42px;
-  }
-
-  .conocenos-info {
-    margin-top: 50px;
-  }
+@media (max-width: 600px) {
+  .conocenos-hero { padding: 0 6%; height: 440px; }
+  .conocenos-card h1 { font-size: 36px; }
+  .conocenos-card p { font-size: 16px; }
+  .conocenos-valores > h2,
+  .conocenos-galeria > h2 { font-size: 26px; }
+  .conocenos-ubicacion { padding: 28px 22px; }
+  .conocenos-final { padding: 28px 22px; margin: 0 18px 60px; }
 }

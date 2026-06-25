@@ -1,0 +1,786 @@
+/* ============================================
+   AutoridadesPage - Diseno responsive
+   ============================================ */
+
+:root {
+  --au-green-dark:  #0a3d1f;
+  --au-green-mid:   #0f5c2e;
+  --au-green-light: #1a7a42;
+  --au-green-soft:  #e8f4ec;
+  --au-gold:        #b8972a;
+  --au-bg:          #f5f7f5;
+  --au-card-bg:     #ffffff;
+  --au-text:        #1a2620;
+  --au-text-soft:   #6b7c72;
+  --au-border:      #e0e6e2;
+}
+
+.au-page {
+  min-height: 100vh;
+  background: var(--au-bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--au-text);
+}
+
+/* HERO */
+.au-hero {
+  position: relative;
+  padding: 100px 20px 120px;
+  background:
+    linear-gradient(135deg, #0a3d1f 0%, #0f5c2e 60%, #1a7a42 100%);
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+}
+
+.au-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 20% 20%, rgba(184, 151, 42, 0.18), transparent 40%),
+                    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.05), transparent 40%);
+  pointer-events: none;
+}
+
+.au-hero-overlay {
+  display: none;
+}
+
+.au-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.au-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(184, 151, 42, 0.2);
+  border: 1px solid rgba(184, 151, 42, 0.4);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f4d76e;
+  margin-bottom: 16px;
+}
+
+.au-hero h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0 0 16px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.au-hero p {
+  font-size: clamp(14px, 2vw, 17px);
+  line-height: 1.6;
+  max-width: 720px;
+  margin: 0 auto 32px;
+  opacity: 0.95;
+}
+
+.au-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.au-hero-stat {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px 24px;
+  min-width: 160px;
+  backdrop-filter: blur(6px);
+}
+
+.au-hero-stat strong {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  color: #f4d76e;
+}
+
+.au-hero-stat span {
+  display: block;
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* CONTAINER */
+.au-container {
+  max-width: 1200px;
+  margin: -60px auto 80px;
+  padding: 0 20px;
+  position: relative;
+  z-index: 5;
+}
+
+/* TABS */
+.au-tabs {
+  display: flex;
+  gap: 8px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(10, 61, 31, 0.08);
+  border: 1px solid var(--au-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.au-tabs::-webkit-scrollbar { display: none; }
+
+.au-tab {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: var(--au-text-soft);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.au-tab:hover {
+  background: var(--au-green-soft);
+  color: var(--au-green-mid);
+}
+
+.au-tab--active {
+  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(10, 61, 31, 0.3);
+}
+
+.au-tab--active:hover {
+  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 100%);
+  color: #fff;
+}
+
+.au-tab-icon { font-size: 18px; }
+
+.au-tab-label { font-weight: 600; }
+
+.au-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.au-tab:not(.au-tab--active) .au-tab-count {
+  background: var(--au-green-soft);
+  color: var(--au-green-mid);
+}
+
+/* NIVEL INFO */
+.au-nivel-info {
+  margin: 32px 0 24px;
+  padding: 20px 24px;
+  background: var(--au-green-soft);
+  border-left: 4px solid var(--au-gold);
+  border-radius: 8px;
+}
+
+.au-nivel-info h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--au-green-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.au-nivel-info p {
+  margin: 0;
+  color: var(--au-text-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* BUSQUEDA */
+.au-busqueda {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.au-busqueda-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--au-text-soft);
+  font-size: 16px;
+}
+
+.au-busqueda input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border: 1.5px solid var(--au-border);
+  border-radius: 10px;
+  font-size: 15px;
+  background: #fff;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+
+.au-busqueda input:focus {
+  outline: none;
+  border-color: var(--au-green-mid);
+  box-shadow: 0 0 0 3px rgba(15, 92, 46, 0.1);
+}
+
+/* GRID */
+.au-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* CARD */
+.au-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--au-card-bg);
+  border: 1px solid var(--au-border);
+  border-radius: 14px;
+  overflow: hidden;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  font-family: inherit;
+  padding: 0;
+}
+
+.au-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(10, 61, 31, 0.15);
+  border-color: var(--au-green-mid);
+}
+
+.au-card-foto {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 100%);
+  overflow: hidden;
+}
+
+.au-card-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+}
+
+.au-card-foto-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 100%);
+}
+
+.au-card-iniciales {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 88px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  position: relative;
+  user-select: none;
+}
+
+.au-card-iniciales::after {
+  content: '';
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: var(--au-gold);
+  border-radius: 2px;
+}
+
+.au-card-cargo-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  background: rgba(10, 29, 16, 0.85);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  text-align: center;
+}
+
+.au-card-body {
+  padding: 16px 18px 12px;
+  flex: 1;
+}
+
+.au-card-nombre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--au-text);
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.au-sexo {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.au-sexo--femenino  { color: #db2777; }
+.au-sexo--masculino { color: #2563eb; }
+
+.au-card-dni,
+.au-card-periodo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+  font-size: 12px;
+  color: var(--au-text-soft);
+}
+
+.au-card-dni svg,
+.au-card-periodo svg {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.au-card-alerta {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  background: #fef3c7;
+  color: #92400e;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.au-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid var(--au-border);
+  background: var(--au-green-soft);
+  color: var(--au-green-mid);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.au-card-footer svg { font-size: 12px; }
+
+/* LOADING / EMPTY */
+.au-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.au-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--au-border);
+  border-top-color: var(--au-green-mid);
+  border-radius: 50%;
+  animation: au-spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes au-spin {
+  to { transform: rotate(360deg); }
+}
+
+.au-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: #fff;
+  border: 2px dashed var(--au-border);
+  border-radius: 14px;
+  text-align: center;
+}
+
+.au-empty-icon {
+  font-size: 48px;
+  color: var(--au-border);
+  margin-bottom: 12px;
+}
+
+.au-empty p {
+  margin: 0;
+  color: var(--au-text-soft);
+  font-size: 15px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .au-hero { padding: 80px 16px 100px; }
+  .au-container { padding: 0 16px; margin-top: -40px; }
+  .au-tab { min-width: 160px; font-size: 13px; padding: 10px 12px; }
+  .au-tab-label { font-size: 12px; }
+  .au-grid { grid-template-columns: 1fr; }
+  .au-hero-stat { min-width: 130px; padding: 12px 16px; }
+  .au-hero-stat strong { font-size: 24px; }
+}
+
+@media (max-width: 480px) {
+  .au-tab-icon { font-size: 16px; }
+  .au-tab { min-width: 130px; }
+}
+
+/* ============================================
+   FASE 4: Marco Legal, Calendario, Mapa, etc.
+   ============================================ */
+
+/* MARCO LEGAL */
+.au-marco-legal {
+  margin: 32px 0 8px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7f5 0%, #e8f4ec 100%);
+  border: 1px solid var(--au-border);
+  border-radius: 14px;
+}
+.au-marco-legal__title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 18px; font-weight: 700; color: var(--au-green-dark);
+  margin: 0 0 16px;
+}
+.au-marco-legal__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.au-marco-legal__card {
+  background: #fff;
+  border-left: 4px solid var(--au-gold);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.au-marco-legal__card h4 {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 6px;
+  font-size: 14px; font-weight: 700; color: var(--au-green-dark);
+}
+.au-marco-legal__card p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--au-text-soft);
+  line-height: 1.4;
+}
+.au-marco-legal__card strong {
+  color: var(--au-text);
+}
+
+/* CALENDARIO ELECTORAL */
+.au-calendario {
+  margin: 24px 0 16px;
+  padding: 24px;
+  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 100%);
+  color: #fff;
+  border-radius: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: center;
+}
+.au-calendario__title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 18px; font-weight: 700; margin: 0 0 12px;
+  color: var(--au-gold);
+}
+.au-calendario__proxima {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.au-calendario__dias {
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--au-gold);
+  line-height: 1;
+  margin: 8px 0;
+}
+.au-calendario__dias-label {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.7);
+}
+.au-calendario__fecha {
+  font-size: 16px; font-weight: 600;
+  margin-top: 8px;
+}
+.au-calendario__leyenda {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+.au-calendario__leyenda ul {
+  margin: 8px 0 0; padding-left: 20px;
+}
+.au-calendario__leyenda li {
+  margin-bottom: 4px;
+}
+
+/* MAPA */
+.au-mapa {
+  margin: 24px 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--au-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.au-mapa__header {
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--au-border);
+  display: flex; align-items: center; gap: 10px;
+}
+.au-mapa__title {
+  font-size: 16px; font-weight: 700; color: var(--au-green-dark);
+  margin: 0;
+}
+.au-mapa__coords {
+  font-size: 11px; color: var(--au-text-soft);
+  font-family: monospace;
+  margin-left: auto;
+}
+.au-mapa iframe {
+  display: block;
+  width: 100%;
+  height: 380px;
+  border: 0;
+}
+
+/* CASA COMUNAL */
+.au-casa-comunal {
+  margin: 24px 0;
+  padding: 20px 24px;
+  background: #fff;
+  border: 1px solid var(--au-border);
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  align-items: center;
+}
+.au-casa-comunal__title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 16px; font-weight: 700; color: var(--au-green-dark);
+  margin: 0 0 12px;
+}
+.au-casa-comunal__info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 12px;
+  font-size: 14px;
+  color: var(--au-text);
+}
+.au-casa-comunal__info dt {
+  font-weight: 600;
+  color: var(--au-text-soft);
+}
+.au-casa-comunal__info dd {
+  margin: 0;
+}
+
+/* COMITES */
+.au-comites {
+  margin: 24px 0;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--au-border);
+  border-radius: 14px;
+}
+.au-comites__title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 18px; font-weight: 700; color: var(--au-green-dark);
+  margin: 0 0 6px;
+}
+.au-comites__subtitle {
+  margin: 0 0 16px;
+  font-size: 13px; color: var(--au-text-soft);
+}
+.au-comites__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.au-comite-card {
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7f5 0%, #fff 100%);
+  border: 1px solid var(--au-border);
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.au-comite-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+.au-comite-card__header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.au-comite-card__icon {
+  font-size: 18px;
+  color: var(--au-gold);
+}
+.au-comite-card__title {
+  font-size: 14px; font-weight: 700; color: var(--au-green-dark);
+  margin: 0;
+}
+.au-comite-card__tipo {
+  font-size: 10px; font-weight: 600;
+  background: var(--au-green-dark); color: #fff;
+  padding: 2px 8px; border-radius: 999px;
+  margin-left: auto;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.au-comite-card__descripcion {
+  font-size: 12px; color: var(--au-text-soft);
+  line-height: 1.5;
+  margin: 8px 0 12px;
+}
+.au-comite-card__meta {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 12px; color: var(--au-text);
+  border-top: 1px solid var(--au-border);
+  padding-top: 10px;
+}
+.au-comite-card__meta strong {
+  color: var(--au-text-soft);
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+/* BADGE: CARGO TRADICIONAL */
+.au-card-cargo-tradicional {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, var(--au-gold) 0%, #d4af37 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+  display: flex; align-items: center; gap: 4px;
+}
+.au-card-cargo-tradicional .au-tradicional-icon {
+  font-size: 11px;
+}
+
+/* BADGE: VENCE PRONTO */
+.au-card-vence-pronto {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+
+/* WHATSAPP BUTTON */
+.au-whatsapp {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: #25D366;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px; font-weight: 600;
+  transition: background 0.15s;
+}
+.au-whatsapp:hover {
+  background: #1da851;
+  color: #fff;
+}
+
+/* Responsive additions */
+@media (max-width: 768px) {
+  .au-calendario { grid-template-columns: 1fr; }
+  .au-casa-comunal { grid-template-columns: 1fr; }
+  .au-marco-legal__grid { grid-template-columns: 1fr; }
+  .au-comites__grid { grid-template-columns: 1fr; }
+}
+
+/* ORGANIGRAMA */
+.au-organigrama {
+  margin: 24px 0;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--au-border);
+  border-radius: 14px;
+}
+.au-organigrama__contenedor {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 8px;
+}
+.au-organigrama svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 600px;
+  max-height: 460px;
+}

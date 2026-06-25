@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 import "../../pages/Admin/AdminLayout.css";
 
-export default function AdminModal({ open, title, onClose, children, footer, wide }) {
+export default function AdminModal({ open, title, onClose, children, footer, wide, size }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
@@ -16,10 +16,15 @@ export default function AdminModal({ open, title, onClose, children, footer, wid
 
   if (!open) return null;
 
+  const sizeClass = size === "lg" ? " admin-modal--lg"
+                  : size === "xl" ? " admin-modal--xl"
+                  : wide ? " admin-modal--wide"
+                  : "";
+
   return (
     <div className="admin-modal-backdrop" onClick={onClose}>
       <div
-        className={"admin-modal" + (wide ? " admin-modal--wide" : "")}
+        className={"admin-modal" + sizeClass}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="admin-modal__header">

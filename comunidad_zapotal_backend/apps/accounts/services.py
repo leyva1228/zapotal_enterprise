@@ -373,8 +373,8 @@ class EmailService:
 
 class OTPService:
     LONGITUD_CODIGO = 6
-    VALIDEZ_MINUTOS = 10
-    MAX_INTENTOS = 3
+    VALIDEZ_MINUTOS = 5
+    MAX_INTENTOS = 5
     COOLDOWN_REENVIO_SEGUNDOS = 60
 
     @classmethod
@@ -399,10 +399,13 @@ class OTPService:
                 f'Debes esperar {restantes} segundos antes de solicitar un nuevo codigo.'
             )
 
-        # Invalidar OTPs anteriores del mismo tipo
-        OTPVerification.objects.filter(
-            usuario=usuario, tipo=tipo, usado=False
-        ).update(usado=True)
+        # Invalidar OTPs anteriores del mismo tipo SOLO si NO fueron usados
+        # (si el usuario ya ingreso el codigo anterior, se mantiene usado=True por el verificar())
+        # Esto evita race condition cuando el email es lento: si el usuario tiene un codigo
+        # valido sin usar y hace clic de nuevo, NO lo invalidamos (solo el nuevo cuenta).
+        # El cooldown de 60s ya evita spam.
+        # (comentario previo: update usado=True invalidaba todos, lo que hacia que
+        #  emails lentos quedaran huerfanos con codigos que el backend rechazaba como "incorrecto")
 
         codigo = cls._generar_codigo()
         codigo_hash = hashlib.sha256(codigo.encode()).hexdigest()
@@ -436,34 +439,41 @@ class OTPService:
 
     @classmethod
     def verificar(cls, usuario, tipo, codigo_ingresado, ip=None):
-        try:
-            otp = OTPVerification.objects.filter(
-                usuario=usuario, tipo=tipo, usado=False
-            ).latest('creado_en')
-        except OTPVerification.DoesNotExist:
-            raise ValidationError('No hay codigo pendiente.')
+        """Verifica el codigo contra TODOS los OTPs activos del usuario.
+        Si el codigo coincide con cualquiera de los OTPs no usados y no expirados,
+        lo marca como usado y retorna True. Esto evita la race condition con
+        emails lentos donde el usuario tiene multiples codigos en su inbox."""
+        ahora = timezone.now()
+        otps = list(
+            OTPVerification.objects
+            .filter(usuario=usuario, tipo=tipo, usado=False, expira_en__gt=ahora)
+            .order_by('-creado_en')
+        )
+        if not otps:
+            raise ValidationError('No hay codigo pendiente o ya expiro. Solicita uno nuevo.')
 
-        if timezone.now() > otp.expira_en:
-            otp.usado = True
-            otp.save(update_fields=['usado'])
-            raise ValidationError('El codigo ha expirado.')
+        # Buscar match contra cualquiera de los OTPs activos (no solo el ultimo)
+        # Esto permite que el usuario use el codigo de cualquier email que recibio
+        for otp in otps:
+            if otp.verificar_codigo(codigo_ingresado):
+                # Marcar TODOS los OTPs del mismo tipo como usados para evitar reuso
+                OTPVerification.objects.filter(
+                    usuario=usuario, tipo=tipo, usado=False
+                ).update(usado=True)
+                return True
 
-        if otp.intentos >= cls.MAX_INTENTOS:
+        # Ningun OTP coincidio: incrementar intentos en el mas reciente y avisar
+        otp = otps[0]
+        otp.intentos += 1
+        otp.save(update_fields=['intentos'])
+        restantes = cls.MAX_INTENTOS - otp.intentos
+        if restantes <= 0:
             otp.usado = True
             otp.save(update_fields=['usado'])
             raise ValidationError('Demasiados intentos. Solicita un nuevo codigo.')
-
-        if not otp.verificar_codigo(codigo_ingresado):
-            otp.intentos += 1
-            otp.save(update_fields=['intentos'])
-            restantes = cls.MAX_INTENTOS - otp.intentos
-            raise ValidationError(
-                f'Codigo incorrecto. Intentos restantes: {restantes}'
-            )
-
-        otp.usado = True
-        otp.save(update_fields=['usado'])
-        return True
+        raise ValidationError(
+            f'Codigo incorrecto. Intentos restantes: {restantes}'
+        )
 
 
 # =====================================================================
