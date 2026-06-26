@@ -8,6 +8,8 @@ import {
 } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import { useAuth } from "../../context/AuthContext";
+import LiveChart from "../../components/Admin/LiveChart";
+import { useTimeSeries } from "../../hooks/useTimeSeries";
 
 function StatCard({ icon, label, value, color, to }) {
   const Card = to ? Link : "div";
@@ -58,6 +60,15 @@ export default function AdminDashboard() {
   });
   const [ultimasNoticias, setUltimasNoticias] = useState([]);
   const [proximosEventos, setProximosEventos] = useState([]);
+  const [chartDonaciones, setChartDonaciones] = useState([]);
+  const [chartUsuarios, setChartUsuarios] = useState([]);
+  const [chartEventos, setChartEventos] = useState([]);
+  const [chartComentarios, setChartComentarios] = useState([]);
+
+  const seriesDonaciones = useTimeSeries(chartDonaciones, { dateKey: "timestamp", valueKey: "value", bucketMs: 3600000, windowSecs: 86400 });
+  const seriesUsuarios = useTimeSeries(chartUsuarios, { dateKey: "timestamp", valueKey: "value", bucketMs: 3600000, windowSecs: 86400 });
+  const seriesEventos = useTimeSeries(chartEventos, { dateKey: "timestamp", valueKey: "value", bucketMs: 3600000, windowSecs: 86400 });
+  const seriesComentarios = useTimeSeries(chartComentarios, { dateKey: "timestamp", valueKey: "value", bucketMs: 3600000, windowSecs: 86400 });
   const [ultimaAuditoria, setUltimaAuditoria] = useState([]);
   const [ultimosReclamos, setUltimosReclamos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +77,7 @@ export default function AdminDashboard() {
     const cargar = async () => {
       try {
         const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const [n, e, c, a, u, co, re, pe, au, lr, cm, don] = await Promise.all([
+        const [n, e, c, a, u, co, re, pe, au, lr, cm, don, don24h, usr24h, ev24h, co24h] = await Promise.all([
           api.get("/noticias/?page_size=5").catch(() => ({ data: { data: [] } })),
           api.get("/eventos/?page_size=5").catch(() => ({ data: { data: [] } })),
           api.get("/categorias/").catch(() => ({ data: { data: [] } })),
@@ -77,8 +88,12 @@ export default function AdminDashboard() {
           api.get("/usuarios/pendientes/").catch(() => ({ data: { count: 0, results: [] } })),
           api.get("/audit-log/?timestamp__gte=" + hace24h).catch(() => ({ data: { results: [] } })),
           api.get("/libro-reclamaciones/?estado=PENDIENTE").catch(() => ({ data: { results: [] } })),
-          api.get("/contacto-mensajes/").catch(() => ({ data: { results: [] } })),
+          api.get("/mensajes-contacto/").catch(() => ({ data: { results: [] } })),
           api.get("/donaciones/estadisticas/").catch(() => ({ data: { cantidad_donaciones: 0, total_recaudado: '0.00' } })),
+          api.get("/donaciones/admin/lista/", { params: { fecha_donacion__gte: hace24h, estado: "APROBADO", page_size: 500 } }).catch(() => ({ data: { data: [] } })),
+          api.get("/usuarios/", { params: { date_joined__gte: hace24h, page_size: 500 } }).catch(() => ({ data: { data: [] } })),
+          api.get("/eventos/", { params: { fecha_creacion__gte: hace24h, page_size: 500 } }).catch(() => ({ data: { data: [] } })),
+          api.get("/comentarios/", { params: { fecha_creacion__gte: hace24h, page_size: 500 } }).catch(() => ({ data: { data: [] } })),
         ]);
         const nl = extractList(n.data);
         const el = extractList(e.data);
@@ -113,6 +128,31 @@ export default function AdminDashboard() {
         setProximosEventos(el.slice(0, 5));
         setUltimaAuditoria(auList.slice(0, 6));
         setUltimosReclamos(lrList.slice(0, 5));
+        // Series temporales para los 4 charts
+        setChartDonaciones(
+          extractList(don24h.data).map((d) => ({
+            timestamp: d.fecha_donacion || d.fecha_creacion || d.created_at,
+            value: Number(d.monto) || 0,
+          }))
+        );
+        setChartUsuarios(
+          extractList(usr24h.data).map((u) => ({
+            timestamp: u.date_joined,
+            value: 1,
+          }))
+        );
+        setChartEventos(
+          extractList(ev24h.data).map((ev) => ({
+            timestamp: ev.fecha_creacion || ev.fecha,
+            value: 1,
+          }))
+        );
+        setChartComentarios(
+          extractList(co24h.data).map((c) => ({
+            timestamp: c.fecha_creacion,
+            value: 1,
+          }))
+        );
       } catch (e) {
         console.error("Dashboard load error", e);
       } finally {
@@ -139,6 +179,13 @@ export default function AdminDashboard() {
         <StatCard icon={<FaHistory />}       label="Auditoria 24h"        value={stats.audit24h}    color="dash-stat__icon--cyan"   to="/admin/auditoria" />
         <StatCard icon={<FaHandHoldingHeart />} label="Donaciones aprobadas" value={stats.donacionesAprobadas} color="dash-stat__icon--green" to="/admin/donaciones" />
         <StatCard icon={<FaMoneyBillWave />}  label="Recaudado total"      value={`S/ ${stats.donacionesRecaudado}`} color="dash-stat__icon--emerald" to="/admin/donaciones" />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, margin: "16px 0 24px 0" }}>
+        <LiveChart data={seriesDonaciones} windowSecs={86400} title="Donaciones 24h" color="#16a34a" valueFormatter={(v) => `S/ ${v.toFixed(0)}`} height={140} variant="compact" />
+        <LiveChart data={seriesUsuarios}   windowSecs={86400} title="Registros 24h"   color="#0a3d1f" height={140} variant="compact" />
+        <LiveChart data={seriesEventos}    windowSecs={86400} title="Eventos 24h"    color="#d97706" height={140} variant="compact" />
+        <LiveChart data={seriesComentarios} windowSecs={86400} title="Comentarios 24h" color="#2563eb" height={140} variant="compact" />
       </div>
 
       <div className="dash-grid">

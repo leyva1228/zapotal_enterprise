@@ -7,6 +7,8 @@ from .models_institucionales import (
 
 
 class ConfiguracionComunidadSerializer(serializers.ModelSerializer):
+    actualizado_por_email = serializers.SerializerMethodField()
+
     class Meta:
         model = ConfiguracionComunidad
         fields = [
@@ -19,9 +21,21 @@ class ConfiguracionComunidadSerializer(serializers.ModelSerializer):
             'email_contacto', 'email_privacidad', 'email_denuncias',
             'horario_atencion',
             'logo_url', 'foto_casa_comunal_url',
+            # Flags de modulos (Loop 1 v2)
+            'modulo_donaciones_activo',
+            'modulo_favoritos_activo',
+            'modulo_registro_abierto',
+            'modulo_comentarios_activo',
+            'moderacion_comentarios_previa',
+            'notificaciones_email_activas',
+            'tiempo_sesion_minutos',
+            'actualizado_por', 'actualizado_por_email',
             'actualizado_en',
         ]
-        read_only_fields = ['actualizado_en']
+        read_only_fields = ['actualizado_en', 'actualizado_por_email']
+
+    def get_actualizado_por_email(self, obj):
+        return obj.actualizado_por.email if obj.actualizado_por else None
 
 
 class MarcoLegalItemSerializer(serializers.ModelSerializer):

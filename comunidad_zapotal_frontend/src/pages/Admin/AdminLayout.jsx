@@ -3,28 +3,27 @@
  *
  * LOOP 1 (rediseño):
  * - Sidebar con header "COMUNIDAD / ZAPOTAL" (2 lineas).
- * - 11 items planos (sin subcategorias; los filtros viven en cada pagina).
- * - Cajita de perfil estatica al fondo con foto, nombre, cargo, estado, logout.
- * - Resizer arrastrable en el borde derecho (auto-hide <60px).
- * - Toggle animado con icono de flecha en circulo blanco.
+ * - Items planos (sin subcategorias; los filtros viven en cada pagina).
+ * - Cajita de perfil sticky al fondo con foto, nombre, cargo, estado, logout.
+ * - Ancho FIJO (no arrastrable, no redimensionable).
  *
  * LOOP 2 (header):
  * - Header blanco minimalista: titulo al centro + 3 iconos a la derecha.
  * - Sin pill de usuario (vive en el sidebar).
  */
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FaTachometerAlt, FaUsers, FaNewspaper, FaCalendarAlt, FaCommentDots,
   FaEnvelope, FaLandmark, FaHandHoldingHeart, FaListAlt, FaCog, FaUserCircle,
-  FaSignOutAlt, FaHome, FaSync, FaBell, FaChevronLeft, FaUser, FaCamera,
+  FaSignOutAlt, FaHome, FaSync, FaBell, FaImages,
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
-import { useResizableSidebar } from '../../hooks/useResizableSidebar';
 import './AdminLayout.css';
 
-// 11 items en el orden pedido por el usuario.
+// Items del sidebar en el orden pedido por el usuario.
+// Incluye Galeria y Perfil como items independientes.
 const MENU_ITEMS = [
   { to: '/admin',                label: 'Dashboard',     icon: <FaTachometerAlt /> },
   { to: '/admin/usuarios',       label: 'Usuarios',      icon: <FaUsers /> },
@@ -34,6 +33,7 @@ const MENU_ITEMS = [
   { to: '/admin/comentarios',    label: 'Comentarios',   icon: <FaCommentDots /> },
   { to: '/admin/autoridades',    label: 'Autoridades',   icon: <FaLandmark /> },
   { to: '/admin/donaciones',     label: 'Donaciones',    icon: <FaHandHoldingHeart /> },
+  { to: '/admin/galeria',        label: 'Galeria',       icon: <FaImages /> },
   { to: '/admin/institucional',  label: 'Contenido',     icon: <FaListAlt /> },
   { to: '/admin/auditoria',      label: 'Sistema',       icon: <FaCog /> },
   { to: '/admin/perfil',         label: 'Perfil',        icon: <FaUserCircle /> },
@@ -137,14 +137,8 @@ export default function AdminLayout() {
   const [searchParams] = useSearchParams();
   const { user, clearAuth } = useAuth();
 
-  const {
-    width,
-    isCollapsed,
-    isDragging,
-    sidebarRef,
-    dragHandleProps,
-    toggleCollapsed,
-  } = useResizableSidebar();
+  // Sidebar de ancho FIJO. No arrastrable, no colapsable.
+  const SIDEBAR_WIDTH = 260;
 
   // Badge de notificaciones no leidas.
   const [notifNoLeidas, setNotifNoLeidas] = useState(0);
@@ -189,29 +183,14 @@ export default function AdminLayout() {
 
   return (
     <div
-      className={
-        'admin-shell'
-        + (isCollapsed ? ' admin-shell--collapsed' : '')
-        + (isDragging ? ' admin-shell--dragging' : '')
-      }
-      style={!isCollapsed ? { '--sidebar-width': `${width}px` } : undefined}
+      className="admin-shell"
+      style={{ '--sidebar-width': `${SIDEBAR_WIDTH}px` }}
     >
-      {/* ===== SIDEBAR ===== */}
+      {/* ===== SIDEBAR FIJO (no arrastrable) ===== */}
       <aside
-        ref={sidebarRef}
-        className={'admin-sidebar' + (isCollapsed ? ' admin-sidebar--collapsed' : '')}
+        className="admin-sidebar"
+        style={{ width: SIDEBAR_WIDTH, flexShrink: 0 }}
       >
-        {/* Toggle (circulo blanco con flecha) */}
-        <button
-          type="button"
-          className="admin-sidebar__toggle"
-          onClick={toggleCollapsed}
-          title={isCollapsed ? 'Expandir' : 'Colapsar'}
-          aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-        >
-          <FaChevronLeft />
-        </button>
-
         {/* Header del sidebar */}
         <div className="admin-sidebar__header">
           <div className="admin-sidebar__logo">Z</div>
@@ -231,7 +210,6 @@ export default function AdminLayout() {
               className={({ isActive }) =>
                 'admin-sidebar__item' + (isActive ? ' admin-sidebar__item--active' : '')
               }
-              title={isCollapsed ? item.label : undefined}
             >
               <span className="admin-sidebar__icon">{item.icon}</span>
               <span className="admin-sidebar__label">{item.label}</span>
@@ -239,7 +217,7 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        {/* Cajita de perfil estatica */}
+        {/* Cajita de perfil STICKY al fondo del sidebar */}
         <div className="admin-profile-card">
           <button
             type="button"
@@ -254,7 +232,7 @@ export default function AdminLayout() {
             {user?.foto_perfil_url ? (
               <img src={user.foto_perfil_url} alt="Foto de perfil" />
             ) : (
-              <FaUser />
+              <FaUserCircle />
             )}
           </div>
           <div className="admin-profile-card__name">
@@ -273,9 +251,6 @@ export default function AdminLayout() {
             {getStatusLabel(user)}
           </div>
         </div>
-
-        {/* Resizer handle (borde derecho) */}
-        <div className="admin-sidebar__resizer" {...dragHandleProps} />
       </aside>
 
       {/* ===== MAIN ===== */}

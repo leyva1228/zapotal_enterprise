@@ -7,6 +7,7 @@ import {
 import { useSearchParams } from "react-router-dom";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 
 const NIVELES = {
   COMUNAL:   { label: "Directiva Comunal",     icon: <FaUsers />,    duracion: 2, cargos: ["PRESIDENTE", "VICEPRESIDENTE", "SECRETARIO", "TESORERO", "FISCAL", "VOCAL"] },
@@ -41,6 +42,7 @@ export default function AdminAutoridades() {
   const isStats = nivelParam === "__STATS__";
 
   const [items, setItems] = useState([]);
+  const { confirm, ConfirmDialog } = useConfirm();
   const [comuneros, setComuneros] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -267,7 +269,10 @@ export default function AdminAutoridades() {
   };
 
   const eliminar = async (a) => {
-    if (!window.confirm(`¿Eliminar a "${a.cargo}" de ${a.nombre_completo || ''}?`)) return;
+    if (!await confirm({
+      title: "Eliminar autoridad",
+      message: `¿Eliminar a "${a.cargo}" de ${a.nombre_completo || ''}? Esta acción no se puede deshacer.`,
+    })) return;
     setError(""); setOk("");
     try { await api.delete(`/autoridades/${a.id}/`); setOk("Eliminado."); cargar(); }
     catch (e) { setError("No se pudo eliminar."); }
@@ -397,8 +402,8 @@ export default function AdminAutoridades() {
                     </td>
                     <td>
                       {a.activo
-                        ? <span className="admin-badge admin-badge--ok">Activo</span>
-                        : <span className="admin-badge admin-badge--mute">Inactivo</span>}
+                        ? <span className="admin-badge admin-badge--success">Activo</span>
+                        : <span className="admin-badge admin-badge--gray">Inactivo</span>}
                     </td>
                     <td className="actions justify-end">
                       <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(a)}><FaEdit /> Editar</button>
@@ -960,7 +965,7 @@ function StatsView({ stats, loading, error, onReload }) {
                     <div key={nivel} className="admin-cuota-row">
                       <div className="admin-cuota-row__head">
                         <strong>{NIVELES[nivel]?.label || nivel}</strong>
-                        <span className={info.cumple_cuota_30 ? 'admin-badge admin-badge--ok' : 'admin-badge admin-badge--warn'}>
+                        <span className={info.cumple_cuota_30 ? 'admin-badge admin-badge--success' : 'admin-badge admin-badge--warning'}>
                           {info.cumple_cuota_30 === null ? "N/A (< 3 cargos)" : info.cumple_cuota_30 ? "Cumple" : "No cumple"}
                         </span>
                       </div>
@@ -1002,6 +1007,7 @@ function StatsView({ stats, loading, error, onReload }) {
           </>
         )}
       </div>
+      {ConfirmDialog}
     </div>
   );
 }

@@ -54,7 +54,8 @@ import AdminBajas from './pages/Admin/AdminBajas';
 import AdminCms from './pages/Admin/AdminCms';
 import AdminDonaciones from './pages/Admin/AdminDonaciones';
 import AdminInstitucional from './pages/Admin/AdminInstitucional';
-import AdminPerfil from './pages/Admin/AdminPerfil';
+import AdminConfiguracion from './pages/Admin/AdminConfiguracion';
+import AdminGaleria from './pages/Admin/AdminGaleria';
 import Buscar from './pages/Buscar/Buscar';
 
 import './App.css';
@@ -220,7 +221,7 @@ function Layout() {
           <Route path="cms" element={<AdminCms />} />
           <Route path="donaciones" element={<AdminDonaciones />} />
           <Route path="institucional" element={<AdminInstitucional />} />
-          <Route path="perfil" element={<AdminPerfil />} />
+          <Route path="perfil" element={<AdminConfiguracion />} />
         </Route>
 
         <Route path="/donaciones" element={<Donaciones />} />

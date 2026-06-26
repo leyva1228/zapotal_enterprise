@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft, FaUserCircle, FaSignInAlt, FaUserPlus,
@@ -274,6 +275,7 @@ const NoticiasRelacionadas = memo(({ noticias }) => {
 function DetalleNoticia() {
   const { id }   = useParams();
   const navigate = useNavigate();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const noticiaId = useMemo(() => {
     const parsed = Number(id);
@@ -494,7 +496,10 @@ function DetalleNoticia() {
 
   const eliminarComentario = async (cId, autorId) => {
     if (usuarioId !== autorId && !esAdmin) { alert("Solo el autor o un administrador pueden eliminar."); return; }
-    if (!window.confirm("¿Eliminar este comentario?")) return;
+    if (!await confirm({
+      title: "Eliminar comentario",
+      message: "¿Eliminar este comentario? Esta acción no se puede deshacer.",
+    })) return;
     try {
       await api.delete(`/comentarios/${cId}/`);
       await cargarComentarios();
@@ -836,6 +841,7 @@ function DetalleNoticia() {
           </div>
         )}
       </div>
+    {ConfirmDialog}
     </main>
   );
 }

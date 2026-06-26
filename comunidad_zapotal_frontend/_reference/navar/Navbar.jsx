@@ -1,26 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  FaChevronDown, FaSignOutAlt, FaUser, FaCog, FaTimes,
+  FaChevronDown, FaSignOutAlt, FaUser, FaCog,
   FaSearch, FaShieldAlt,
   FaHome, FaNewspaper, FaCalendarAlt, FaUsers,
-  FaPhoneAlt, FaHandHoldingHeart,
+  FaPhoneAlt, FaHandHoldingHeart, FaTimes,
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
-// ── Links publicos con icono (estilo del companero) ──
 const PUBLIC_LINKS = [
-  { to: '/',             label: 'Inicio',      icon: <FaHome /> },
-  { to: '/noticias',     label: 'Noticias',    icon: <FaNewspaper /> },
-  { to: '/eventos',      label: 'Eventos',     icon: <FaCalendarAlt /> },
-  { to: '/autoridades',  label: 'Autoridades', icon: <FaUsers /> },
-  { to: '/contactanos',  label: 'Contacto',    icon: <FaPhoneAlt /> },
-  { to: '/donaciones',   label: 'Donaciones',  icon: <FaHandHoldingHeart /> },
+  { to: '/',            label: 'Inicio',      icon: <FaHome /> },
+  { to: '/noticias',    label: 'Noticias',    icon: <FaNewspaper /> },
+  { to: '/eventos',     label: 'Eventos',     icon: <FaCalendarAlt /> },
+  { to: '/autoridades', label: 'Autoridades', icon: <FaUsers /> },
+  { to: '/contactanos', label: 'Contacto',    icon: <FaPhoneAlt /> },
+  { to: '/donaciones',  label: 'Donaciones',  icon: <FaHandHoldingHeart /> },
 ];
 
-// ── Link admin (solo visible si el usuario es admin) ──
 const ADMIN_LINK = { to: '/admin', label: 'Admin', icon: <FaShieldAlt /> };
 
 function Navbar() {
@@ -28,8 +26,7 @@ function Navbar() {
   const location  = useLocation();
   const navbarRef = useRef(null);
 
-  const { user, isAuthenticated, clearAuth } = useAuth();
-  const { isAdmin: isAdminCtx } = useAuth();
+  const { user, isAuthenticated, clearAuth, isAdmin: isAdminCtx } = useAuth();
   const isAdmin = !!isAdminCtx;
 
   const [perfilAbierto,   setPerfilAbierto]   = useState(false);
@@ -39,22 +36,30 @@ function Navbar() {
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
 
-  const enlaces = isAdmin ? [...PUBLIC_LINKS, ADMIN_LINK] : PUBLIC_LINKS;
+  const enlaces = useMemo(
+    () => (isAdmin ? [...PUBLIC_LINKS, ADMIN_LINK] : PUBLIC_LINKS),
+    [isAdmin]
+  );
 
-  /* ── Scroll: agrega sombra al navbar cuando hay scroll ── */
+  const cerrarMenu = useCallback(() => {
+    setMenuAbierto(false);
+    setNosotrosAbierto(false);
+  }, []);
+
+  /* ── Scroll ── */
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* ── Bloquear scroll del body cuando el drawer esta abierto ── */
+  /* ── Bloquear scroll del body cuando menú móvil abierto ── */
   useEffect(() => {
     document.body.style.overflow = menuAbierto ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [menuAbierto]);
 
-  /* ── Cerrar dropdowns al hacer clic fuera ── */
+  /* ── Cerrar dropdowns al clic fuera ── */
   useEffect(() => {
     const onClickOutside = (e) => {
       if (navbarRef.current && !navbarRef.current.contains(e.target)) {
@@ -67,65 +72,49 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
-  /* ── Tecla Escape cierra todo ── */
+  /* ── Escape key cierra todo ── */
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        setMenuAbierto(false);
+        cerrarMenu();
         setPerfilAbierto(false);
         setBuscadorAbierto(false);
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  }, [cerrarMenu]);
 
-  /* ── Logout (misma logica que ya tenias) ── */
-  const handleLogout = async () => {
-    try {
-      await clearAuth();
-    } finally {
-      setPerfilAbierto(false);
-      setMenuAbierto(false);
-      navigate('/login');
-    }
-  };
+  const handleLogout = useCallback(async () => {
+    try { await clearAuth(); }
+    finally { setPerfilAbierto(false); navigate('/login'); }
+  }, [clearAuth, navigate]);
 
-  /* ── Busqueda (misma logica que ya tenias) ── */
-  const handleBuscar = (e) => {
+  const handleBuscar = useCallback((e) => {
     e.preventDefault();
     if (terminoBusqueda.trim()) {
       navigate(`/buscar?q=${encodeURIComponent(terminoBusqueda.trim())}`);
       setBuscadorAbierto(false);
-      setMenuAbierto(false);
+      cerrarMenu();
       setTerminoBusqueda('');
     }
-  };
+  }, [terminoBusqueda, navigate, cerrarMenu]);
 
-  const cerrarMenu = () => {
-    setMenuAbierto(false);
-    setNosotrosAbierto(false);
-  };
+  const enlaceActivo = useCallback(
+    (path) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path),
+    [location.pathname]
+  );
 
-  /* ── Detectar link activo ── */
-  const enlaceActivo = (path) => {
-    if (path === '/') return location.pathname === '/';
-    if (path === '/nosotros/historia' || path === '/nosotros/conocenos')
-      return location.pathname.startsWith('/nosotros');
-    return location.pathname.startsWith(path);
-  };
-
-  /* ── Inicial del usuario para el avatar ── */
-  const userInitial = (user?.nombres?.charAt(0) || user?.email?.charAt(0) || 'U').toUpperCase();
+  const userInitial = useMemo(() => {
+    if (!user) return 'U';
+    return (user.nombres?.charAt(0) || user.email?.charAt(0) || 'U').toUpperCase();
+  }, [user]);
 
   return (
     <>
-      {/* ═══════════════════════════════════════════
-          NAVBAR FIJO (2 franjas en desktop)
-          ═══════════════════════════════════════════ */}
       <header ref={navbarRef} className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
 
-        {/* ─── FRANJA SUPERIOR (52px) ─── */}
+        {/* ══ FRANJA SUPERIOR ══ */}
         <div className="navbar-top">
 
           {/* Brand */}
@@ -133,20 +122,21 @@ function Navbar() {
             <img
               src="/img/Logo-comunidad/Logo-principal.png"
               alt="Logo Comunidad Campesina Zapotal"
+              className="navbar-logo-img"
             />
-            <div>
+            <div className="navbar-brand-text">
               <strong>Comunidad Zapotal</strong>
             </div>
           </Link>
 
-          {/* Acciones (buscador, notif, perfil, auth, burger) */}
-          <div className="navbar-user navbar-actions">
+          {/* Acciones */}
+          <div className="navbar-actions">
 
-            {/* Buscador — solo desktop (en mobile va dentro del drawer) */}
+            {/* Buscador — solo desktop */}
             <div className="buscador-box">
               <button
                 className="circle-btn"
-                onClick={() => setBuscadorAbierto((prev) => !prev)}
+                onClick={() => setBuscadorAbierto(prev => !prev)}
                 aria-label="Buscar"
                 title="Buscar"
               >
@@ -156,7 +146,7 @@ function Navbar() {
                 <form className="buscador-dropdown" onSubmit={handleBuscar}>
                   <input
                     type="text"
-                    placeholder="Buscar noticias, eventos..."
+                    placeholder="Buscar noticias..."
                     value={terminoBusqueda}
                     onChange={(e) => setTerminoBusqueda(e.target.value)}
                     autoFocus
@@ -177,7 +167,7 @@ function Navbar() {
               <div className="profile-box">
                 <button
                   className="profile-trigger"
-                  onClick={() => setPerfilAbierto((prev) => !prev)}
+                  onClick={() => setPerfilAbierto(prev => !prev)}
                   aria-label="Perfil"
                 >
                   {user.foto_perfil || user.foto_perfil_url ? (
@@ -190,44 +180,28 @@ function Navbar() {
                     <div className="profile-letter">{userInitial}</div>
                   )}
                 </button>
+
                 {perfilAbierto && (
                   <div className="profile-dropdown">
                     <div className="profile-info-header">
                       <div className="profile-avatar-sm">{userInitial}</div>
-                      <div className="profile-info-name">
-                        {user.nombres} {user.apellidos}
-                      </div>
+                      <div className="profile-info-name">{user.nombres} {user.apellidos}</div>
                       <div className="profile-info-email">{user.email}</div>
                     </div>
                     <div className="profile-options">
-                      <Link
-                        to="/perfil"
-                        className="profile-option"
-                        onClick={() => setPerfilAbierto(false)}
-                      >
+                      <Link to="/perfil" className="profile-option" onClick={() => setPerfilAbierto(false)}>
                         <FaUser /> Ver perfil
                       </Link>
-                      <Link
-                        to="/perfil"
-                        className="profile-option"
-                        onClick={() => setPerfilAbierto(false)}
-                      >
-                        <FaCog /> Configuracion
+                      <Link to="/perfil" className="profile-option" onClick={() => setPerfilAbierto(false)}>
+                        <FaCog /> Configuración
                       </Link>
                       {isAdmin && (
-                        <Link
-                          to="/admin"
-                          className="profile-option"
-                          onClick={() => setPerfilAbierto(false)}
-                        >
+                        <Link to="/admin" className="profile-option" onClick={() => setPerfilAbierto(false)}>
                           <FaShieldAlt /> Panel admin
                         </Link>
                       )}
-                      <button
-                        className="profile-option logout-btn"
-                        onClick={handleLogout}
-                      >
-                        <FaSignOutAlt /> Cerrar sesion
+                      <button className="profile-option logout-btn" onClick={handleLogout}>
+                        <FaSignOutAlt /> Cerrar sesión
                       </button>
                     </div>
                   </div>
@@ -235,16 +209,16 @@ function Navbar() {
               </div>
             ) : (
               <div className="auth-buttons">
-                <Link to="/login"    className="login-btn btn-ingresar">Ingresar</Link>
-                <Link to="/registro" className="register-btn btn-registrarse">Registrarse</Link>
+                <Link to="/login"    className="btn-ingresar">Ingresar</Link>
+                <Link to="/registro" className="btn-registrarse">Registrarse</Link>
               </div>
             )}
 
-            {/* Hamburguesa — solo mobile/tablet */}
+            {/* Hamburguesa — solo móvil/tablet */}
             <button
               className={`burger-btn ${menuAbierto ? 'burger-open' : ''}`}
-              onClick={() => setMenuAbierto((prev) => !prev)}
-              aria-label={menuAbierto ? 'Cerrar menu' : 'Abrir menu'}
+              onClick={() => setMenuAbierto(prev => !prev)}
+              aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
             >
               <span className="burger-bar" />
               <span className="burger-bar" />
@@ -253,9 +227,9 @@ function Navbar() {
           </div>
         </div>
 
-        {/* ─── FRANJA NAV VERDE (44px) — solo desktop ─── */}
+        {/* ══ FRANJA NAV — solo desktop ══ */}
         <div className="navbar-nav-wrapper">
-          <nav className="nav-desktop nav-links">
+          <nav className="nav-links nav-desktop">
             {enlaces.map(({ to, label, icon }) => (
               <Link
                 key={to}
@@ -267,62 +241,50 @@ function Navbar() {
               </Link>
             ))}
 
-            {/* Dropdown Nosotros (desktop) */}
             <div className={`dropdown ${nosotrosAbierto ? 'dropdown-open' : ''}`}>
               <button
                 className={`nav-link dropdown-title ${enlaceActivo('/nosotros') ? 'activo' : ''}`}
-                onClick={() => setNosotrosAbierto((prev) => !prev)}
+                onClick={() => setNosotrosAbierto(prev => !prev)}
               >
                 <span className="nav-icon"><FaUsers /></span>
                 Nosotros <FaChevronDown className="dropdown-arrow" />
               </button>
               <div className="dropdown-menu">
-                <Link to="/nosotros/historia" onClick={cerrarMenu}>Nuestra historia</Link>
-                <Link to="/nosotros/conocenos" onClick={cerrarMenu}>Conocenos</Link>
+                <Link to="/nosotros/historia">Nuestra historia</Link>
+                <Link to="/nosotros/conocenos">Conócenos</Link>
               </div>
             </div>
           </nav>
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════
-          DRAWER MOBILE
-          ═══════════════════════════════════════════ */}
+      {/* ══ OVERLAY ══ */}
       {menuAbierto && (
         <div className="nav-overlay" onClick={cerrarMenu} aria-hidden="true" />
       )}
 
-      <nav
-        className={`nav-drawer ${menuAbierto ? 'nav-drawer-open' : ''}`}
-        aria-label="Menu principal"
-      >
-        {/* Cabecera del drawer */}
+      {/* ══ PANEL LATERAL MÓVIL ══ */}
+      <nav className={`nav-drawer ${menuAbierto ? 'nav-drawer-open' : ''}`} aria-label="Menú principal">
+
+        {/* Cabecera */}
         <div className="drawer-header">
-          <img
-            src="/img/Logo-comunidad/Logo-principal.png"
-            alt="Logo"
-            className="drawer-logo"
-          />
+          <img src="/img/Logo-comunidad/Logo-principal.png" alt="Logo" className="drawer-logo" />
           <div className="drawer-brand">
             <p className="drawer-title">Comunidad Zapotal</p>
             <p className="drawer-sub">Portal Oficial</p>
           </div>
-          <button
-            className="drawer-close"
-            onClick={cerrarMenu}
-            aria-label="Cerrar menu"
-          >
+          <button className="drawer-close" onClick={cerrarMenu} aria-label="Cerrar menú">
             <FaTimes />
           </button>
         </div>
 
-        {/* Buscador del drawer */}
+        {/* Buscador */}
         <div className="drawer-search">
           <form onSubmit={handleBuscar}>
             <FaSearch className="drawer-search-icon" />
             <input
               type="text"
-              placeholder="Buscar noticias, eventos..."
+              placeholder="Buscar noticias..."
               value={terminoBusqueda}
               onChange={(e) => setTerminoBusqueda(e.target.value)}
               maxLength={100}
@@ -333,7 +295,7 @@ function Navbar() {
           </form>
         </div>
 
-        {/* Usuario logueado (mini card) */}
+        {/* Usuario logueado — mini card */}
         {isAuthenticated && user && (
           <div className="drawer-user">
             <div className="drawer-user-avatar">
@@ -344,16 +306,14 @@ function Navbar() {
               )}
             </div>
             <div className="drawer-user-info">
-              <p className="drawer-user-name">
-                {user.nombres} {user.apellidos}
-              </p>
+              <p className="drawer-user-name">{user.nombres} {user.apellidos}</p>
               <p className="drawer-user-email">{user.email}</p>
             </div>
           </div>
         )}
 
-        {/* Links principales */}
-        <div className="drawer-section-label">Navegacion</div>
+        {/* Sección: Navegación */}
+        <div className="drawer-section-label">Navegación</div>
         <div className="drawer-links">
           {enlaces.map(({ to, label, icon }) => (
             <Link
@@ -372,32 +332,24 @@ function Navbar() {
           <div className={`drawer-accordion ${nosotrosAbierto ? 'drawer-accordion-open' : ''}`}>
             <button
               className={`drawer-link drawer-accordion-btn ${enlaceActivo('/nosotros') ? 'drawer-link-activo' : ''}`}
-              onClick={() => setNosotrosAbierto((prev) => !prev)}
+              onClick={() => setNosotrosAbierto(prev => !prev)}
             >
               <span className="drawer-icon"><FaUsers /></span>
               Nosotros
               <FaChevronDown className="drawer-accordion-arrow" />
             </button>
             <div className="drawer-accordion-body">
-              <Link
-                to="/nosotros/historia"
-                className="drawer-sub-link"
-                onClick={cerrarMenu}
-              >
+              <Link to="/nosotros/historia" className="drawer-sub-link" onClick={cerrarMenu}>
                 Nuestra historia
               </Link>
-              <Link
-                to="/nosotros/conocenos"
-                className="drawer-sub-link"
-                onClick={cerrarMenu}
-              >
-                Conocenos
+              <Link to="/nosotros/conocenos" className="drawer-sub-link" onClick={cerrarMenu}>
+                Conócenos
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Seccion cuenta */}
+        {/* Sección: Cuenta */}
         {isAuthenticated && user ? (
           <>
             <div className="drawer-section-label">Mi cuenta</div>
@@ -408,7 +360,7 @@ function Navbar() {
               </Link>
               <Link to="/perfil" className="drawer-link" onClick={cerrarMenu}>
                 <span className="drawer-icon"><FaCog /></span>
-                Configuracion
+                Configuración
               </Link>
               {isAdmin && (
                 <Link to="/admin" className="drawer-link" onClick={cerrarMenu}>
@@ -419,26 +371,14 @@ function Navbar() {
             </div>
             <div className="drawer-footer">
               <button className="drawer-logout" onClick={handleLogout}>
-                <FaSignOutAlt /> Cerrar sesion
+                <FaSignOutAlt /> Cerrar sesión
               </button>
             </div>
           </>
         ) : (
           <div className="drawer-auth">
-            <Link
-              to="/login"
-              className="drawer-btn-ingresar"
-              onClick={cerrarMenu}
-            >
-              Ingresar
-            </Link>
-            <Link
-              to="/registro"
-              className="drawer-btn-registrarse"
-              onClick={cerrarMenu}
-            >
-              Registrarse
-            </Link>
+            <Link to="/login"    className="drawer-btn-ingresar"    onClick={cerrarMenu}>Ingresar</Link>
+            <Link to="/registro" className="drawer-btn-registrarse" onClick={cerrarMenu}>Registrarse</Link>
           </div>
         )}
       </nav>

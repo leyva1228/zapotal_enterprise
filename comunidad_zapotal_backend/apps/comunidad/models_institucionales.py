@@ -88,6 +88,44 @@ class ConfiguracionComunidad(models.Model):
     # Metadata
     actualizado_en = models.DateTimeField('Actualizado en', auto_now=True)
 
+    # ============================================================
+    # Modulos (Loop 1 v2 — flags para activar/desactivar modulos
+    # del sistema desde el panel admin sin redeploy).
+    # ============================================================
+    modulo_donaciones_activo = models.BooleanField(
+        'Modulo Donaciones activo', default=True,
+        help_text='Permite mostrar/ocultar la seccion de donaciones en el sitio publico.',
+    )
+    modulo_favoritos_activo = models.BooleanField(
+        'Modulo Favoritos activo', default=True,
+        help_text='Permite mostrar/ocultar el boton de favoritos en noticias/eventos.',
+    )
+    modulo_registro_abierto = models.BooleanField(
+        'Registro publico de usuarios abierto', default=True,
+        help_text='Permite bloquear el registro de nuevos usuarios.',
+    )
+    modulo_comentarios_activo = models.BooleanField(
+        'Modulo Comentarios activo', default=True,
+        help_text='Permite deshabilitar comentarios en noticias y eventos.',
+    )
+    moderacion_comentarios_previa = models.BooleanField(
+        'Moderacion previa de comentarios', default=False,
+        help_text='Si esta activo, los comentarios quedan PENDIENTES hasta aprobacion admin.',
+    )
+    notificaciones_email_activas = models.BooleanField(
+        'Notificaciones por email activas', default=True,
+        help_text='Envia emails de notificacion al admin (bienvenida, alertas, etc).',
+    )
+    tiempo_sesion_minutos = models.PositiveIntegerField(
+        'Tiempo de sesion en minutos', default=60,
+        help_text='Duracion del access token JWT.',
+    )
+    actualizado_por = models.ForeignKey(
+        'accounts.Usuario', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='configuraciones_modificadas',
+        verbose_name='Actualizado por',
+    )
+
     class Meta:
         verbose_name = 'Configuracion de la Comunidad'
         verbose_name_plural = 'Configuracion de la Comunidad'

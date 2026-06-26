@@ -3,6 +3,7 @@ import { FaTrash, FaEye, FaEyeSlash, FaSearch } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import FiltersBar from "../../components/Admin/FiltersBar";
 import Pagination from "../../components/Admin/Pagination";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
@@ -14,6 +15,7 @@ export default function AdminComentarios() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+  const { confirm, ConfirmDialog } = useConfirm();
   const abortRef = useRef(null);
 
   const [filters, setFilters, clearFilters] = useUrlFilters({
@@ -62,7 +64,10 @@ export default function AdminComentarios() {
   };
 
   const eliminar = async (c) => {
-    if (!window.confirm(`¿Eliminar definitivamente el comentario #${c.id}?`)) return;
+    if (!await confirm({
+      title: "Eliminar comentario",
+      message: `¿Eliminar definitivamente el comentario #${c.id}? Esta acción no se puede deshacer.`,
+    })) return;
     setError(""); setOk("");
     try { await api.delete(`/comentarios/${c.id}/`); setOk("Comentario eliminado."); cargar(); }
     catch (e) { setError("No se pudo eliminar."); }
@@ -177,6 +182,7 @@ export default function AdminComentarios() {
           )}
         </div>
       </div>
+      {ConfirmDialog}
     </div>
   );
 }

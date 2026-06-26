@@ -8,8 +8,10 @@ import {
 import api, { extractList } from "../../api";
 import FiltersBar from "../../components/Admin/FiltersBar";
 import Pagination from "../../components/Admin/Pagination";
+import LiveChart from "../../components/Admin/LiveChart";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { useTimeSeries } from "../../hooks/useTimeSeries";
 import "./AdminDonaciones.css";
 
 const ESTADOS = [
@@ -87,6 +89,37 @@ export default function AdminDonaciones() {
 
   const [detalle, setDetalle] = useState(null);
   const [confirmAccion, setConfirmAccion] = useState(null);
+  const [donacionesChart, setDonacionesChart] = useState([]);
+  const [chartLoading, setChartLoading] = useState(true);
+
+  const cargarChart = useCallback(async () => {
+    setChartLoading(true);
+    try {
+      const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data } = await api.get("/donaciones/admin/lista/", {
+        params: { fecha_donacion__gte: hace24h, estado: "APROBADO", page_size: 500 }
+      });
+      const lista = extractList(data);
+      // Mapear a {timestamp, value} donde value = monto
+      setDonacionesChart(
+        lista.map((d) => ({
+          timestamp: d.fecha_donacion || d.fecha_creacion || d.created_at,
+          value: Number(d.monto) || 0,
+        }))
+      );
+    } catch {
+      setDonacionesChart([]);
+    } finally {
+      setChartLoading(false);
+    }
+  }, []);
+
+  const seriesChart = useTimeSeries(donacionesChart, {
+    dateKey: "timestamp",
+    valueKey: "value",
+    bucketMs: 60 * 60 * 1000, // 1h
+    windowSecs: 86400, // 24h
+  });
 
   const cargarStats = useCallback(async () => {
     try {
@@ -119,6 +152,7 @@ export default function AdminDonaciones() {
 
   useEffect(() => { cargarStats(); }, [cargarStats]);
   useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { cargarChart(); }, [cargarChart]);
 
   const ejecutarAccion = async () => {
     if (!confirmAccion) return;
@@ -228,6 +262,23 @@ export default function AdminDonaciones() {
               onChange={(e) => setFilters({ search: e.target.value, page: 1 })}
             />
           </div>
+        </section>
+
+        <section style={{ marginBottom: 24 }}>
+          <LiveChart
+            data={seriesChart}
+            windowSecs={86400}
+            windows={[
+              { label: "1h", secs: 3600 },
+              { label: "6h", secs: 21600 },
+              { label: "24h", secs: 86400 },
+            ]}
+            title="Monto recaudado (ultimas 24h)"
+            color="#16a34a"
+            valueFormatter={(v) => `S/ ${v.toFixed(2)}`}
+            badge={seriesChart.length > 0 ? seriesChart[seriesChart.length - 1].value : 0}
+            height={180}
+          />
         </section>
 
       <section className="adn-table-card">

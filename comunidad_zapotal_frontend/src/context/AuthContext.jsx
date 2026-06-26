@@ -42,7 +42,9 @@ export function AuthProvider({ children }) {
     try {
       const refresh = SessionStore.getRefresh();
       if (refresh) {
-        await fetch(`${SessionStore._apiBase || ''}/token/blacklist/`.replace('//api/v1/', '/api/v1/'),
+        // Construir URL absoluta a partir de la base del API (definida en api.js).
+        const base = (import.meta.env.VITE_API_URL) || 'http://127.0.0.1:8000/api/v1';
+        await fetch(`${base}/token/blacklist/`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

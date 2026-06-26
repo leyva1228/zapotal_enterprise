@@ -4,6 +4,7 @@ import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
 import FiltersBar from "../../components/Admin/FiltersBar";
 import Pagination from "../../components/Admin/Pagination";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
@@ -28,6 +29,7 @@ export default function AdminNoticias() {
     page: { defaultValue: 1, parser: parseIntParam },
   });
   const debouncedSearch = useDebouncedValue(filters.search, 350);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -111,7 +113,10 @@ export default function AdminNoticias() {
   };
 
   const eliminar = async (n) => {
-    if (!window.confirm(`¿Eliminar la noticia "${n.titulo}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar noticia",
+      message: `¿Eliminar la noticia "${n.titulo}"? Esta acción no se puede deshacer.`,
+    })) return;
     setError(""); setOk("");
     try {
       await api.delete(`/noticias/${n.id}/`);
@@ -300,6 +305,7 @@ export default function AdminNoticias() {
           </div>
         </form>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

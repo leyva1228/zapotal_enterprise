@@ -7,6 +7,7 @@ import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
 import FiltersBar from "../../components/Admin/FiltersBar";
 import Pagination from "../../components/Admin/Pagination";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
@@ -47,9 +48,8 @@ export default function AdminReclamaciones() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("");
-  const [busqueda, setBusqueda] = useState("");
   const [detalle, setDetalle] = useState(null);
+  const { confirm, ConfirmDialog } = useConfirm();
   const [plantillas, setPlantillas] = useState([]);
   const [plantillaSeleccionada, setPlantillaSeleccionada] = useState("");
   const [textoRespuesta, setTextoRespuesta] = useState("");
@@ -94,13 +94,6 @@ export default function AdminReclamaciones() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.estado, debouncedSearch]);
 
-  // Sincronizar URL con state local al montar.
-  useEffect(() => {
-    if (filters.estado) setFiltroEstado(filters.estado);
-    if (filters.search) setBusqueda(filters.search);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const cambiarEstado = async (item, nuevoEstado) => {
     setError(""); setOk("");
     try {
@@ -123,7 +116,10 @@ export default function AdminReclamaciones() {
   };
 
   const eliminar = async (item) => {
-    if (!window.confirm(`Eliminar reclamacion ${item.numero_reclamo} de "${item.nombre}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar reclamación",
+      message: `Eliminar reclamacion ${item.numero_reclamo} de "${item.nombre}"? Esta acción no se puede deshacer.`,
+    })) return;
     setError(""); setOk("");
     try {
       await api.delete(`/libro-reclamaciones/${item.id}/`);
@@ -159,9 +155,12 @@ export default function AdminReclamaciones() {
       setError("La respuesta no puede estar vacia.");
       return;
     }
-    if (!window.confirm(
-      "Esta accion enviara un email al consumidor y marcara el reclamo como RESUELTO. Continuar?"
-    )) return;
+    if (!await confirm({
+      title: "Enviar respuesta y resolver",
+      message: "Esta accion enviara un email al consumidor y marcara el reclamo como RESUELTO. Continuar?",
+      variant: "warning",
+      confirmText: "Si, enviar y resolver",
+    })) return;
     setEnviandoRespuesta(true);
     setError(""); setOk("");
     try {
@@ -196,16 +195,16 @@ export default function AdminReclamaciones() {
               <input
                 type="text"
                 placeholder="Buscar por nombre, email, descripcion o numero..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
+                value={filters.search || ""}
+                onChange={(e) => setFilters({ search: e.target.value, page: 1 })}
                 onKeyDown={(e) => { if (e.key === "Enter") cargar(); }}
                 className="admin-input"
               />
             </div>
             <select
               className="admin-select min-w-[160px]"
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
+              value={filters.estado || ""}
+              onChange={(e) => setFilters({ estado: e.target.value, page: 1 })}
             >
               <option value="">Todos los estados</option>
               {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -435,6 +434,7 @@ export default function AdminReclamaciones() {
           </div>
         )}
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

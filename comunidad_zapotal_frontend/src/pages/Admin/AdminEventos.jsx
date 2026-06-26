@@ -4,6 +4,7 @@ import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
 import FiltersBar from "../../components/Admin/FiltersBar";
 import Pagination from "../../components/Admin/Pagination";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
@@ -27,6 +28,7 @@ export default function AdminEventos() {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const abortRef = useRef(null);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [filters, setFilters, clearFilters] = useUrlFilters({
     estadoEvento: { defaultValue: "" }, // "activos" | "finalizados" | ""
@@ -118,7 +120,10 @@ export default function AdminEventos() {
   };
 
   const eliminar = async (ev) => {
-    if (!window.confirm(`¿Eliminar el evento "${ev.titulo}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar evento",
+      message: `¿Eliminar el evento "${ev.titulo}"? Esta acción no se puede deshacer.`,
+    })) return;
     setError(""); setOk("");
     try {
       await api.delete(`/eventos/${ev.id}/`);
@@ -288,6 +293,7 @@ export default function AdminEventos() {
           </div>
         </form>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

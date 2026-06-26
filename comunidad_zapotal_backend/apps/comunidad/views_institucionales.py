@@ -123,6 +123,10 @@ class ConfiguracionComunidadView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return ConfiguracionComunidad.get_solo()
 
+    def perform_update(self, serializer):
+        # Loop 1 v2: registrar quien modifico.
+        serializer.save(actualizado_por=self.request.user)
+
 
 class MarcoLegalItemViewSet(viewsets.ModelViewSet):
     """Items editables del Marco Legal."""

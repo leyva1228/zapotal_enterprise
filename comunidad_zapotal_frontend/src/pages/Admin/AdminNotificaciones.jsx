@@ -9,6 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import FiltersBar from "../../components/Admin/FiltersBar";
 import Pagination from "../../components/Admin/Pagination";
 import { useUrlFilters, parseBoolParam, parseIntParam } from "../../hooks/useUrlFilters";
@@ -82,6 +83,7 @@ export default function AdminNotificaciones() {
   const [filtroTipo, setFiltroTipo] = useState("");
   // V2.3: modal de detalle con mensaje completo.
   const [detalle, setDetalle] = useState(null);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   // LOOP 6: sincronizar filtros con URL.
   const [filters, setFilters, clearFilters] = useUrlFilters({
@@ -106,6 +108,7 @@ export default function AdminNotificaciones() {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    setLoading(true);
     setError(""); setOk("");
     try {
       const params = {};
@@ -119,7 +122,7 @@ export default function AdminNotificaciones() {
         setError("No se pudieron cargar las notificaciones.");
       }
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) setLoading(false);
     }
   }, [filtroLeido, filtroTipo]);
 
@@ -198,7 +201,10 @@ export default function AdminNotificaciones() {
   };
 
   const eliminar = async (n) => {
-    if (!window.confirm("Eliminar esta notificacion?")) return;
+    if (!await confirm({
+      title: "Eliminar notificación",
+      message: "Eliminar esta notificacion? Esta acción no se puede deshacer.",
+    })) return;
     setError(""); setOk("");
     try {
       await api.delete(`/notificaciones/${n.id}/`);
@@ -425,6 +431,7 @@ export default function AdminNotificaciones() {
           </div>
         )}
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

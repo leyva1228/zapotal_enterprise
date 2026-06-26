@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FaSearch, FaHistory, FaRedo } from "react-icons/fa";
 import api, { extractList } from "../../api";
+import LiveChart from "../../components/Admin/LiveChart";
+import { useTimeSeriesByCategory } from "../../hooks/useTimeSeries";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 
 const ACCIONES = [
@@ -37,6 +39,46 @@ export default function AdminAuditoria() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [count, setCount] = useState(0);
+  const [chartItems, setChartItems] = useState([]);
+
+  const cargarChart = useCallback(async () => {
+    try {
+      const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data } = await api.get("/audit-log/", {
+        params: { timestamp__gte: hace24h, page_size: 1000 }
+      });
+      // Mapear cada item a {timestamp, value, categoria}
+      const categoria = (a) => {
+        if (!a) return "OTHER";
+        if (a.startsWith("LOGIN")) return "LOGIN";
+        if (a === "CREATE") return "CREATE";
+        if (a === "UPDATE") return "UPDATE";
+        if (a === "DELETE") return "DELETE";
+        return "OTHER";
+      };
+      setChartItems(
+        extractList(data).map((it) => ({
+          timestamp: it.timestamp || it.fecha_creacion,
+          value: 1,
+          categoria: categoria(it.accion),
+        }))
+      );
+    } catch {
+      setChartItems([]);
+    }
+  }, []);
+
+  const CATEGORY_COLORS = {
+    LOGIN: "#0a3d1f", CREATE: "#2563eb", UPDATE: "#d97706", DELETE: "#dc2626",
+  };
+
+  const chartSeries = useTimeSeriesByCategory(chartItems, CATEGORY_COLORS, {
+    dateKey: "timestamp",
+    valueKey: "value",
+    categoryKey: "categoria",
+    bucketMs: 3600000,
+    windowSecs: 86400,
+  });
   const [filtros, setFiltros] = useState({
     accion: "",
     usuario: "",
@@ -79,6 +121,7 @@ export default function AdminAuditoria() {
   };
 
   useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page]);
+  useEffect(() => { cargarChart(); }, [cargarChart]);
 
   const aplicarFiltros = (e) => {
     e?.preventDefault?.();
@@ -97,6 +140,21 @@ export default function AdminAuditoria() {
   return (
     <div>
       {error && <div className="admin-error">{error}</div>}
+
+      <div style={{ marginTop: 16, marginBottom: 16 }}>
+        <LiveChart
+          series={chartSeries}
+          windowSecs={86400}
+          windows={[
+            { label: "1h", secs: 3600 },
+            { label: "6h", secs: 21600 },
+            { label: "24h", secs: 86400 },
+          ]}
+          title="Actividad por tipo (ultimas 24h)"
+          color="#0a3d1f"
+          height={200}
+        />
+      </div>
 
       <div className="admin-card mt-4">
         <div className="admin-card__header">

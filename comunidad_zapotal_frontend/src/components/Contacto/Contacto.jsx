@@ -196,7 +196,7 @@ function Contacto() {
       setFeedback({ tipo: "", msg: "" });
 
       const inicio = Date.now();
-      await api.post("/contacto/", datosFinales, {
+      const r = await api.post("/contacto/", datosFinales, {
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
       });

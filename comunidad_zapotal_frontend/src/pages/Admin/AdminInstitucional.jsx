@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import api from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 
 const TABS = [
   { id: 'configuracion', label: 'Configuracion',   icon: <FaCog /> },
@@ -221,6 +222,7 @@ function ConfiguracionTab() {
 }
 
 function MarcoLegalTab() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
@@ -261,7 +263,10 @@ function MarcoLegalTab() {
     } finally { setSaving(false); }
   };
   const eliminar = async (it) => {
-    if (!window.confirm(`Eliminar "${it.titulo}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar item de Marco Legal",
+      message: `Eliminar "${it.titulo}"? Esta acción no se puede deshacer.`,
+    })) return;
     await api.delete(`/marco-legal/${it.id}/`);
     cargar();
   };
@@ -435,6 +440,7 @@ function PaginasLegalesTab() {
 }
 
 function HitosTab() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
@@ -475,7 +481,10 @@ function HitosTab() {
     } finally { setSaving(false); }
   };
   const eliminar = async (it) => {
-    if (!window.confirm(`Eliminar "${it.titulo}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar hito histórico",
+      message: `Eliminar "${it.titulo}"? Esta acción no se puede deshacer.`,
+    })) return;
     await api.delete(`/hitos-historicos/${it.id}/`);
     cargar();
   };
@@ -533,6 +542,7 @@ function HitosTab() {
           </div>
         </form>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }
@@ -578,4 +588,5 @@ function GaleriaTab() {
     </div>
   );
 }
+
 

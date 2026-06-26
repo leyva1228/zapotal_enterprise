@@ -108,7 +108,14 @@ class LibroReclamacionViewSet(viewsets.ModelViewSet):
                 instance.id,
             )
         # Notificacion interna: admins ven el reclamo en /admin/notificaciones.
-        self._crear_notificaciones_admin(instance)
+        # Wrap en try/except para que un fallo en el buzon NO impida crear el reclamo.
+        try:
+            self._crear_notificaciones_admin(instance)
+        except Exception:
+            logger.exception(
+                'Excepcion inesperada al crear notificaciones admin para reclamo id=%s.',
+                instance.id,
+            )
 
     def _crear_notificaciones_admin(self, instance):
         from apps.accounts.models import Usuario

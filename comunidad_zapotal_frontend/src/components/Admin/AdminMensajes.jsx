@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa';
 import api, { extractList } from '../../api';
 import AdminModal from '../Admin/AdminModal';
+import { useConfirm } from './AdminConfirmDialog';
 import FiltersBar from './FiltersBar';
 import Pagination from './Pagination';
 import { useUrlFilters, parseIntParam } from '../../hooks/useUrlFilters';
@@ -21,8 +22,10 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 export default function AdminMensajes() {
   const [items, setItems] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [detalle, setDetalle] = useState(null);
   const abortRef = useRef(null);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [filters, setFilters, clearFilters] = useUrlFilters({
     filtro: { defaultValue: 'todos' },
@@ -37,8 +40,7 @@ export default function AdminMensajes() {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    const [loading, setLoading] = [false, () => {}];
-    void loading; void setLoading;
+    setLoading(true);
     try {
       const params = { page: filters.page };
       if (debouncedSearch) params.search = debouncedSearch;
@@ -59,6 +61,8 @@ export default function AdminMensajes() {
       if (e.name !== 'CanceledError' && e.name !== 'AbortError') {
         console.error('[AdminMensajes] error:', e);
       }
+    } finally {
+      if (abortRef.current === controller) setLoading(false);
     }
   }, [filters.page, filters.filtro, debouncedSearch]);
 
@@ -84,7 +88,10 @@ export default function AdminMensajes() {
   };
   const eliminar = async (m, e) => {
     e && e.stopPropagation();
-    if (!window.confirm(`Eliminar mensaje de "${m.nombre}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar mensaje",
+      message: `Eliminar mensaje de "${m.nombre}"? Esta acción no se puede deshacer.`,
+    })) return;
     await api.delete(`/mensajes-contacto/${m.id}/`);
     cargar();
     if (detalle && detalle.id === m.id) setDetalle(null);
@@ -212,11 +219,11 @@ export default function AdminMensajes() {
                   </td>
                   <td>
                     {m.respondido ? (
-                      <span className="admin-badge admin-badge--ok"><FaCheck /> Respondido</span>
+                      <span className="admin-badge admin-badge--success"><FaCheck /> Respondido</span>
                     ) : m.leido ? (
                       <span className="admin-badge admin-badge--info">Leido</span>
                     ) : (
-                      <span className="admin-badge admin-badge--warn">No leido</span>
+                      <span className="admin-badge admin-badge--warning">No leido</span>
                     )}
                   </td>
                   <td className="actions justify-end" onClick={(e) => e.stopPropagation()}>
@@ -317,12 +324,12 @@ export default function AdminMensajes() {
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'center', flexWrap: 'wrap' }}>
               {detalle.leido ? (
-                <span className="admin-badge admin-badge--ok"><FaEye /> Leido</span>
+                <span className="admin-badge admin-badge--success"><FaEye /> Leido</span>
               ) : (
-                <span className="admin-badge admin-badge--warn">No leido</span>
+                <span className="admin-badge admin-badge--warning">No leido</span>
               )}
               {detalle.respondido ? (
-                <span className="admin-badge admin-badge--ok"><FaCheck /> Respondido</span>
+                <span className="admin-badge admin-badge--success"><FaCheck /> Respondido</span>
               ) : (
                 <button
                   className="admin-btn admin-btn-sm"
@@ -335,6 +342,7 @@ export default function AdminMensajes() {
           </div>
         )}
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

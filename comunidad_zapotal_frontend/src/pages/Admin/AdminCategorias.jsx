@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 
 const EMPTY = { nombre: "", descripcion: "" };
 
@@ -14,6 +15,7 @@ export default function AdminCategorias() {
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const cargar = async () => {
     setLoading(true);
@@ -41,7 +43,10 @@ export default function AdminCategorias() {
     finally { setSaving(false); }
   };
   const eliminar = async (c) => {
-    if (!window.confirm(`¿Eliminar la categoría "${c.nombre}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar categoría",
+      message: `¿Eliminar la categoría "${c.nombre}"? Esta acción no se puede deshacer.`,
+    })) return;
     setError(""); setOk("");
     try { await api.delete(`/categorias/${c.id}/`); setOk("Categoría eliminada."); cargar(); }
     catch (e) { setError("No se pudo eliminar. Verifica que no tenga noticias asociadas."); }
@@ -111,6 +116,7 @@ export default function AdminCategorias() {
           </div>
         </form>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

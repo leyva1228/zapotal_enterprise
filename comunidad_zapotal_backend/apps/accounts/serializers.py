@@ -32,12 +32,12 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'id', 'email', 'tipo_usuario', 'estado',
             'foto_perfil', 'foto_perfil_url',
             'nombre_completo', 'iniciales', 'nombres', 'apellidos', 'dni',
-            'fecha_registro', 'is_active', 'comunero',
+            'fecha_registro', 'is_active', 'is_staff', 'is_superuser', 'comunero',
             'email_verificado', 'telefono', 'telefono_verificado',
             'two_factor_enabled', 'aprobado_por', 'fecha_aprobacion',
             'es_admin', 'es_autoridad', 'autoridad_cargo',
         ]
-        read_only_fields = ['id', 'fecha_registro', 'is_active']
+        read_only_fields = ['id', 'fecha_registro', 'is_active', 'is_staff', 'is_superuser']
 
     def get_foto_perfil_url(self, obj):
         request = self.context.get('request')

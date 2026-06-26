@@ -4,6 +4,7 @@ import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
 import FiltersBar from "../../components/Admin/FiltersBar";
 import Pagination from "../../components/Admin/Pagination";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
@@ -34,6 +35,7 @@ export default function AdminUsuarios() {
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
   const [actionModal, setActionModal] = useState({ open: false, item: null, accion: null });
   const [motivo, setMotivo] = useState("");
 
@@ -123,7 +125,10 @@ export default function AdminUsuarios() {
   };
 
   const eliminar = async (u) => {
-    if (!window.confirm(`Eliminar al usuario "${u.email}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar usuario",
+      message: `Eliminar al usuario "${u.email}"? Esta acción no se puede deshacer.`,
+    })) return;
     setError(""); setOk("");
     try { await api.delete(`/usuarios/${u.id}/`); setOk("Usuario eliminado."); cargar(); }
     catch (e) { setError("No se pudo eliminar. Puede tener contenido asociado."); }
@@ -452,6 +457,7 @@ export default function AdminUsuarios() {
           />
         </div>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

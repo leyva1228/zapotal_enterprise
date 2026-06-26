@@ -5,6 +5,7 @@ import {
 } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
+import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 
 const TIPOS = {
   ELECTORAL: { label: "Comite Electoral",         icon: <FaGavel /> },
@@ -32,6 +33,7 @@ export default function AdminComitesComunales() {
   const [ok, setOk] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const { confirm, ConfirmDialog } = useConfirm();
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const inputActaRef = useRef(null);
@@ -119,7 +121,10 @@ export default function AdminComitesComunales() {
   };
 
   const eliminar = async (c) => {
-    if (!window.confirm(`¿Eliminar el comite "${c.nombre}"?`)) return;
+    if (!await confirm({
+      title: "Eliminar comite",
+      message: `¿Eliminar el comite "${c.nombre}"? Esta acción no se puede deshacer.`,
+    })) return;
     setError(""); setOk("");
     try { await api.delete(`/comites-comunales/${c.id}/`); setOk("Eliminado."); cargar(); }
     catch (e) { setError("No se pudo eliminar."); }
@@ -185,8 +190,8 @@ export default function AdminComitesComunales() {
                       </td>
                       <td>
                         {c.activo
-                          ? <span className="admin-badge admin-badge--ok">Activo</span>
-                          : <span className="admin-badge admin-badge--mute">Inactivo</span>}
+                          ? <span className="admin-badge admin-badge--success">Activo</span>
+                          : <span className="admin-badge admin-badge--gray">Inactivo</span>}
                       </td>
                       <td className="actions justify-end">
                         <button className="admin-btn admin-btn-sm" onClick={() => abrirEditar(c)}><FaEdit /> Editar</button>
@@ -409,6 +414,7 @@ export default function AdminComitesComunales() {
           </fieldset>
         </form>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }
