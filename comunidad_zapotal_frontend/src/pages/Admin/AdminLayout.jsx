@@ -1,120 +1,152 @@
-import React, { useState, useEffect } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+/**
+ * AdminLayout - Shell del panel administrador.
+ *
+ * LOOP 1 (rediseño):
+ * - Sidebar con header "COMUNIDAD / ZAPOTAL" (2 lineas).
+ * - 11 items planos (sin subcategorias; los filtros viven en cada pagina).
+ * - Cajita de perfil estatica al fondo con foto, nombre, cargo, estado, logout.
+ * - Resizer arrastrable en el borde derecho (auto-hide <60px).
+ * - Toggle animado con icono de flecha en circulo blanco.
+ *
+ * LOOP 2 (header):
+ * - Header blanco minimalista: titulo al centro + 3 iconos a la derecha.
+ * - Sin pill de usuario (vive en el sidebar).
+ */
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  FaTachometerAlt, FaNewspaper, FaCalendarAlt, FaTags, FaUsers,
-  FaUserShield, FaCommentDots, FaSignOutAlt, FaUser, FaChevronLeft, FaHome,
-  FaHistory, FaEnvelope, FaBell, FaChevronDown, FaChevronRight,
-  FaInbox, FaFlag, FaCog, FaListAlt, FaArchive, FaCheckCircle, FaUserCheck,
-  FaHandHoldingHeart, FaMoneyBillWave, FaLandmark, FaBuilding, FaUserTie,
-  FaChartPie, FaGavel,
+  FaTachometerAlt, FaUsers, FaNewspaper, FaCalendarAlt, FaCommentDots,
+  FaEnvelope, FaLandmark, FaHandHoldingHeart, FaListAlt, FaCog, FaUserCircle,
+  FaSignOutAlt, FaHome, FaSync, FaBell, FaChevronLeft, FaUser, FaCamera,
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
+import { useResizableSidebar } from '../../hooks/useResizableSidebar';
 import './AdminLayout.css';
 
-const MENU_GROUPS = [
-  {
-    id: 'usuarios',
-    title: 'Usuarios',
-    icon: <FaUserShield />,
-    items: [
-      { to: '/admin/usuarios', label: 'Todos', icon: <FaUsers /> },
-      { to: '/admin/usuarios', label: 'Pendientes', icon: <FaUserCheck />, state: 'PENDIENTE' },
-      { to: '/admin/usuarios', label: 'Bloqueados', icon: <FaFlag />, state: 'BLOQUEADO' },
-    ],
-  },
-  {
-    id: 'comentarios',
-    title: 'Comentarios',
-    icon: <FaCommentDots />,
-    items: [
-      { to: '/admin/comentarios', label: 'Todos', icon: <FaListAlt /> },
-      { to: '/admin/comentarios', label: 'Moderacion', icon: <FaCommentDots />, estado: 'PENDIENTE' },
-      { to: '/admin/comentarios', label: 'Censurados', icon: <FaFlag />, estado: 'OCULTO' },
-    ],
-  },
-  {
-    id: 'noticias',
-    title: 'Noticias',
-    icon: <FaNewspaper />,
-    items: [
-      { to: '/admin/noticias', label: 'Publicadas', icon: <FaCheckCircle />, estadoNoticia: 'PUBLICADA' },
-      { to: '/admin/noticias', label: 'Borradores', icon: <FaArchive />, estadoNoticia: 'BORRADOR' },
-      { to: '/admin/categorias', label: 'Categorias', icon: <FaTags /> },
-    ],
-  },
-  {
-    id: 'eventos',
-    title: 'Eventos',
-    icon: <FaCalendarAlt />,
-    items: [
-      { to: '/admin/eventos', label: 'Activos', icon: <FaCheckCircle /> },
-      { to: '/admin/eventos', label: 'Finalizados', icon: <FaArchive /> },
-    ],
-  },
-  {
-    id: 'contenido',
-    title: 'Contenido',
-    icon: <FaListAlt />,
-    items: [
-      { to: '/admin/bajas', label: 'Solicitudes de baja', icon: <FaUserShield /> },
-      { to: '/admin/cms', label: 'CMS', icon: <FaCog /> },
-      { to: '/admin/institucional', label: 'Institucional', icon: <FaCog /> },
-    ],
-  },
-  {
-    id: 'autoridades',
-    title: 'Autoridades',
-    icon: <FaLandmark />,
-    items: [
-      { to: '/admin/autoridades', label: 'Directiva Comunal',  icon: <FaUsers />,    nivel: 'COMUNAL' },
-      { to: '/admin/autoridades', label: 'Municipalidad C.P.', icon: <FaBuilding />, nivel: 'MUNICIPAL' },
-      { to: '/admin/autoridades', label: 'Autoridad Politica', icon: <FaUserTie />,  nivel: 'POLITICO' },
-      { to: '/admin/comites-comunales', label: 'Comites Comunales', icon: <FaGavel /> },
-      { to: '/admin/autoridades', label: 'Estadisticas',       icon: <FaChartPie />, nivel: '__STATS__' },
-    ],
-  },
-  {
-    id: 'mensajeria',
-    title: 'Mensajeria',
-    icon: <FaEnvelope />,
-    items: [
-      { to: '/admin/notificaciones', label: 'Notificaciones', icon: <FaBell />, badgeKey: 'notif' },
-      { to: '/admin/contacto', label: 'Contacto', icon: <FaEnvelope /> },
-      { to: '/admin/reclamaciones', label: 'Reclamaciones', icon: <FaInbox /> },
-    ],
-  },
-  {
-    id: 'donaciones',
-    title: 'Donaciones',
-    icon: <FaHandHoldingHeart />,
-    items: [
-      { to: '/admin/donaciones', label: 'Todas', icon: <FaListAlt /> },
-      { to: '/admin/donaciones', label: 'Aprobadas', icon: <FaCheckCircle />, estado: 'APROBADO' },
-      { to: '/admin/donaciones', label: 'Pendientes', icon: <FaArchive />, estado: 'PENDIENTE' },
-      { to: '/admin/donaciones', label: 'Rechazadas', icon: <FaFlag />, estado: 'RECHAZADO' },
-    ],
-  },
-  {
-    id: 'sistema',
-    title: 'Sistema',
-    icon: <FaCog />,
-    items: [
-      { to: '/admin/auditoria', label: 'Auditoria', icon: <FaHistory /> },
-    ],
-  },
+// 11 items en el orden pedido por el usuario.
+const MENU_ITEMS = [
+  { to: '/admin',                label: 'Dashboard',     icon: <FaTachometerAlt /> },
+  { to: '/admin/usuarios',       label: 'Usuarios',      icon: <FaUsers /> },
+  { to: '/admin/noticias',       label: 'Noticias',      icon: <FaNewspaper /> },
+  { to: '/admin/eventos',        label: 'Eventos',       icon: <FaCalendarAlt /> },
+  { to: '/admin/notificaciones', label: 'Mensajeria',    icon: <FaEnvelope /> },
+  { to: '/admin/comentarios',    label: 'Comentarios',   icon: <FaCommentDots /> },
+  { to: '/admin/autoridades',    label: 'Autoridades',   icon: <FaLandmark /> },
+  { to: '/admin/donaciones',     label: 'Donaciones',    icon: <FaHandHoldingHeart /> },
+  { to: '/admin/institucional',  label: 'Contenido',     icon: <FaListAlt /> },
+  { to: '/admin/auditoria',      label: 'Sistema',       icon: <FaCog /> },
+  { to: '/admin/perfil',         label: 'Perfil',        icon: <FaUserCircle /> },
 ];
+
+// Mapeo: pathname -> query param que define la subseccion + label default.
+const SUBSECTION_MAP = {
+  '/admin/usuarios':       { param: 'estado',        default: 'Todos' },
+  '/admin/comentarios':    { param: 'estado',        default: 'Todos' },
+  '/admin/noticias':       { param: 'estadoNoticia', default: 'Publicadas' },
+  '/admin/eventos':        { param: 'estadoEvento',  default: 'Activos' },
+  '/admin/donaciones':     { param: 'estado',        default: 'Todas' },
+  '/admin/autoridades':    { param: 'nivel',         default: 'Directiva Comunal' },
+  '/admin/bajas':          { param: 'estado',        default: 'Pendientes' },
+  '/admin/notificaciones': { param: 'leido',         default: 'Todas' },
+  '/admin/auditoria':      { param: null,            default: '' },
+  '/admin/reclamaciones':  { param: 'estado',        default: 'Pendientes' },
+  '/admin/contacto':       { param: null,            default: '' },
+  '/admin/perfil':         { param: null,            default: '' },
+  '/admin/institucional':  { param: null,            default: '' },
+};
+
+// Labels legibles para los valores de subseccion.
+const SUBSECTION_LABELS = {
+  estado: {
+    '':                       'Todos',
+    'PENDIENTE':              'Pendientes',
+    'PENDIENTE_OTP':          'Pendientes',
+    'PENDIENTE_APROBACION':   'Pendientes',
+    'ACTIVO':                 'Activos',
+    'BLOQUEADO':              'Bloqueados',
+    'INACTIVO':               'Inactivos',
+    'RECHAZADO':              'Rechazados',
+    'RECHAZADA':              'Rechazadas',
+    'CANCELADA':              'Canceladas',
+    'PUBLICADA':              'Publicadas',
+    'OCULTO':                 'Censurados',
+    'EN_PROCESO':             'En proceso',
+    'RESUELTO':               'Resueltos',
+    'VENCIDO':                'Vencidos',
+    'APROBADO':               'Aprobadas',
+  },
+  estadoNoticia: {
+    '':           'Todos',
+    'PUBLICADA':  'Publicadas',
+    'BORRADOR':   'Borradores',
+    'ARCHIVADA':  'Archivadas',
+  },
+  estadoEvento: {
+    '':            'Todos',
+    'activos':     'Activos',
+    'finalizados': 'Finalizados',
+  },
+  nivel: {
+    'COMUNAL':   'Directiva Comunal',
+    'MUNICIPAL': 'Municipalidad',
+    'POLITICO':  'Autoridad Politica',
+    '__STATS__': 'Estadisticas',
+  },
+  leido: {
+    '':      'Todas',
+    'true':  'Leidas',
+    'false': 'No leidas',
+  },
+};
+
+function getTituloYSubseccion(pathname, searchParams) {
+  const item = MENU_ITEMS.find((i) => i.to === pathname);
+  const titulo = item ? item.label : 'Administracion';
+  const config = SUBSECTION_MAP[pathname];
+  if (!config || !config.param) {
+    return { titulo, subseccion: '' };
+  }
+  const value = searchParams.get(config.param) || '';
+  const subseccion = SUBSECTION_LABELS[config.param]?.[value] || value;
+  return { titulo, subseccion };
+}
+
+function getRoleLabel(user) {
+  if (!user) return '';
+  if (user.tipo_usuario === 'ADMIN') return 'Administrador';
+  if (user.tipo_usuario === 'COMUNERO') return 'Comunero';
+  return user.tipo_usuario;
+}
+
+function getStatusLabel(user) {
+  if (!user) return '';
+  const e = user.estado;
+  if (e === 'ACTIVO') return 'Vigente';
+  if (e === 'INACTIVO') return 'Inactivo';
+  if (e === 'BLOQUEADO') return 'Bloqueado';
+  if (e === 'RECHAZADO') return 'Rechazado';
+  if (e === 'PENDIENTE_APROBACION') return 'Pendiente aprobacion';
+  if (e === 'PENDIENTE_OTP') return 'Pendiente verificacion';
+  return e;
+}
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
-  const [abiertos, setAbiertos] = useState(() => {
-    const inicial = {};
-    MENU_GROUPS.forEach((g) => { inicial[g.id] = true; });
-    return inicial;
-  });
+  const [searchParams] = useSearchParams();
   const { user, clearAuth } = useAuth();
+
+  const {
+    width,
+    isCollapsed,
+    isDragging,
+    sidebarRef,
+    dragHandleProps,
+    toggleCollapsed,
+  } = useResizableSidebar();
+
+  // Badge de notificaciones no leidas.
   const [notifNoLeidas, setNotifNoLeidas] = useState(0);
 
   useEffect(() => {
@@ -124,12 +156,11 @@ export default function AdminLayout() {
         const { data } = await api.get('/notificaciones/no-leidas/count/');
         if (!cancelado) setNotifNoLeidas(data.count || 0);
       } catch {
-        /* silencioso: badge no aparece */
+        /* silencioso */
       }
     };
     cargar();
     const id = setInterval(cargar, 30000);
-    // Loop 3.6: decrementar inmediatamente cuando se marca leida en otra pagina.
     const handler = () => cargar();
     window.addEventListener('notificaciones:actualizadas', handler);
     return () => {
@@ -139,8 +170,6 @@ export default function AdminLayout() {
     };
   }, []);
 
-  const toggleGrupo = (id) => setAbiertos((prev) => ({ ...prev, [id]: !prev[id] }));
-
   const handleLogout = async () => {
     try {
       await clearAuth();
@@ -149,124 +178,156 @@ export default function AdminLayout() {
     }
   };
 
-  const renderItem = (item) => {
-    const params = new URLSearchParams();
-    if (item.estado)      params.set('estado', item.estado);
-    if (item.estadoNoticia) params.set('estadoNoticia', item.estadoNoticia);
-    if (item.state)       params.set('state', item.state);
-    if (item.nivel)       params.set('nivel', item.nivel);
-    const search = params.toString();
-    const to = search ? `${item.to}?${search}` : item.to;
-    const badge = item.badgeKey === 'notif' && notifNoLeidas > 0 ? notifNoLeidas : null;
-
-    return (
-      <NavLink
-        key={`${item.to}-${item.label}`}
-        to={to}
-        end={item.to === '/admin'}
-        className={({ isActive }) =>
-          'admin-sidebar__sublink' + (isActive && location.search === (search ? `?${search}` : '') ? ' admin-sidebar__sublink--active' : '')
-        }
-      >
-        <span className="admin-sidebar__subicon">{item.icon}</span>
-        {!collapsed && <span>{item.label}</span>}
-        {!collapsed && badge !== null && (
-          <span className="admin-sidebar__badge admin-sidebar__badge--warn">{badge}</span>
-        )}
-      </NavLink>
-    );
+  const handleRefresh = () => {
+    window.dispatchEvent(new CustomEvent('admin:refresh'));
   };
 
-  return (
-    <div className={`admin-shell${collapsed ? ' admin-shell--collapsed' : ''}`}>
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar__brand">
-          <span className="admin-sidebar__logo">Z</span>
-          {!collapsed && <span className="admin-sidebar__title">Zapotal Admin</span>}
-        </div>
-        <nav className="admin-sidebar__nav">
-          <NavLink
-            to="/admin"
-            end
-            className={({ isActive }) =>
-              'admin-sidebar__link' + (isActive ? ' admin-sidebar__link--active' : '')
-            }
-          >
-            <span className="admin-sidebar__icon"><FaTachometerAlt /></span>
-            {!collapsed && <span className="admin-sidebar__label">Dashboard</span>}
-          </NavLink>
+  const { titulo, subseccion } = useMemo(
+    () => getTituloYSubseccion(location.pathname, searchParams),
+    [location.pathname, searchParams],
+  );
 
-          {MENU_GROUPS.map((grupo) => (
-            <div key={grupo.id} className="admin-sidebar__group">
-              {!collapsed && (
-                <button
-                  type="button"
-                  className={`admin-sidebar__group-title ${abiertos[grupo.id] ? 'is-open' : ''}`}
-                  onClick={() => toggleGrupo(grupo.id)}
-                >
-                  <span className="admin-sidebar__icon">{grupo.icon}</span>
-                  <span className="admin-sidebar__group-label">{grupo.title}</span>
-                  <span className="admin-sidebar__group-chevron">
-                    {abiertos[grupo.id] ? <FaChevronDown /> : <FaChevronRight />}
-                  </span>
-                </button>
-              )}
-              {collapsed && (
-                <div className="admin-sidebar__group-title admin-sidebar__group-title--collapsed" title={grupo.title}>
-                  {grupo.icon}
-                </div>
-              )}
-              {abiertos[grupo.id] && (
-                <div className="admin-sidebar__sublinks">
-                  {grupo.items.map(renderItem)}
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
+  return (
+    <div
+      className={
+        'admin-shell'
+        + (isCollapsed ? ' admin-shell--collapsed' : '')
+        + (isDragging ? ' admin-shell--dragging' : '')
+      }
+      style={!isCollapsed ? { '--sidebar-width': `${width}px` } : undefined}
+    >
+      {/* ===== SIDEBAR ===== */}
+      <aside
+        ref={sidebarRef}
+        className={'admin-sidebar' + (isCollapsed ? ' admin-sidebar--collapsed' : '')}
+      >
+        {/* Toggle (circulo blanco con flecha) */}
         <button
           type="button"
-          className="admin-sidebar__collapse"
-          onClick={() => setCollapsed((c) => !c)}
-          title={collapsed ? 'Expandir' : 'Colapsar'}
+          className="admin-sidebar__toggle"
+          onClick={toggleCollapsed}
+          title={isCollapsed ? 'Expandir' : 'Colapsar'}
+          aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
         >
-          <FaChevronLeft className={collapsed ? 'rotate-180' : ''} />
-          {!collapsed && <span>Colapsar</span>}
+          <FaChevronLeft />
         </button>
+
+        {/* Header del sidebar */}
+        <div className="admin-sidebar__header">
+          <div className="admin-sidebar__logo">Z</div>
+          <div className="admin-sidebar__header-text">
+            <div className="admin-sidebar__title-line1">COMUNIDAD</div>
+            <div className="admin-sidebar__title-line2">ZAPOTAL</div>
+          </div>
+        </div>
+
+        {/* Lista plana de items */}
+        <nav className="admin-sidebar__nav">
+          {MENU_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/admin'}
+              className={({ isActive }) =>
+                'admin-sidebar__item' + (isActive ? ' admin-sidebar__item--active' : '')
+              }
+              title={isCollapsed ? item.label : undefined}
+            >
+              <span className="admin-sidebar__icon">{item.icon}</span>
+              <span className="admin-sidebar__label">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Cajita de perfil estatica */}
+        <div className="admin-profile-card">
+          <button
+            type="button"
+            className="admin-profile-card__logout"
+            onClick={handleLogout}
+            title="Cerrar sesion"
+            aria-label="Cerrar sesion"
+          >
+            <FaSignOutAlt />
+          </button>
+          <div className="admin-profile-card__photo">
+            {user?.foto_perfil_url ? (
+              <img src={user.foto_perfil_url} alt="Foto de perfil" />
+            ) : (
+              <FaUser />
+            )}
+          </div>
+          <div className="admin-profile-card__name">
+            {user?.nombre_completo || user?.email || 'Usuario'}
+          </div>
+          <div className="admin-profile-card__role">
+            {getRoleLabel(user)}
+          </div>
+          <div className="admin-profile-card__status">
+            <span
+              className={
+                'admin-profile-card__status-dot'
+                + (user?.estado === 'ACTIVO' ? ' admin-profile-card__status-dot--ok' : '')
+              }
+            />
+            {getStatusLabel(user)}
+          </div>
+        </div>
+
+        {/* Resizer handle (borde derecho) */}
+        <div className="admin-sidebar__resizer" {...dragHandleProps} />
       </aside>
 
+      {/* ===== MAIN ===== */}
       <div className="admin-main">
+        {/* Header blanco */}
         <header className="admin-topbar">
-          <div className="admin-topbar__left">
-            <Link to="/" className="admin-topbar__back">
-              <FaHome /> {!collapsed && <span>Ver sitio</span>}
-            </Link>
-            <h1 className="admin-topbar__title">{tituloRuta(location.pathname)}</h1>
+          <div className="admin-topbar__center">
+            <h1 className="admin-topbar__title">
+              {titulo}
+              {subseccion && (
+                <span className="admin-topbar__subtitle"> - {subseccion}</span>
+              )}
+            </h1>
           </div>
           <div className="admin-topbar__right">
-            <div className="admin-topbar__user" title={user?.email}>
-              <FaUser />
-              <span>{user?.nombre_completo || user?.email}</span>
-            </div>
-            <button className="admin-btn admin-btn-ghost" onClick={handleLogout}>
-              <FaSignOutAlt /> Salir
+            <Link
+              to="/"
+              className="admin-topbar__icon-btn"
+              title="Ir al sitio publico"
+              aria-label="Ir al sitio publico"
+            >
+              <FaHome />
+            </Link>
+            <button
+              type="button"
+              className="admin-topbar__icon-btn"
+              onClick={handleRefresh}
+              title="Recargar data"
+              aria-label="Recargar data"
+            >
+              <FaSync />
+            </button>
+            <button
+              type="button"
+              className="admin-topbar__icon-btn admin-topbar__icon-btn--notif"
+              onClick={() => navigate('/admin/notificaciones')}
+              title="Notificaciones"
+              aria-label="Notificaciones"
+            >
+              <FaBell />
+              {notifNoLeidas > 0 && (
+                <span className="admin-topbar__badge">{notifNoLeidas > 99 ? '99+' : notifNoLeidas}</span>
+              )}
             </button>
           </div>
         </header>
+
+        {/* Contenido */}
         <main className="admin-content">
           <Outlet />
         </main>
       </div>
     </div>
   );
-}
-
-function tituloRuta(path) {
-  if (path === '/admin') return 'Dashboard';
-  for (const g of MENU_GROUPS) {
-    for (const it of g.items) {
-      if (it.to === path) return `${g.title} - ${it.label}`;
-    }
-  }
-  return 'Administracion';
 }
