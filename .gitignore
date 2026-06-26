@@ -1,0 +1,57 @@
+# ─── Allowlist: solo estos directorios/archivos se trackean ───
+/*
+!/comunidad_zapotal_backend/
+!/comunidad_zapotal_frontend/
+!/generate_secret_key.bat
+!/init_db.bat
+!/install_backend.bat
+!/install_frontend.bat
+!/setup_backend.bat
+!/credenciales-seed.txt
+!/setup_backend.bat
+!/setup.bat
+!/VERSION
+!/.gitignore
+
+# ─── Patrones generales dentro de las carpetas permitidas ───
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Node / React
+node_modules/
+dist/
+build/
+
+# Entorno y secretos
+.env
+
+# Django
+staticfiles/
+
+# Bases de datos
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+docs/
+*.md
+comunidad_zapotal_mobilebff_and_mobile_old/
+.playwright-mcp/
+.swarm/
