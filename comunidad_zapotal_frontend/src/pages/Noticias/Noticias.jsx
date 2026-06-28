@@ -22,11 +22,26 @@ const obtenerEtiquetaCategoria = (noticia) => {
   return "GENERAL";
 };
 
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
 const formatearFecha = (str) => {
   if (!str) return "";
   const d = new Date(str);
   if (isNaN(d)) return "";
-  return `${d.getDate().toString().padStart(2,"0")}.${(d.getMonth()+1).toString().padStart(2,"0")}.${d.getFullYear()}`;
+  const dd = d.getDate().toString().padStart(2, "0");
+  const mes = MESES[d.getMonth()];
+  return `${dd} ${mes} de ${d.getFullYear()}`;
+};
+
+const compartirNoticia = async (noticia) => {
+  const url = `${window.location.origin}/noticia/detalle/${noticia.id}/`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: noticia.titulo || "Noticia", url });
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+    }
+  } catch {}
 };
 
 /* En el listado solo se muestran imágenes. Prioriza la primera IMAGEN del array
@@ -119,7 +134,7 @@ function Noticias() {
         <div className="nc-lateral__body">
           <div className="nc-card__top">
             <span className="nc-card__cat">{categoria}</span>
-            <button className="nc-card__share" title="Compartir"><BsShare /></button>
+            <button className="nc-card__share" title="Compartir" onClick={() => compartirNoticia(noticia)}><BsShare /></button>
           </div>
           <Link to={`/noticias/${noticia.id}`} className="nc-card__title-link">
             <h2 className="nc-lateral__title">{noticia.titulo}</h2>
@@ -150,7 +165,7 @@ function Noticias() {
         <div className="nc-card__body">
           <div className="nc-card__top">
             <span className="nc-card__cat">{categoria}</span>
-            <button className="nc-card__share" title="Compartir"><BsShare /></button>
+            <button className="nc-card__share" title="Compartir" onClick={() => compartirNoticia(noticia)}><BsShare /></button>
           </div>
           <Link to={`/noticias/${noticia.id}`} className="nc-card__title-link">
             <h2 className="nc-card__title">{noticia.titulo}</h2>
@@ -194,7 +209,7 @@ function Noticias() {
                   <div className="nc-hero__body">
                     <div className="nc-card__top">
                       <span className="nc-card__cat">{categoria}</span>
-                      <button className="nc-card__share" title="Compartir"><BsShare /></button>
+                      <button className="nc-card__share" title="Compartir" onClick={() => compartirNoticia(heroNoticia)}><BsShare /></button>
                     </div>
                     <Link to={`/noticias/${heroNoticia.id}`} className="nc-card__title-link">
                       <h2 className="nc-hero__title">{heroNoticia.titulo}</h2>
