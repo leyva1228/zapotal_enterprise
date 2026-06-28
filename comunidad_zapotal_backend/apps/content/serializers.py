@@ -233,10 +233,13 @@ class EventoSerializer(serializers.ModelSerializer):
         model = Evento
         # Ver nota en NoticiaSerializer: `imagen` se omite para no
         # depender del storage backend. El frontend usa `imagen_url`.
+        # `vistas` se expone para que el frontend pueda mostrar y
+        # actualizar el contador (mismo patron que `NoticiaSerializer`).
         fields = [
             'id', 'titulo', 'descripcion', 'fecha', 'fecha_evento',
             'lugar', 'ubicacion', 'imagen_url', 'multimedia',
-            'total_reacciones', 'total_comentarios', 'categoria', 'categoria_nombre',
+            'total_reacciones', 'total_comentarios', 'vistas',
+            'categoria', 'categoria_nombre',
         ]
         read_only_fields = ['id', 'fecha_evento', 'ubicacion', 'total_reacciones', 'total_comentarios', 'categoria_nombre']
 
@@ -291,9 +294,11 @@ class EventoRelacionadoSerializer(serializers.ModelSerializer):
         model = Evento
         # Ver nota en NoticiaRelacionadaSerializer: omitimos `imagen` para
         # evitar la llamada a `FieldFile.url` que depende del storage backend.
+        # `vistas` se incluye para consistencia con `NoticiaRelacionadaSerializer`
+        # y porque la sidebar puede mostrar el contador.
         fields = [
             'id', 'titulo', 'descripcion', 'fecha', 'fecha_evento',
-            'lugar', 'ubicacion', 'imagen_url',
+            'lugar', 'ubicacion', 'imagen_url', 'vistas',
             'categoria', 'categoria_nombre',
         ]
 
