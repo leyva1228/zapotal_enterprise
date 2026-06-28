@@ -40,8 +40,8 @@
   border-radius: 18px;
   border: 1px solid #e5e7eb;
 }
-.usuario-indicador a { color: #15803d; text-decoration: none; }
-.usuario-indicador.autenticado { border-color: #15803d; }
+.usuario-indicador a { color: var(--nb-verde, #1a3209); text-decoration: none; }
+.usuario-indicador.autenticado { border-color: var(--nb-verde, #1a3209); }
 
 /* Layout de dos columnas */
 .detalle-layout-full {
@@ -112,7 +112,7 @@
   background: white;
   border-radius: 50%;
   padding: 2px;
-  color: #15803d;
+  color: var(--nb-verde, #1a3209);
 }
 .yt-canal-texto {
   display: flex;
@@ -125,7 +125,7 @@
   gap: 5px;
 }
 .yt-verificado {
-  color: #15803d;
+  color: var(--nb-verde, #1a3209);
 }
 .yt-canal-sub {
   font-size: 0.75rem;
@@ -166,7 +166,7 @@
   background: rgba(0,0,0,0.05);
 }
 .yt-like-btn.activo {
-  color: #15803d;
+  color: var(--nb-verde, #1a3209);
 }
 .yt-dislike-btn.activo {
   color: #8b6f47;
@@ -192,7 +192,7 @@
   background: #e0e0e0;
 }
 .yt-share-btn {
-  color: var(--nb-dorado, #b8963e);
+  color: var(--nb-dorado, var(--nb-dorado, #b8963e));
   transition: color 0.2s;
 }
 .yt-share-btn:hover {
@@ -225,7 +225,7 @@
 .yt-desc-toggle {
   background: none;
   border: none;
-  color: #15803d;
+  color: var(--nb-verde, #1a3209);
   font-weight: 500;
   margin-top: 0.5rem;
   cursor: pointer;
@@ -254,7 +254,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-  border-left: 4px solid #1f7a32;
+  border-left: 4px solid var(--nb-verde, #1a3209);
 }
 .evento-info-item {
   display: flex;
@@ -264,7 +264,7 @@
   color: #333;
 }
 .evento-info-item svg {
-  color: #1f7a32;
+  color: var(--nb-verde, #1a3209);
 }
 @media (max-width: 600px) {
   .evento-info-adicional {
@@ -312,7 +312,7 @@
   justify-content: center;
   font-weight: bold;
   color: white;
-  background: #15803d;
+  background: var(--nb-verde, #1a3209);
 }
 .comentario-form {
   flex: 1;
@@ -329,10 +329,10 @@
   transition: border 0.2s;
 }
 .comentario-form input:focus {
-  border-color: #15803d;
+  border-color: var(--nb-verde, #1a3209);
 }
 .comentario-form button {
-  background: #15803d;
+  background: var(--nb-verde, #1a3209);
   border: none;
   border-radius: 40px;
   padding: 0 20px;
@@ -370,7 +370,7 @@
   font-size: 0.9rem;
 }
 .autor-badge, .admin-badge {
-  background: #15803d;
+  background: var(--nb-verde, #1a3209);
   color: white;
   font-size: 0.7rem;
   padding: 2px 8px;
@@ -411,7 +411,7 @@
   gap: 4px;
 }
 .comentario-like-btn:hover, .comentario-responder-btn:hover {
-  color: #15803d;
+  color: var(--nb-verde, #1a3209);
 }
 .respuesta-input-wrapper {
   display: flex;
@@ -445,7 +445,7 @@
   background: #e0e0e0;
 }
 .btn-responder {
-  background: #15803d;
+  background: var(--nb-verde, #1a3209);
   color: white;
 }
 .ver-respuestas-btn {
@@ -553,7 +553,7 @@
 }
 .gm-thumb--active {
   opacity: 1;
-  border: 2px solid #15803d;
+  border: 2px solid var(--nb-verde, #1a3209);
 }
 .gm-thumb img {
   width: 100%;
@@ -716,5 +716,5 @@
   text-transform: uppercase; letter-spacing: 0.05em;
   z-index: 4; display: inline-flex; align-items: center; gap: 4px;
 }
-.gm-badge--principal { left: 12px; background: #d4a72c; color: #0a3d1f; }
+.gm-badge--principal { left: 12px; background: var(--nb-dorado, var(--nb-dorado, #b8963e)); color: var(--nb-verde-med, #243f0f); }
 .gm-badge--kind { right: 12px; }
