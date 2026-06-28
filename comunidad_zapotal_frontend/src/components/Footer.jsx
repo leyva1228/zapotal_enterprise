@@ -12,13 +12,9 @@ function Footer() {
         <div className="footer-brand">
             <h2>Comunidad Campesina Niño Dios de Zapotal</h2>
           <p>
-            Plataforma digital institucional creada para informar,
-            conectar y fortalecer la identidad de nuestra comunidad
-            mediante noticias, eventos y contenido relevante.
+            Plataforma digital institucional para informar y conectar
+            a nuestra comunidad.
           </p>
-          <div className="footer-badge">
-            <span>Portal institucional comunitario</span>
-          </div>
         </div>
 
         <div className="footer-section">
@@ -39,15 +35,6 @@ function Footer() {
             <li><Link to="/nosotros/conocenos">Conocenos</Link></li>
             <li><Link to="/nosotros/marco-legal">Marco legal</Link></li>
           </ul>
-          <div className="libro-reclamaciones-item">
-            <Link to="/libro-reclamaciones" className="libro-reclamaciones-link">
-              <img
-                src="img/Libro _de_reclamaciones/libro_de_recalmaciones.png"
-                alt="Libro de reclamaciones"
-                className="libro-reclamaciones-img"
-              />
-            </Link>
-          </div>
         </div>
 
         <div className="footer-section">
@@ -57,6 +44,15 @@ function Footer() {
             <li><Link to="/privacidad">Politica de Privacidad</Link></li>
             <li><Link to="/cookies">Politica de Cookies</Link></li>
           </ul>
+          <div className="libro-reclamaciones-item">
+            <Link to="/libro-reclamaciones" className="libro-reclamaciones-link">
+              <img
+                src="img/Libro _de_reclamaciones/libro_de_recalmaciones.png"
+                alt="Libro de reclamaciones"
+                className="libro-reclamaciones-img"
+              />
+            </Link>
+          </div>
         </div>
 
       </div>
