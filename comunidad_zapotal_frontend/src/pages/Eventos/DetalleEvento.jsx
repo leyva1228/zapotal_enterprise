@@ -778,7 +778,7 @@ function DetalleEvento() {
             <div className={`yt-desc-box ${descExpanded ? "expandida" : ""}`}>
               <div className="yt-desc-meta-row">
                 {evento.vistas != null && <span className="yt-desc-views"><FaEye /> {evento.vistas} visualizaciones</span>}
-                <span className="yt-desc-fecha">Publicado: {formatFecha(evento.fecha)}</span>
+                <span className="yt-desc-fecha">{formatFecha(evento.fecha)}</span>
               </div>
               <div className="yt-desc-contenido">
                 <p>{evento.descripcion || evento.contenido}</p>
