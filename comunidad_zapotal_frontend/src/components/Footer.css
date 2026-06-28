@@ -27,8 +27,8 @@
   margin: auto;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 70px;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
   padding-bottom: 25px;
 }
 
@@ -167,20 +167,25 @@
   font-family: 'Outfit', sans-serif;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1100px) {
   .footer-container {
-    grid-template-columns: 1fr;
-    gap: 40px;
-    text-align: center;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px 32px;
   }
+  .footer-brand { grid-column: 1 / -1; text-align: center; }
   .footer-brand p { margin: auto; }
+  .footer-brand h2 { text-align: center; }
+  .footer-section h3 { text-align: center; }
   .footer-section h3::after { left: 50%; transform: translateX(-50%); }
   .footer-section ul li a { justify-content: center; }
-  .footer-badge { justify-content: center; }
   .libro-reclamaciones-item { display: flex; justify-content: center; }
 }
 
 @media (max-width: 600px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
   .footer { padding-top: 50px; }
   .footer-brand h2 { font-size: 1.65rem; }
   .footer-brand p { font-size: .93rem; }
