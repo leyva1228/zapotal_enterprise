@@ -359,21 +359,33 @@ function DetalleEvento() {
     // Endpoint singular con /detalle/ (nomenclatura estandar).
     // Se pasa ?cat=<id> para filtrar por la misma categoria del evento
     // base y que la sidebar muestre el grupo "mismo tema" arriba.
+    // Si la ruta singular da 404 (servidor sin reiniciar), fallback
+    // automatico a la ruta plural legacy.
     const catParam = evento && evento.categoria ? `?cat=${evento.categoria}` : "";
-    api.get(`/evento/detalle/${eventoId}/relacionados/${catParam}`)
-      .then(res => {
-        const data = res.data;
-        if (Array.isArray(data)) {
-          setRelacionados({
-            grupos: [{ categoria: null, label: "General", items: data }],
-          });
-        } else if (data && Array.isArray(data.grupos)) {
-          setRelacionados(data);
+    const singular = `/evento/detalle/${eventoId}/relacionados/${catParam}`;
+    const plural   = `/eventos/${eventoId}/relacionados/${catParam}`;
+
+    const apply = (data) => {
+      if (Array.isArray(data)) {
+        setRelacionados({
+          grupos: [{ categoria: null, label: "General", items: data }],
+        });
+      } else if (data && Array.isArray(data.grupos)) {
+        setRelacionados(data);
+      } else {
+        setRelacionados({ grupos: [] });
+      }
+    };
+    api.get(singular)
+      .then(res => apply(res.data))
+      .catch(err => {
+        if (err?.response?.status === 404) {
+          // Fallback a la ruta plural
+          api.get(plural).then(res => apply(res.data)).catch(() => setRelacionados({ grupos: [] }));
         } else {
           setRelacionados({ grupos: [] });
         }
-      })
-      .catch(() => setRelacionados({ grupos: [] }));
+      });
   }, [eventoId, evento]);
 
   const cargarReacciones = useCallback(() => {
