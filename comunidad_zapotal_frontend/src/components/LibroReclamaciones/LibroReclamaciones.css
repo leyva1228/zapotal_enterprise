@@ -548,7 +548,7 @@ body,
 .libro-input-with-icon { position: relative; display: flex; align-items: center; }
 .libro-input-with-icon input { flex: 1; padding-right: 36px; }
 .libro-input__status { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; display: inline-flex; }
-.libro-input--ok input { border-color: #16a34a; }
+.libro-input--ok input { border-color: var(--nb-verde, #1a3209); }
 .libro-input--warn input { border-color: #f59e0b; }
 .libro-email-sugerencia { display: block; margin-top: 4px; color: #b45309; font-size: 12px; }
 .libro-email-sugerencia button { background: none; border: 0; color: #1f3b34; text-decoration: underline; cursor: pointer; padding: 0; font-size: inherit; }
@@ -557,17 +557,17 @@ body,
   margin-top: 24px;
   padding: 24px;
   background: #f0fdf4;
-  border: 2px solid #16a34a;
+  border: 2px solid var(--nb-verde, #1a3209);
   border-radius: 12px;
   text-align: center;
 }
 .libro-constancia__icono {
   font-size: 48px;
-  color: #16a34a;
+  color: var(--nb-verde, #1a3209);
   margin-bottom: 8px;
 }
 .libro-constancia h3 {
-  color: #0a3d1f;
+  color: var(--nb-verde-med, #243f0f);
   margin: 0 0 8px 0;
   font-size: 18px;
 }
@@ -583,11 +583,11 @@ body,
 }
 .libro-constancia__linea code {
   background: #fff;
-  border: 1px solid #16a34a;
+  border: 1px solid var(--nb-verde, #1a3209);
   border-radius: 4px;
   padding: 2px 6px;
   font-family: 'Courier New', monospace;
-  color: #0a3d1f;
+  color: var(--nb-verde-med, #243f0f);
 }
 .libro-constancia__botones {
   margin-top: 16px;
@@ -598,7 +598,7 @@ body,
 }
 .libro-constancia__btn {
   padding: 8px 16px;
-  background: #16a34a;
+  background: var(--nb-verde, #1a3209);
   color: #fff;
   border: 0;
   border-radius: 6px;
@@ -610,8 +610,8 @@ body,
 }
 .libro-constancia__btn--secundario {
   background: transparent;
-  color: #16a34a;
-  border: 1px solid #16a34a;
+  color: var(--nb-verde, #1a3209);
+  border: 1px solid var(--nb-verde, #1a3209);
 }
 .libro-constancia__btn:hover {
   opacity: 0.9;

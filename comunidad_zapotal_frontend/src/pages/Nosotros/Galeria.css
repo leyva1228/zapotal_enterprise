@@ -62,9 +62,9 @@
 }
 
 .galeria-filtros button.activo {
-  background: #14532d;
+  background: var(--nb-verde, #1a3209);
   color: #fff;
-  border-color: #14532d;
+  border-color: var(--nb-verde, #1a3209);
 }
 
 .galeria-grid {
@@ -102,7 +102,7 @@
 .galeria-card-body h3 {
   font-size: 14px;
   margin: 0 0 4px;
-  color: #14532d;
+  color: var(--nb-verde, #1a3209);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

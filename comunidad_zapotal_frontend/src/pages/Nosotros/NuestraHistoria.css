@@ -108,7 +108,7 @@
 }
 
 .historia-texto span {
-  color: #1f7a32;
+  color: var(--nb-verde, #1a3209);
   font-weight: bold;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -176,7 +176,7 @@
 .historia-html ol { margin: 0 0 16px 22px; }
 .historia-html li { margin-bottom: 6px; }
 .historia-html blockquote {
-  border-left: 4px solid #1f7a32;
+  border-left: 4px solid var(--nb-verde, #1a3209);
   padding: 8px 18px;
   margin: 18px 0;
   background: #f4f8ef;
@@ -184,8 +184,8 @@
   color: #2c3a30;
   border-radius: 0 8px 8px 0;
 }
-.historia-html a { color: #1f7a32; text-decoration: underline; }
-.historia-html a:hover { color: #0a3d1f; }
+.historia-html a { color: var(--nb-verde, #1a3209); text-decoration: underline; }
+.historia-html a:hover { color: var(--nb-verde-med, #243f0f); }
 .historia-html img {
   max-width: 100%;
   height: auto;
@@ -213,7 +213,7 @@
   text-align: center;
 }
 
-.historia-timeline-section > h2 svg { color: #1f7a32; }
+.historia-timeline-section > h2 svg { color: var(--nb-verde, #1a3209); }
 
 .historia-timeline-section > p {
   text-align: center;
@@ -234,7 +234,7 @@
   border-radius: 20px;
   padding: 30px 28px;
   position: relative;
-  border-top: 5px solid #1f7a32;
+  border-top: 5px solid var(--nb-verde, #1a3209);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
   transition: transform 0.35s ease, box-shadow 0.35s ease;
   display: flex;
@@ -250,7 +250,7 @@
 .historia-timeline__anio {
   display: inline-block;
   align-self: flex-start;
-  background: linear-gradient(135deg, #1f7a32, #0a3d1f);
+  background: linear-gradient(135deg, var(--nb-verde, #1a3209), var(--nb-verde-med, #243f0f));
   color: #e8f5d7;
   font-size: 22px;
   font-weight: 700;
@@ -270,7 +270,7 @@
 .historia-timeline__contenido h3 {
   font-size: 13px;
   font-weight: 600;
-  color: #1f7a32;
+  color: var(--nb-verde, #1a3209);
   letter-spacing: 2px;
   text-transform: uppercase;
   margin: 0;

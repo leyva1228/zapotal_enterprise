@@ -3,7 +3,7 @@
   background: #f9fafb;
 }
 .buscar-hero {
-  background: linear-gradient(135deg, #0a3d1f, #2a5572);
+  background: linear-gradient(135deg, var(--nb-verde-med, #243f0f), #2a5572);
   color: #fff;
   padding: 60px 20px 40px;
   text-align: center;
@@ -87,9 +87,9 @@
   cursor: pointer;
 }
 .buscar-tab--active {
-  background: #0a3d1f;
+  background: var(--nb-verde-med, #243f0f);
   color: #fff;
-  border-color: #0a3d1f;
+  border-color: var(--nb-verde-med, #243f0f);
 }
 .buscar-empty,
 .buscar-error {
@@ -119,7 +119,7 @@
   transition: border-color 0.15s, transform 0.15s;
 }
 .buscar-item:hover {
-  border-color: #0a3d1f;
+  border-color: var(--nb-verde-med, #243f0f);
   transform: translateX(2px);
 }
 .buscar-item__badge {
@@ -143,7 +143,7 @@
   display: block;
   font-size: 16px;
   font-weight: 700;
-  color: #0a3d1f;
+  color: var(--nb-verde-med, #243f0f);
   text-decoration: none;
   margin-bottom: 4px;
 }

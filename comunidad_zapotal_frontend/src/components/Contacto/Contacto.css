@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@500;600&display=swap');
 
 :root {
-  --verde-oscuro:   #0c2b26;
+  --verde-oscuro:   var(--nb-verde-med, #243f0f);
   --verde-medio:    #134a40;
-  --verde-claro:    #1a6b5e;
+  --verde-claro:    var(--nb-verde-claro, #3a6019);
   --verde-acento:   #2eb89a;
   --verde-menta:    #7effea;
-  --dorado:         #d4a72c;
+  --dorado:         var(--nb-dorado, var(--nb-dorado, var(--nb-dorado, #b8963e)));
   --rojo:           #b91c1c;
   --whatsapp:       #25D366;
   --radio-grande:   20px;
@@ -188,7 +188,7 @@
 .contacto-info__tarjeta-encabezado h3 {
   font-size: 17px;
   font-weight: 700;
-  color: #0a3d1f;
+  color: var(--nb-verde-med, #243f0f);
   margin: 0;
 }
 
@@ -273,7 +273,7 @@
 }
 
 .contacto-info__btn:hover {
-  background: #052e16;
+  background: var(--nb-verde, #1a3209);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -339,7 +339,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 26px;
   font-weight: 700;
-  color: #0a3d1f;
+  color: var(--nb-verde-med, #243f0f);
   margin: 0 0 6px;
   display: flex;
   align-items: center;
@@ -483,7 +483,7 @@
   animation: girar 1s linear infinite;
 }
 .form-grupo__icono--valido { color: #059669; }
-.form-grupo__icono--sospechoso { color: #d4a72c; }
+.form-grupo__icono--sospechoso { color: var(--nb-dorado, var(--nb-dorado, var(--nb-dorado, #b8963e))); }
 .form-grupo__icono--invalido { color: #b91c1c; }
 
 .form-grupo__ayuda {
@@ -777,17 +777,17 @@
   margin-top: 24px;
   padding: 24px;
   background: #f0fdf4;
-  border: 2px solid #16a34a;
+  border: 2px solid var(--nb-verde, #1a3209);
   border-radius: 12px;
   text-align: center;
 }
 .form-confirmacion__icono {
   font-size: 48px;
-  color: #16a34a;
+  color: var(--nb-verde, #1a3209);
   margin-bottom: 8px;
 }
 .form-confirmacion h3 {
-  color: #0a3d1f;
+  color: var(--nb-verde-med, #243f0f);
   margin: 0 0 8px 0;
   font-size: 18px;
 }
@@ -800,7 +800,7 @@
   margin: 12px 0;
   padding: 8px 12px;
   background: #fff;
-  border: 1px solid #16a34a;
+  border: 1px solid var(--nb-verde, #1a3209);
   border-radius: 6px;
   display: inline-block;
   font-family: 'Courier New', monospace;
@@ -814,7 +814,7 @@
 }
 .form-confirmacion__btn {
   padding: 8px 16px;
-  background: #16a34a;
+  background: var(--nb-verde, #1a3209);
   color: #fff;
   border: 0;
   border-radius: 6px;
@@ -826,8 +826,8 @@
 }
 .form-confirmacion__btn--secundario {
   background: transparent;
-  color: #16a34a;
-  border: 1px solid #16a34a;
+  color: var(--nb-verde, #1a3209);
+  border: 1px solid var(--nb-verde, #1a3209);
 }
 .form-confirmacion__btn:hover {
   opacity: 0.9;

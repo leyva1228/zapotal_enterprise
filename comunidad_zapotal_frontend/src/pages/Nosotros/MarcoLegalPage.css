@@ -13,13 +13,13 @@
 @keyframes ml-spin { to { transform: rotate(360deg); } }
 
 .ml-hero {
-  background: linear-gradient(135deg, #0a3d1f 0%, #0f5c2e 60%, #1a7a42 100%);
+  background: linear-gradient(135deg, var(--nb-verde-med, #243f0f) 0%, #0f5c2e 60%, #1a7a42 100%);
   color: #fff;
   padding: 60px 20px 80px;
   text-align: center;
 }
 .ml-hero-content { max-width: 800px; margin: 0 auto; }
-.ml-hero-icon { font-size: 56px; color: #d4a72c; margin-bottom: 12px; }
+.ml-hero-icon { font-size: 56px; color: var(--nb-dorado, var(--nb-dorado, var(--nb-dorado, #b8963e))); margin-bottom: 12px; }
 .ml-hero h1 { font-size: 36px; font-weight: 800; margin: 0 0 12px; }
 .ml-hero p { font-size: 17px; opacity: 0.9; line-height: 1.5; }
 
@@ -37,7 +37,7 @@
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #e0e6e2;
-  border-left: 4px solid #d4a72c;
+  border-left: 4px solid var(--nb-dorado, var(--nb-dorado, var(--nb-dorado, #b8963e)));
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .ml-card:hover {
@@ -48,15 +48,15 @@
   display: flex; align-items: flex-start; gap: 14px;
   margin-bottom: 14px;
 }
-.ml-card__icon { font-size: 32px; color: #0a3d1f; flex-shrink: 0; }
-.ml-card__title { font-size: 16px; font-weight: 700; color: #0a3d1f; margin: 0 0 4px; }
+.ml-card__icon { font-size: 32px; color: var(--nb-verde-med, #243f0f); flex-shrink: 0; }
+.ml-card__title { font-size: 16px; font-weight: 700; color: var(--nb-verde-med, #243f0f); margin: 0 0 4px; }
 .ml-card__norma { font-size: 12px; color: #b8972a; font-weight: 600; margin: 0; }
 .ml-card__descripcion { font-size: 14px; color: #1a2620; line-height: 1.6; margin: 0 0 14px; }
 .ml-card__link {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 13px; color: #d4a72c; text-decoration: none;
+  font-size: 13px; color: var(--nb-dorado, var(--nb-dorado, var(--nb-dorado, #b8963e))); text-decoration: none;
   font-weight: 600;
-  border-bottom: 1px dashed #d4a72c;
+  border-bottom: 1px dashed var(--nb-dorado, var(--nb-dorado, var(--nb-dorado, #b8963e)));
   padding-bottom: 2px;
 }
-.ml-card__link:hover { color: #0a3d1f; border-bottom-color: #0a3d1f; }
+.ml-card__link:hover { color: var(--nb-verde-med, #243f0f); border-bottom-color: var(--nb-verde-med, #243f0f); }
