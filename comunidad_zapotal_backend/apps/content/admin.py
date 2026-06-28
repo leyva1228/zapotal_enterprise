@@ -112,6 +112,7 @@ class EventoAdmin(admin.ModelAdmin):
     raw_id_fields = ['categoria']
     ordering = ['-fecha']
     list_per_page = 25
+    inlines = [MultimediaInline]
 
 
 @admin.register(Multimedia, site=custom_admin_site)

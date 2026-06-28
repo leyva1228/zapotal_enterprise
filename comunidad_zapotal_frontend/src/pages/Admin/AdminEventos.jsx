@@ -7,6 +7,8 @@ import Pagination from "../../components/Admin/Pagination";
 import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import SubirMultimedia from "../../components/SubirMultimedia";
+import "../../components/SubirMultimedia.css";
 
 const EMPTY = {
   titulo: "", descripcion: "", lugar: "",
@@ -290,6 +292,13 @@ export default function AdminEventos() {
             {editItem?.imagen && !form.imagen && (
               <div className="admin-form-hint">Imagen actual: {editItem.imagen.split("/").pop()}</div>
             )}
+          </div>
+          <div className="admin-form-group">
+            <SubirMultimedia
+              itemId={editItem?.id}
+              itemType="evento"
+              initialFiles={editItem?.multimedia || []}
+            />
           </div>
         </form>
       </AdminModal>
