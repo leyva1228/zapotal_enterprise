@@ -90,7 +90,7 @@ body, .detalle-page {
 }
 .detalle-layout-full.two-columns {
   flex-direction: row;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 32px;
 }
 .detalle-contenido-principal {
@@ -100,9 +100,17 @@ body, .detalle-page {
 .detalle-sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  position: sticky;
-  top: 72px;
-  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  max-height: none;
+}
+.detalle-sidebar > * {
+  flex-shrink: 0;
+}
+.detalle-sidebar > div:last-child {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--yt-border) transparent;
