@@ -30,7 +30,7 @@ const formatearFecha = (str) => {
   if (isNaN(d)) return "";
   const dd = d.getDate().toString().padStart(2, "0");
   const mes = MESES[d.getMonth()];
-  return `${dd} ${mes} de ${d.getFullYear()}`;
+  return `${dd} de ${mes} de ${d.getFullYear()}`;
 };
 
 const compartirNoticia = async (noticia) => {

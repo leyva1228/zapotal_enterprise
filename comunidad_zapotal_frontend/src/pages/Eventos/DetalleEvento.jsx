@@ -28,13 +28,18 @@ const RATE_LIMIT_COMMENTS = 10;
 
 const PALABRAS_PROHIBIDAS = ["idiota","estupido","imbecil","tarado","basura","mierda"];
 
+const MESES_LARGO = [
+  "enero","febrero","marzo","abril","mayo","junio",
+  "julio","agosto","septiembre","octubre","noviembre","diciembre",
+];
+
 const formatFecha = (str) => {
   if (!str) return "Fecha reciente";
   try {
     const d = new Date(str);
     if (isNaN(d.getTime())) return "Fecha reciente";
-    const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-    return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`;
+    const dd = d.getDate().toString().padStart(2, "0");
+    return `${dd} de ${MESES_LARGO[d.getMonth()]} de ${d.getFullYear()}`;
   } catch { return "Fecha reciente"; }
 };
 

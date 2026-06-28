@@ -23,7 +23,7 @@ import {
   FaSlidersH,
   FaExternalLinkAlt,
 } from "react-icons/fa";
-import { BsCalendarEvent, BsCalendarCheck, BsCalendarX } from "react-icons/bs";
+import { BsCalendarEvent, BsCalendarCheck, BsCalendarX, BsShare } from "react-icons/bs";
 import { GiPartyPopper } from "react-icons/gi";
 import { MdLocationOn } from "react-icons/md";
 import { useTaskLifecycle } from "../../context/LoaderContext";
@@ -111,14 +111,29 @@ function Eventos() {
     } de ${fecha.getFullYear()}`;
   };
 
+  const MESES_CORTO = [
+    "enero","febrero","marzo","abril","mayo","junio",
+    "julio","agosto","septiembre","octubre","noviembre","diciembre",
+  ];
+
   const formatearFechaCorta = (fechaString) => {
     if (!fechaString) return "";
     const fecha = new Date(fechaString);
     if (isNaN(fecha.getTime())) return "";
     const dd = fecha.getDate().toString().padStart(2, "0");
-    const mm = (fecha.getMonth() + 1).toString().padStart(2, "0");
-    const yyyy = fecha.getFullYear();
-    return `${dd}.${mm}.${yyyy}`;
+    const mes = MESES_CORTO[fecha.getMonth()];
+    return `${dd} de ${mes} de ${fecha.getFullYear()}`;
+  };
+
+  const compartirEvento = async (evento) => {
+    const url = `${window.location.origin}/evento/detalle/${evento.id}/`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: evento.titulo || "Evento", url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {}
   };
 
   const extraerFechaBadge = (fechaString) => {
@@ -244,7 +259,17 @@ function Eventos() {
                 )}
               </div>
               <div className="hero-contenido">
-                <span className="hero-categoria-badge">{nombreCategoria}</span>
+                <div className="hero-categoria-row">
+                  <span className="hero-categoria-badge">{nombreCategoria}</span>
+                  <button
+                    type="button"
+                    className="evento-share-btn"
+                    title="Compartir"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); compartirEvento(eventoHero); }}
+                  >
+                    <BsShare />
+                  </button>
+                </div>
                 <h2 className="hero-titulo">{eventoHero.titulo}</h2>
                 {descripcionCorta && <p className="hero-descripcion">{descripcionCorta}</p>}
                 <div className="hero-meta">
@@ -340,11 +365,21 @@ function Eventos() {
                           {esProximo ? <><BsCalendarCheck /> Próximo</> : <><BsCalendarX /> Pasado</>}
                         </div>
                       </div>
-                      <div className="contenido-evento">
-                        <span className="categoria-evento">{iconoCategoria} {nombreCategoria}</span>
-                        <span className="fecha-evento">
-                          <FaCalendarAlt /> {formatearFechaCorta(evento.fecha_evento)}
-                        </span>
+                        <div className="contenido-evento">
+                          <div className="categoria-evento-row">
+                            <span className="categoria-evento">{iconoCategoria} {nombreCategoria}</span>
+                            <button
+                              type="button"
+                              className="evento-share-btn"
+                              title="Compartir"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); compartirEvento(evento); }}
+                            >
+                              <BsShare />
+                            </button>
+                          </div>
+                          <span className="fecha-evento">
+                            <FaCalendarAlt /> {formatearFechaCorta(evento.fecha_evento)}
+                          </span>
                         <h2 className="titulo-tarjeta">{evento.titulo}</h2>
                         <p>
                           {evento.descripcion?.length > 100
