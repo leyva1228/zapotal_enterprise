@@ -233,7 +233,7 @@ const NoticiasRelacionadas = memo(({ grupos }) => {
   return (
     <RelacionadosSidebar
       titulo="Noticias relacionadas"
-      icono={<FaNewspaper />}
+      icono={FaNewspaper}
       grupos={grupos}
       kind="NOTICIA"
       linkBase="/noticia/detalle/"

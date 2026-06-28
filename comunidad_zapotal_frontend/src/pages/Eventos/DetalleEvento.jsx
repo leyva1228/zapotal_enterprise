@@ -231,7 +231,7 @@ const EventosRelacionados = memo(({ grupos }) => {
   return (
     <RelacionadosSidebar
       titulo="Eventos relacionados"
-      icono={<FaCalendarAlt />}
+      icono={FaCalendarAlt}
       grupos={grupos}
       kind="EVENTO"
       linkBase="/evento/detalle/"
