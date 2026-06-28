@@ -404,7 +404,7 @@ export default function Registro() {
               </div>
 
               {TURNSTILE_SITE_KEY && (
-                <div className="mt-2">
+                <div className="mt-2 flex justify-center">
                   <Turnstile
                     ref={turnstileRef}
                     siteKey={TURNSTILE_SITE_KEY}
