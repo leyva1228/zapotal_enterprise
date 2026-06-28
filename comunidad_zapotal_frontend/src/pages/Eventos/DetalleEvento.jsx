@@ -19,6 +19,7 @@ import { useAuth } from "../../context/AuthContext";
 import BotonFavorito from "../../components/BotonFavorito";
 import { useTaskLifecycle } from "../../context/LoaderContext";
 import RelacionadosSidebar from "../../components/common/RelacionadosSidebar/RelacionadosSidebar";
+import { useAnonymousId } from "../../hooks/useAnonymousId";
 import "./DetalleEvento.css";
 
 const MAX_COMMENT_LENGTH = 500;
@@ -253,6 +254,7 @@ function DetalleEvento() {
   const { user: userActual, isAuthenticated: estaAuth, isAdmin: esAdminCtx } = useAuth();
   const esAdmin   = !!esAdminCtx || userActual?.tipo_usuario === "ADMIN" || userActual?.is_superuser === true;
   const usuarioId = userActual?.id;
+  const anonId    = useAnonymousId();
 
   const [evento,              setEvento]            = useState(null);
   const [error,               setError]             = useState("");
@@ -296,24 +298,40 @@ function DetalleEvento() {
     })();
   }, [eventoId]);
 
-  // Contador de vistas (endpoint dedicado, una vez por usuario/sesion)
+  // Contador de vistas (endpoint dedicado, una vez por navegador-usuario).
+  // Misma politica que DetalleNoticia: SIEMPRE `localStorage`,
+  // discriminador = `user_<id>` para autenticados (cualquier tipo) o
+  // `anon_<anonId>` para anonimos. Antes de incrementar, se chequea
+  // si EXISTE cualquier clave con el prefijo del item: si existe, NO
+  // se cuenta. Asi se evita doble conteo al cambiar entre anonimo y
+  // logueado en el mismo navegador.
   useEffect(() => {
     if (!eventoId || !evento) return;
-    const claveLocal = estaAuth && usuarioId
-      ? `visto_evento_${eventoId}_user_${usuarioId}`
-      : `visto_evento_${eventoId}_session`;
-    const storage = (typeof window !== "undefined")
-      ? (estaAuth && usuarioId ? window.localStorage : window.sessionStorage)
-      : null;
-    if (storage && !storage.getItem(claveLocal)) {
-      api.post(`/eventos/${eventoId}/incrementar_vistas/`)
-        .then(({ data }) => {
-          setEvento((prev) => prev ? { ...prev, vistas: data.vistas } : prev);
-          try { storage.setItem(claveLocal, new Date().toISOString()); } catch (e) { /* noop */ }
-        })
-        .catch(err => console.warn("Error al incrementar vistas:", err));
-    }
-  }, [eventoId, evento, estaAuth, usuarioId]);
+    if (typeof window === "undefined" || !window.localStorage) return;
+
+    const prefijo = `visto_evento_${eventoId}_`;
+    let yaVisto = false;
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith(prefijo)) { yaVisto = true; break; }
+      }
+    } catch (e) { /* noop */ }
+    if (yaVisto) return;
+
+    const identificador = (estaAuth && usuarioId)
+      ? `user_${usuarioId}`
+      : (anonId ? `anon_${anonId}` : null);
+    if (!identificador) return; // sin identificador estable, no contamos
+
+    const clavePropia = `${prefijo}${identificador}`;
+    api.post(`/eventos/${eventoId}/incrementar_vistas/`)
+      .then(({ data }) => {
+        setEvento((prev) => prev ? { ...prev, vistas: data.vistas } : prev);
+        try { window.localStorage.setItem(clavePropia, new Date().toISOString()); } catch (e) { /* noop */ }
+      })
+      .catch(err => console.warn("Error al incrementar vistas:", err));
+  }, [eventoId, evento, estaAuth, usuarioId, anonId]);
 
   // Cargar relacionados
   useEffect(() => {

@@ -18,6 +18,7 @@ import { useAuth } from "../../context/AuthContext";
 import BotonFavorito from "../../components/BotonFavorito";
 import { useTaskLifecycle } from "../../context/LoaderContext";
 import RelacionadosSidebar from "../../components/common/RelacionadosSidebar/RelacionadosSidebar";
+import { useAnonymousId } from "../../hooks/useAnonymousId";
 import "./DetalleNoticia.css";
 
 const MAX_COMMENT_LENGTH = 500;
@@ -255,6 +256,7 @@ function DetalleNoticia() {
   const { user: userActual, isAuthenticated: estaAuth, isAdmin: esAdminCtx } = useAuth();
   const esAdmin   = !!esAdminCtx || userActual?.tipo_usuario === "ADMIN" || userActual?.is_superuser === true;
   const usuarioId = userActual?.id;
+  const anonId    = useAnonymousId();
 
   const [noticia,             setNoticia]            = useState(null);
   const [error,               setError]              = useState("");
@@ -298,24 +300,45 @@ function DetalleNoticia() {
     })();
   }, [noticiaId]);
 
-  // Contador de vistas (endpoint dedicado, una vez por usuario/sesion)
+  // Contador de vistas (endpoint dedicado, una vez por navegador-usuario).
+  // Regla: SIEMPRE se usa `localStorage` (no `sessionStorage`) para que
+  // el conteo sea persistente. El discriminador es:
+  //   - usuario logueado (cualquier tipo: COMUNERO/ADMIN/INVITADO):
+  //     "user_<id>"
+  //   - usuario anonimo: "anon_<anonId>" (UUID estable por navegador,
+  //     generado por `useAnonymousId`).
+  // Ademas, antes de incrementar, se chequea si EXISTE cualquier clave
+  // que empiece con el prefijo del item. Asi, si un usuario vio la
+  // noticia como anonimo y luego se loguea (o viceversa), NO se cuenta
+  // de nuevo: la regla es "una vista por navegador-usuario, no por
+  // combinacion de estados de sesion".
   useEffect(() => {
     if (!noticiaId || !noticia) return;
-    const claveLocal = estaAuth && usuarioId
-      ? `visto_noticia_${noticiaId}_user_${usuarioId}`
-      : `visto_noticia_${noticiaId}_session`;
-    const storage = (typeof window !== "undefined")
-      ? (estaAuth && usuarioId ? window.localStorage : window.sessionStorage)
-      : null;
-    if (storage && !storage.getItem(claveLocal)) {
-      api.post(`/noticias/${noticiaId}/incrementar_vistas/`)
-        .then(({ data }) => {
-          setNoticia((prev) => prev ? { ...prev, vistas: data.vistas } : prev);
-          try { storage.setItem(claveLocal, new Date().toISOString()); } catch (e) { /* noop */ }
-        })
-        .catch(err => console.warn("Error al incrementar vistas:", err));
-    }
-  }, [noticiaId, noticia, estaAuth, usuarioId]);
+    if (typeof window === "undefined" || !window.localStorage) return;
+
+    const prefijo = `visto_noticia_${noticiaId}_`;
+    let yaVisto = false;
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith(prefijo)) { yaVisto = true; break; }
+      }
+    } catch (e) { /* noop */ }
+    if (yaVisto) return;
+
+    const identificador = (estaAuth && usuarioId)
+      ? `user_${usuarioId}`
+      : (anonId ? `anon_${anonId}` : null);
+    if (!identificador) return; // sin identificador estable, no contamos
+
+    const clavePropia = `${prefijo}${identificador}`;
+    api.post(`/noticias/${noticiaId}/incrementar_vistas/`)
+      .then(({ data }) => {
+        setNoticia((prev) => prev ? { ...prev, vistas: data.vistas } : prev);
+        try { window.localStorage.setItem(clavePropia, new Date().toISOString()); } catch (e) { /* noop */ }
+      })
+      .catch(err => console.warn("Error al incrementar vistas:", err));
+  }, [noticiaId, noticia, estaAuth, usuarioId, anonId]);
 
   // Cargar relacionadas
   useEffect(() => {
