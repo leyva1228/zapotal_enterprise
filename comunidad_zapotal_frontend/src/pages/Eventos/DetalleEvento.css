@@ -1,5 +1,9 @@
 /* ========== ADICIONES PARA EL NUEVO DETALLE EVENTO ========== */
 
+:root {
+  --layout-padding: 24px;
+}
+
 /* ─── HEADER ────────────────────────────────────────────────── */
 .detalle-header {
   display: flex;
@@ -41,7 +45,7 @@
 
 /* Layout de dos columnas */
 .detalle-layout-full {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
   display: flex;

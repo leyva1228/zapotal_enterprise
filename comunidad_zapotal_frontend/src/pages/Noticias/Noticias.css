@@ -18,7 +18,7 @@
   --nc-blanco:     #ffffff;
   --nc-verde:      #1f7a32;
   --nc-verde-dk:   #145222;
-  --nc-max:        1300px;
+  --nc-max:        1200px;
 }
 
 /* ── RESET ── */
@@ -47,7 +47,7 @@
 .nc-cabecera {
   max-width: var(--nc-max);
   margin: 0 auto 28px;
-  padding: 78px 25px 0;
+  padding: 78px 24px 0;
 }
 
 .nc-cabecera__titulo {
@@ -72,7 +72,7 @@
   gap: 32px;
   max-width: var(--nc-max);
   margin: 0 auto 0;
-  padding: 0 25px 32px;
+  padding: 0 24px 32px;
   border-bottom: 1px solid var(--nc-gris-borde);
 }
 
@@ -187,7 +187,7 @@
   gap: 12px;
   max-width: var(--nc-max);
   margin: 0 auto 36px;
-  padding: 20px 25px;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--nc-gris-borde);
 }
 
@@ -281,7 +281,7 @@
   gap: 52px 40px;
   max-width: var(--nc-max);
   margin: 0 auto;
-  padding: 0 25px;
+  padding: 0 24px;
 }
 
 /* ============================================

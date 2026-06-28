@@ -30,7 +30,7 @@
   --thumb-w: 168px;
   --thumb-h: 94px;
   --video-max-width: 1000px;
-  --layout-padding: 28px;
+  --layout-padding: 24px;
   --media-aspect-ratio: 16 / 9;
 }
 
@@ -83,8 +83,8 @@ body, .detalle-page {
 .detalle-layout-full {
   display: flex;
   flex-direction: column;
-  max-width: 100%;
-  margin: 0;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 16px var(--layout-padding) 40px;
   gap: 32px;
 }
