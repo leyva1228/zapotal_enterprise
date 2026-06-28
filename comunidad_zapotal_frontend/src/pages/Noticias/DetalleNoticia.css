@@ -417,6 +417,14 @@ body, .detalle-page {
   background: var(--yt-border);
   flex-shrink: 0;
 }
+.yt-share-btn {
+  color: var(--nb-dorado, #b8963e);
+  transition: color 0.2s;
+}
+.yt-share-btn:hover {
+  color: var(--nb-verde, #1a3209);
+  background: var(--yt-surface);
+}
 .yt-share-btn.copiado { color: #1a8a00; }
 
 /* ─── DESCRIPCIÓN COLABSABLE (VER MÁS / VER MENOS) ──────────── */

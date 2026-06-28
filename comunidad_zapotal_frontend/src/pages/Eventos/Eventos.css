@@ -119,8 +119,8 @@
 
 .contenido-evento { display: flex; flex-direction: column; gap: 6px; flex: 1; }
 .categoria-evento-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.evento-share-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: 1px solid var(--negro); color: var(--negro); width: 28px; height: 24px; font-size: 12px; cursor: pointer; transition: background 0.15s, color 0.15s; padding: 0; flex-shrink: 0; }
-.evento-share-btn:hover { background: var(--negro); color: var(--blanco); }
+.evento-share-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: 1px solid var(--nb-dorado, #b8963e); color: var(--nb-dorado, #b8963e); width: 28px; height: 24px; font-size: 12px; cursor: pointer; transition: color 0.2s, border-color 0.2s; padding: 0; flex-shrink: 0; }
+.evento-share-btn:hover { color: var(--nb-verde, #1a3209); border-color: var(--nb-verde, #1a3209); }
 .hero-categoria-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; width: 100%; }
 .categoria-evento { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--negro); font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; color: var(--negro); font-family: var(--font-body); width: fit-content; }
 .fecha-evento { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--gris-medio); font-family: var(--font-body); letter-spacing: 0.03em; }

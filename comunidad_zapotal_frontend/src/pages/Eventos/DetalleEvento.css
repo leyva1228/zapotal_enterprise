@@ -191,6 +191,14 @@
 .yt-btn:hover {
   background: #e0e0e0;
 }
+.yt-share-btn {
+  color: var(--nb-dorado, #b8963e);
+  transition: color 0.2s;
+}
+.yt-share-btn:hover {
+  color: var(--nb-verde, #1a3209);
+  background: #f0f0f0;
+}
 .yt-share-btn.copiado {
   background: #4caf50;
   color: white;

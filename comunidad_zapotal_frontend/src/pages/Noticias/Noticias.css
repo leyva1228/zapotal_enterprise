@@ -362,7 +362,7 @@
 .nc-card__share {
   border: none;
   background: none;
-  color: var(--nc-gris-med);
+  color: var(--nb-dorado, #b8963e);
   cursor: pointer;
   font-size: 14px;
   padding: 4px;
@@ -370,7 +370,7 @@
   flex-shrink: 0;
 }
 
-.nc-card__share:hover { color: var(--nc-negro); }
+.nc-card__share:hover { color: var(--nb-verde, #1a3209); }
 
 .nc-card__title-link { text-decoration: none; color: inherit; }
 
