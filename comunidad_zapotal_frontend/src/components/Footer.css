@@ -23,9 +23,9 @@
 .footer-container {
   position: relative;
   z-index: 2;
-  width: 92%;
-  max-width: 1450px;
+  max-width: 1200px;
   margin: auto;
+  padding: 0 24px;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 70px;

@@ -334,6 +334,33 @@
     background-clip: text;
     color: transparent;
   }
+
+  /* ============================================================
+     Container unificado: todas las secciones publicas
+     (Navbar, Footer, home, Autoridades, Contacto, Conocenos,
+     LibroReclamaciones, Buscar, Legal, etc.) usan este mismo
+     ancho y padding para verse como un solo sistema.
+     - max-width: 1200px (alineado con AutoridadesPage y
+       LibroReclamaciones; mas estrecho que el footer anterior
+       de 1450px).
+     - margin: 0 auto (centrado horizontal).
+     - padding: 0 24px (aire lateral consistente).
+     ============================================================ */
+  .container-zapotal {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px;
+    padding-right: 24px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  @media (max-width: 768px) {
+    .container-zapotal {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+  }
 }
 
 code {

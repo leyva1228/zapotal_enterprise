@@ -85,7 +85,7 @@
 
 /* ══════════ LAYOUT 2 COLUMNAS ══════════ */
 .contacto-grid {
-  max-width: 1280px;
+  max-width: 1200px;
   margin: -30px auto 80px;
   padding: 0 24px;
   display: grid;

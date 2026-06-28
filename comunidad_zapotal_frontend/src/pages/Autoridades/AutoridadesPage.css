@@ -124,7 +124,7 @@
 .au-container {
   max-width: 1200px;
   margin: -60px auto 80px;
-  padding: 0 20px;
+  padding: 0 24px;
   position: relative;
   z-index: 5;
 }

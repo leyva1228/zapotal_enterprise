@@ -36,9 +36,9 @@
 }
 
 .legal-container {
-  max-width: 880px;
-  margin: -40px auto 40px;
-  padding: 0 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 24px 60px;
 }
 
 .legal-content {

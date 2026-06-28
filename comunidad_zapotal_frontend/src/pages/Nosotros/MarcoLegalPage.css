@@ -23,7 +23,7 @@
 .ml-hero h1 { font-size: 36px; font-weight: 800; margin: 0 0 12px; }
 .ml-hero p { font-size: 17px; opacity: 0.9; line-height: 1.5; }
 
-.ml-container { max-width: 1100px; margin: -40px auto 40px; padding: 0 20px; }
+.ml-container { max-width: 1200px; margin: -40px auto 40px; padding: 0 24px; }
 
 .ml-grid {
   display: grid;
