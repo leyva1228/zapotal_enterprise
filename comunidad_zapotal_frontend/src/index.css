@@ -50,6 +50,15 @@
     --c-accent-800: #70591a;
     --c-accent-900: #4d3d11;
 
+    /* Alias del navbar — para mantener consistencia visual
+       entre Login, Registro, Navbar y cualquier pantalla publica.
+       Son los hexes exactos que usa Navbar.css. */
+    --nb-verde:        #1a3209;
+    --nb-verde-med:    #243f0f;
+    --nb-verde-claro:  #3a6019;
+    --nb-dorado:       #b8963e;
+    --nb-dorado-light: #d4ae5a;
+
     /* Estados */
     --c-success: var(--c-primary-600);
     --c-warning: var(--c-accent-600);

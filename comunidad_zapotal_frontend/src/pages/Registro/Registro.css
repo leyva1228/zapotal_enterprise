@@ -1,5 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Outfit:wght@300;400;500;600&display=swap');
 
+/* ============================================================
+   Registro: mismo diseno que Login (comparten paleta y layout).
+   Los hexes vienen de las variables del navbar (--nb-*) definidas
+   en src/index.css, para que Login y Registro esten 100%
+   sincronizados.
+   ============================================================ */
 .rg {
   --g-950: #071a0f;
   --g-900: #0d2b1a;
@@ -10,9 +16,14 @@
   --g-200: #a3d4b8;
   --g-100: #d4eede;
   --g-50:  #edf7f2;
-  --gold:  #b8912a;
-  --gold-l:#e8d49a;
-  --gold-xl:#faf4e4;
+  /* Oro: alias del navbar (mismo hex que Login y el navbar) */
+  --gold:        var(--nb-dorado,       #b8963e);
+  --gold-l:      var(--nb-dorado-light, #d4ae5a);
+  --gold-xl:     #faf4e4;
+  /* Verde: alias del navbar */
+  --g-navbar:    var(--nb-verde,        #1a3209);
+  --g-navbar-med:var(--nb-verde-med,    #243f0f);
+  --g-navbar-cl: var(--nb-verde-claro,  #3a6019);
   --ink:   #111816;
   --ink-2: #3d4d46;
   --ink-3: #7a8e85;
@@ -29,17 +40,22 @@
 .rg {
   width: 100%;
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: row;
   font-family: 'Outfit', sans-serif;
   background: var(--bg);
 }
 
-/* ── HERO ── */
+/* ── HERO (igual que Login) ── */
 .rg-hero {
   position: relative;
+  width: 50%;
   min-height: 100vh;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
   background: url("/img/login/Union-fondo login.jpg") center right / cover no-repeat;
 }
 
@@ -47,27 +63,10 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(160deg,
-    rgba(7, 26, 15, 0.116) 0%,
+    rgba(26, 50, 9, .35) 0%,
     rgba(13, 43, 26, .82) 40%,
-    rgba(7, 26, 15, 0.568) 100%
+    rgba(7, 26, 15, .65) 100%
   );
-}
-
-.rg-hero::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 480px;
-  height: 480px;
-  border-radius: 50%;
-  border: 1px solid rgba(163, 212, 184, .07);
-  box-shadow:
-    0 0 0 60px rgba(163, 212, 184, .03),
-    0 0 0 120px rgba(163, 212, 184, .015);
-  pointer-events: none;
-  z-index: 1;
 }
 
 .rg-hero-body {
@@ -87,9 +86,9 @@
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  border: 2px solid rgba(163, 212, 184, .28);
+  border: 2px solid rgba(255, 255, 255, .35);
   padding: 5px;
-  background: rgba(255, 255, 255, .07);
+  background: rgba(255, 255, 255, .10);
   backdrop-filter: blur(6px);
   margin-bottom: 18px;
   flex-shrink: 0;
@@ -120,7 +119,7 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
-  color: var(--g-200);
+  color: var(--gold);
   margin-bottom: 16px;
   font-size: 13px;
   width: 100%;
@@ -129,14 +128,14 @@
 .rg-ornament span {
   width: 55px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(163, 212, 184, .5), transparent);
+  background: var(--gold-l);
 }
 
 .rg-hero-desc {
   font-size: 15px;
   line-height: 1.75;
-  color: rgba(255, 255, 255, .76);
-  max-width: 340px;
+  color: rgba(255, 255, 255, .86);
+  max-width: 360px;
   margin-bottom: 24px;
   text-align: center;
 }
@@ -147,25 +146,25 @@
   gap: 10px;
   padding: 10px 22px;
   border-radius: 999px;
-  border: 1px solid rgba(163, 212, 184, .25);
-  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .25);
+  background: rgba(255, 255, 255, .10);
   backdrop-filter: blur(8px);
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, .88);
+  color: rgba(255, 255, 255, .95);
   letter-spacing: .01em;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
-.rg-shield svg { color: #4ade80; font-size: 13px; }
+.rg-shield svg { color: var(--gold-l); font-size: 13px; }
 
 .rg-steps {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 22px;
-  background: rgba(255, 255, 255, .06);
-  border: 1px solid rgba(163, 212, 184, .14);
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .18);
   border-radius: var(--r-l);
   backdrop-filter: blur(8px);
 }
@@ -181,8 +180,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--g-600);
-  border: 1.5px solid var(--g-200);
+  background: var(--g-navbar);
+  border: 1.5px solid var(--gold-l);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -193,28 +192,33 @@
 
 .rg-step span {
   font-size: 10px;
-  color: rgba(255, 255, 255, .55);
+  color: rgba(255, 255, 255, .8);
   text-transform: uppercase;
   letter-spacing: .07em;
   white-space: nowrap;
 }
 
+.rg-step--active .rg-step-num {
+  background: var(--g-navbar-med);
+  border-color: var(--gold);
+}
+
 .rg-step-arrow {
-  color: rgba(163, 212, 184, .4);
+  color: rgba(255, 255, 255, .45);
   font-size: 10px;
   margin-bottom: 14px;
 }
 
-/* ── PANEL DERECHO ── */
+/* ── PANEL DERECHO (igual que Login) ── */
 .rg-panel {
+  width: 50%;
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px 170px;
+  padding: 40px 48px;
   background:
-    radial-gradient(ellipse 55% 45% at 80% 8%, rgba(39, 107, 71, .08), transparent),
-    radial-gradient(ellipse 35% 35% at 20% 92%, rgba(184, 145, 42, .05), transparent),
+    linear-gradient(135deg, rgba(184, 150, 62, .04) 0%, transparent 50%),
     var(--bg);
   overflow-y: auto;
   box-sizing: border-box;
@@ -223,7 +227,7 @@
 /* ── CARD ── */
 .rg-card {
   width: 100%;
-  max-width: 100%;
+  max-width: 520px;
   background: #ffffff;
   border-radius: var(--r-xl);
   border: 1.5px solid rgba(180, 200, 188, .6);
@@ -232,7 +236,7 @@
     0 32px 72px rgba(7, 26, 15, .14),
     0 12px 28px rgba(7, 26, 15, .09),
     0 4px 8px  rgba(7, 26, 15, .05);
-  padding: 2px 32px 28px;
+  padding: 28px 32px;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -280,7 +284,7 @@
 .rg-rule {
   width: 180px;
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--gold-l);
   margin: 12px auto;
 }
 
@@ -487,7 +491,7 @@
   height: 46px;
   border: none;
   border-radius: var(--r-s);
-  background: var(--g-900);
+  background: var(--g-navbar);
   color: #fff;
   font-family: 'Outfit', sans-serif;
   font-size: 14px;
@@ -516,7 +520,7 @@
 .rg-btn-submit:hover::before { transform: translateX(100%); }
 .rg-btn-submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: var(--g-800);
+  background: var(--g-navbar-cl);
   box-shadow: 0 14px 28px rgba(7, 26, 15, .28);
 }
 .rg-btn-submit:active:not(:disabled) { transform: translateY(0); }
@@ -562,7 +566,7 @@
   margin-left: 4px;
   transition: color .15s;
 }
-.rg-login-link:hover { color: var(--g-800); text-decoration: underline; }
+.rg-login-link:hover { color: var(--g-navbar); text-decoration: underline; }
 
 .rg-copy {
   margin-top: 14px;
@@ -575,10 +579,11 @@
 
 /* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
-  .rg { grid-template-columns: 1fr; }
-  .rg-hero { display: none; }
-  .rg-panel { padding: 24px 20px; }
+  .rg { flex-direction: column; }
+  .rg-hero { width: 100%; min-height: 320px; display: flex; }
+  .rg-panel { width: 100%; padding: 24px 20px; }
   .rg-card { max-width: 480px; margin: 0 auto; padding: 32px 28px 26px; }
+  .rg-hero-body { min-height: 320px; padding: 32px 24px; }
 }
 
 @media (max-width: 640px) {
@@ -588,6 +593,7 @@
 @media (max-width: 520px) {
   .rg-card       { padding: 26px 18px 22px; }
   .rg-card-title { font-size: 26px; }
+  .rg-hero-title { font-size: 32px; }
 }
 
 /* === Turnstile === */

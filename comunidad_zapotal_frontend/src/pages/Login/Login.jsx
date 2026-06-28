@@ -222,25 +222,29 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-white">
-      {/* Hero / Branding */}
-      <aside className="relative bg-hero-gradient md:w-1/2 flex items-center justify-center py-16 md:py-0">
-        <div className="absolute inset-0 bg-black/30" />
+      {/* Hero / Branding — mismo layout y paleta que Registro */}
+      <aside
+        className="relative md:w-1/2 flex items-center justify-center py-16 md:py-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/img/login/Union-fondo login.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-950/80 via-primary-900/70 to-primary-800/60" />
         <div className="relative z-10 text-center px-6 max-w-md">
-          <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+          <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
             <img src="/img/Logo-comunidad/Logo-principal.png" alt="Escudo" className="h-20 w-20" />
           </div>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-white leading-tight">
             Comunidad Campesina<br />Zapotal
           </h1>
-          <div className="my-5 flex items-center justify-center gap-3 text-white/70">
-            <span className="h-px w-12 bg-accent-400" />
-            <FaLeaf className="text-accent-300" />
-            <span className="h-px w-12 bg-accent-400" />
+          {/* Adorno con el oro del navbar (--nb-dorado / --nb-dorado-light) */}
+          <div className="my-5 flex items-center justify-center gap-3 text-white/80">
+            <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
+            <FaLeaf style={{ color: "var(--nb-dorado)" }} />
+            <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
           </div>
           <p className="text-white/85 text-base leading-relaxed">
             Plataforma digital institucional para la gestion eficiente y transparente.
           </p>
-          <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm">
+          <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm border border-white/20">
             <FaShieldAlt className="text-primary-300" />
             <span>Acceso seguro y autorizado</span>
           </div>
@@ -248,17 +252,18 @@ export default function Login() {
       </aside>
 
       {/* Form */}
-      <section className="md:w-1/2 flex items-center justify-center p-6 md:p-10">
+      <section className="md:w-1/2 flex items-center justify-center p-6 md:p-10 bg-gradient-to-br from-white via-white to-primary-50/30">
         <form onSubmit={handleLogin} noValidate className="w-full max-w-md">
           <header className="text-center mb-6">
-            <div className="my-3 flex items-center justify-center gap-3 text-secondary-400">
-              <span className="h-px w-12 bg-secondary-300" />
+            {/* Adorno con el oro del navbar (mismo que el hero) */}
+            <div className="my-3 flex items-center justify-center gap-3" style={{ color: "var(--nb-dorado)" }}>
+              <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
               <FaLeaf />
-              <span className="h-px w-12 bg-secondary-300" />
+              <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
             </div>
-            <p className="text-sm text-secondary-600 uppercase tracking-wider">Bienvenido</p>
+            <p className="text-sm text-primary-700 uppercase tracking-wider font-semibold">Bienvenido</p>
             <h2 className="font-display text-3xl font-bold text-primary-800 mt-1">Iniciar Sesion</h2>
-            <hr className="my-3 border-t border-secondary-200" />
+            <hr className="my-3 border-t" style={{ borderColor: "var(--nb-dorado-light)" }} />
             <p className="text-mute text-sm">
               Ingresa tus credenciales para acceder a la plataforma institucional.
             </p>
