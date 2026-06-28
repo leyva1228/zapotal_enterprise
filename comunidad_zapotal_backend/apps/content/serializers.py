@@ -10,6 +10,35 @@ from .models import (
 )
 
 
+def _resolver_imagen_url(obj, request=None):
+    """Devuelve la URL publica de la imagen de un objeto (Noticia/Evento).
+
+    Prioriza `imagen_url` (URL externa, ej. R2/CDN). Si no existe,
+    intenta resolver el `ImageField` local usando el `request` para
+    construir una URL absoluta. Como ultimo recurso (sin request o si
+    el storage backend no esta disponible) devuelve `None` en lugar de
+    explotar, para que la respuesta del endpoint nunca quede en 500.
+    """
+    url_externa = (getattr(obj, "imagen_url", "") or "").strip()
+    if url_externa:
+        return url_externa
+    imagen = getattr(obj, "imagen", None)
+    if not imagen:
+        return None
+    nombre = getattr(imagen, "name", None)
+    if not nombre:
+        return None
+    if request is not None:
+        try:
+            return request.build_absolute_uri(imagen.url)
+        except Exception:
+            pass
+    try:
+        return imagen.url
+    except Exception:
+        return None
+
+
 class CategoriaSerializer(serializers.ModelSerializer):
     """Serializer de categorías de noticias."""
     total_noticias = serializers.SerializerMethodField()
@@ -29,17 +58,30 @@ class MultimediaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Multimedia
+        # `archivo` (FileField) NO se incluye a proposito: si el storage
+        # backend (R2) no esta disponible, DRF intenta resolver
+        # `FieldFile.url` y el endpoint entero devuelve 500. El frontend
+        # consume `archivo_url` (string URL externa), asi que no perdemos
+        # informacion para el cliente.
         fields = [
-            'id', 'tipo', 'archivo', 'archivo_url',
+            'id', 'tipo', 'archivo_url',
             'noticia', 'evento', 'fecha_subida',
         ]
         read_only_fields = ['id', 'fecha_subida', 'archivo_url']
 
     def get_archivo_url(self, obj):
         request = self.context.get('request')
-        if obj.archivo and request:
-            return request.build_absolute_uri(obj.archivo.url)
-        return obj.archivo.url if obj.archivo else None
+        url_externa = (getattr(obj, "archivo_url", "") or "").strip() if False else ""
+        try:
+            archivo = getattr(obj, "archivo", None)
+            nombre = getattr(archivo, "name", None) if archivo else None
+            if not nombre:
+                return None
+            if request is not None:
+                return request.build_absolute_uri(archivo.url)
+            return archivo.url
+        except Exception:
+            return None
 
 
 class ComentarioSerializer(serializers.ModelSerializer):
@@ -113,8 +155,13 @@ class NoticiaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Noticia
+        # NOTA: `imagen` (ImageField) NO se incluye a proposito: si el
+        # storage backend (R2) no esta disponible, DRF intenta resolver
+        # `FieldFile.url` y el endpoint entero devuelve 500. El frontend
+        # consume `imagen_url` (string URL externa), asi que no perdemos
+        # informacion para el cliente.
         fields = [
-            'id', 'titulo', 'contenido', 'resumen', 'imagen', 'imagen_url',
+            'id', 'titulo', 'contenido', 'resumen', 'imagen_url',
             'fecha_publicacion', 'estado', 'vistas', 'categoria',
             'categoria_nombre', 'multimedia', 'comentarios',
             'reacciones', 'total_reacciones',
@@ -126,13 +173,7 @@ class NoticiaSerializer(serializers.ModelSerializer):
         return dict(Counter(r.tipo for r in obj.reacciones.all()))
 
     def get_imagen_url(self, obj):
-        """Retorna URL absoluta de la imagen (local o externa)."""
-        if obj.imagen_url:
-            return obj.imagen_url
-        request = self.context.get('request')
-        if obj.imagen and request:
-            return request.build_absolute_uri(obj.imagen.url)
-        return obj.imagen.url if obj.imagen else None
+        return _resolver_imagen_url(obj, self.context.get("request"))
 
 
 class NoticiaEscrituraSerializer(serializers.ModelSerializer):
@@ -154,15 +195,7 @@ class NoticiaEscrituraSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def get_imagen_url(self, obj):
-        """URL absoluta: externa si imagen_url, sino el archivo subido."""
-        if obj.imagen_url:
-            return obj.imagen_url
-        request = self.context.get('request')
-        if obj.imagen and request:
-            return request.build_absolute_uri(obj.imagen.url)
-        if obj.imagen:
-            return obj.imagen.url
-        return None
+        return _resolver_imagen_url(obj, self.context.get("request"))
 
 
 class EventoEscrituraSerializer(serializers.ModelSerializer):
@@ -178,19 +211,12 @@ class EventoEscrituraSerializer(serializers.ModelSerializer):
         model = Evento
         fields = [
             'id', 'titulo', 'descripcion', 'fecha', 'lugar',
-            'imagen', 'imagen_url',
+            'imagen', 'imagen_url', 'categoria',
         ]
         read_only_fields = ['id']
 
     def get_imagen_url(self, obj):
-        if obj.imagen_url:
-            return obj.imagen_url
-        request = self.context.get('request')
-        if obj.imagen and request:
-            return request.build_absolute_uri(obj.imagen.url)
-        if obj.imagen:
-            return obj.imagen.url
-        return None
+        return _resolver_imagen_url(obj, self.context.get("request"))
 
 
 class EventoSerializer(serializers.ModelSerializer):
@@ -201,23 +227,21 @@ class EventoSerializer(serializers.ModelSerializer):
     ubicacion = serializers.CharField(source='lugar', read_only=True)
     total_reacciones = serializers.SerializerMethodField()
     total_comentarios = serializers.SerializerMethodField()
+    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True, default=None)
 
     class Meta:
         model = Evento
+        # Ver nota en NoticiaSerializer: `imagen` se omite para no
+        # depender del storage backend. El frontend usa `imagen_url`.
         fields = [
             'id', 'titulo', 'descripcion', 'fecha', 'fecha_evento',
-            'lugar', 'ubicacion', 'imagen', 'imagen_url', 'multimedia',
-            'total_reacciones', 'total_comentarios',
+            'lugar', 'ubicacion', 'imagen_url', 'multimedia',
+            'total_reacciones', 'total_comentarios', 'categoria', 'categoria_nombre',
         ]
-        read_only_fields = ['id', 'fecha_evento', 'ubicacion', 'total_reacciones', 'total_comentarios']
+        read_only_fields = ['id', 'fecha_evento', 'ubicacion', 'total_reacciones', 'total_comentarios', 'categoria_nombre']
 
     def get_imagen_url(self, obj):
-        if obj.imagen_url:
-            return obj.imagen_url
-        request = self.context.get('request')
-        if obj.imagen and request:
-            return request.build_absolute_uri(obj.imagen.url)
-        return obj.imagen.url if obj.imagen else None
+        return _resolver_imagen_url(obj, self.context.get("request"))
 
     def get_total_reacciones(self, obj):
         from collections import Counter
@@ -231,12 +255,20 @@ class NoticiaRelacionadaSerializer(serializers.ModelSerializer):
     """Serializer minimalista para noticias relacionadas (en endpoint custom)."""
     reacciones = serializers.SerializerMethodField()
     imagen_url = serializers.SerializerMethodField()
+    categoria = serializers.PrimaryKeyRelatedField(read_only=True)
+    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True, default=None)
 
     class Meta:
         model = Noticia
+        # NOTA: NO se incluye el campo `imagen` (ImageField) a proposito.
+        # Si el storage backend (R2) no esta disponible, DRF intenta
+        # resolver `FieldFile.url` y revienta el endpoint entero. Como el
+        # frontend consume `imagen_url` (string URL externa), exponer el
+        # FileField no aporta valor y rompe la serializacion.
         fields = [
-            'id', 'titulo', 'resumen', 'imagen', 'imagen_url',
+            'id', 'titulo', 'resumen', 'imagen_url',
             'fecha_publicacion', 'estado', 'vistas', 'reacciones',
+            'categoria', 'categoria_nombre',
         ]
 
     def get_reacciones(self, obj):
@@ -244,9 +276,43 @@ class NoticiaRelacionadaSerializer(serializers.ModelSerializer):
         return dict(Counter(r.tipo for r in obj.reacciones.all()))
 
     def get_imagen_url(self, obj):
-        if obj.imagen_url:
-            return obj.imagen_url
-        request = self.context.get('request')
-        if obj.imagen and request:
-            return request.build_absolute_uri(obj.imagen.url)
-        return obj.imagen.url if obj.imagen else None
+        return _resolver_imagen_url(obj, self.context.get("request"))
+
+
+class EventoRelacionadoSerializer(serializers.ModelSerializer):
+    """Serializer minimalista para eventos relacionados (en endpoint custom)."""
+    imagen_url = serializers.SerializerMethodField()
+    fecha_evento = serializers.DateTimeField(source='fecha', read_only=True)
+    ubicacion = serializers.CharField(source='lugar', read_only=True)
+    categoria = serializers.PrimaryKeyRelatedField(read_only=True)
+    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True, default=None)
+
+    class Meta:
+        model = Evento
+        # Ver nota en NoticiaRelacionadaSerializer: omitimos `imagen` para
+        # evitar la llamada a `FieldFile.url` que depende del storage backend.
+        fields = [
+            'id', 'titulo', 'descripcion', 'fecha', 'fecha_evento',
+            'lugar', 'ubicacion', 'imagen_url',
+            'categoria', 'categoria_nombre',
+        ]
+
+    def get_imagen_url(self, obj):
+        return _resolver_imagen_url(obj, self.context.get("request"))
+
+
+class NoticiaRelacionadaAgrupadaSerializer(serializers.Serializer):
+    """Agrupa las noticias relacionadas por categoria.
+
+    Shape:
+        { "grupos": [ { "categoria": {"id": 1, "nombre": "Cultura"}, "items": [...] } ] }
+    Si la noticia base no tiene categoria, se devuelve un unico grupo
+    "General" con todas las relacionadas.
+    """
+    grupos = serializers.ListField(child=serializers.DictField())
+
+
+class EventoRelacionadoAgrupadoSerializer(serializers.Serializer):
+    """Agrupa los eventos relacionados por categoria. Mismo shape que
+    `NoticiaRelacionadaAgrupadaSerializer`."""
+    grupos = serializers.ListField(child=serializers.DictField())

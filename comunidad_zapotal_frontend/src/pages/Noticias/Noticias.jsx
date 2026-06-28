@@ -5,6 +5,7 @@ import {
 } from "react-icons/fa";
 import { BsShare } from "react-icons/bs";
 import api, { extractList } from "../../api";
+import { useTaskLifecycle } from "../../context/LoaderContext";
 import "./Noticias.css";
 
 /* Noticias del grid secundario (después del bloque hero+2) por página */
@@ -49,6 +50,8 @@ function Noticias() {
   const [orden, setOrden]         = useState("recientes");
   const [pagina, setPagina]       = useState(1);
 
+  useTaskLifecycle("noticias:list", loading);
+
   useEffect(() => {
     setLoading(true);
     api.get("/noticias/")
@@ -74,17 +77,8 @@ function Noticias() {
     return lista;
   }, [noticias, busqueda, orden]);
 
-  /* ── Loader ── */
-  if (loading) return (
-    <div className="loader-container">
-      <div className="loader-wrapper">
-        <div className="loader-ring" />
-        <div className="loader-ring ring-2" />
-      </div>
-      <h2 className="loader-title">Cargando publicaciones</h2>
-      <p className="loader-subtitle">Espere un momento...</p>
-    </div>
-  );
+  /* Loader global manejado por LoaderContext (useTaskLifecycle). */
+  if (loading) return null;
 
   if (noticias.length === 0)
     return <p className="nc-vacio">No hay noticias disponibles.</p>;

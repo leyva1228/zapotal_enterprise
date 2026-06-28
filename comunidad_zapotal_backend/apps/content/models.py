@@ -65,6 +65,14 @@ class Evento(models.Model):
     imagen = models.ImageField('Imagen', upload_to='eventos/', blank=True, null=True)
     imagen_url = models.URLField('URL de imagen externa', max_length=500, blank=True, default='')
     vistas = models.PositiveIntegerField('Vistas', default=0)
+    categoria = models.ForeignKey(
+        Categoria,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='eventos',
+        verbose_name='Categoria',
+    )
 
     class Meta:
         db_table = 'evento'

@@ -106,9 +106,10 @@ class NoticiaAdmin(admin.ModelAdmin):
 
 @admin.register(Evento, site=custom_admin_site)
 class EventoAdmin(admin.ModelAdmin):
-    list_display = ['titulo', 'fecha', 'lugar']
-    list_filter = ['fecha', 'lugar']
+    list_display = ['titulo', 'categoria', 'fecha', 'lugar']
+    list_filter = ['fecha', 'lugar', 'categoria']
     search_fields = ['titulo', 'descripcion', 'lugar']
+    raw_id_fields = ['categoria']
     ordering = ['-fecha']
     list_per_page = 25
 

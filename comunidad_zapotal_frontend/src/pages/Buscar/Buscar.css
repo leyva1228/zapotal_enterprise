@@ -91,7 +91,6 @@
   color: #fff;
   border-color: #0a3d1f;
 }
-.buscar-loading,
 .buscar-empty,
 .buscar-error {
   background: #fff;
@@ -102,8 +101,6 @@
   color: #6b7280;
 }
 .buscar-error { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 .buscar-results {
   list-style: none;
   padding: 0;

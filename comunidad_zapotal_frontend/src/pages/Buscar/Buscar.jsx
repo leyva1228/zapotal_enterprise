@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { FaSearch, FaUserShield, FaNewspaper, FaCalendarAlt, FaRedo } from "react-icons/fa";
+import { FaSearch, FaUserShield, FaNewspaper, FaCalendarAlt } from "react-icons/fa";
 import { useSearchParams } from "react-router-dom";
 import api, { extractList } from "../../api";
+import PageLoader from "../../components/common/PageLoader/PageLoader";
 import "./Buscar.css";
 
 function useDebounce(value, delay) {
@@ -124,7 +125,9 @@ export default function Buscar() {
             </div>
 
             {loading ? (
-              <div className="buscar-loading"><FaRedo className="spin" /> Buscando...</div>
+              <div className="buscar-loading">
+                <PageLoader variant="section" mensaje="Buscando" />
+              </div>
             ) : error ? (
               <div className="buscar-error">{error}</div>
             ) : data.items.length === 0 ? (

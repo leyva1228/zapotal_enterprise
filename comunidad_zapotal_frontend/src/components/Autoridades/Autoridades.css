@@ -220,21 +220,7 @@
   line-height: 1.55;
 }
 
-/* LOADER / ERROR */
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 2px solid var(--au-gris-borde);
-  border-top-color: var(--au-negro);
-  border-radius: 50%;
-  animation: au-spin 0.7s linear infinite;
-  margin: 100px auto;
-}
-
-@keyframes au-spin {
-  to { transform: rotate(360deg); }
-}
-
+/* LOADER (migrado a PageLoader) / ERROR */
 .error-message {
   text-align: center;
   color: #c00;

@@ -24,24 +24,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── LOADING ── */
-.contenedor-carga {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; min-height: 60vh; gap: 20px;
-  background: var(--blanco); font-family: var(--font-body);
-}
-.animacion-carga { position: relative; width: 48px; height: 48px; }
-.anillo-carga {
-  position: absolute; inset: 0;
-  border: 3px solid var(--gris-borde);
-  border-top-color: var(--azul-institucional);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-.anillo-2 { inset: 8px; border-top-color: var(--azul-medio); animation-duration: 1.2s; animation-direction: reverse; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.titulo-carga   { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--negro); }
-.subtitulo-carga{ font-size: 14px; color: var(--gris-medio); font-family: var(--font-body); }
+/* ── LOADING (migrado a PageLoader) ── */
 
 /* ── PÁGINA ── */
 .pagina-eventos   { font-family: var(--font-body); background: var(--blanco); color: var(--negro); min-height: 100vh; }
@@ -60,11 +43,7 @@
   color: var(--negro); line-height: 1.1; letter-spacing: -0.02em;
   display: flex; align-items: center; gap: 0; margin-bottom: 12px;
 }
-.cabecera-eventos h1::before {
-  content: "•"; color: var(--azul-institucional); font-size: 52px;
-  line-height: 0; margin-right: 10px; vertical-align: middle;
-  position: relative; top: 2px;
-}
+/* Punto eliminado por solicitud */
 .cabecera-eventos p { font-size: 15px; color: var(--gris-texto); font-family: var(--font-body); font-weight: 300; line-height: 1.65; max-width: 680px; }
 
 /* ── HERO ── */

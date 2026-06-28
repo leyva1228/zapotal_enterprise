@@ -2,11 +2,15 @@ import React, { useEffect, useState } from "react";
 import { FaLeaf } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import api, { extractList } from "../../api";
+import PageLoader from "../common/PageLoader/PageLoader";
+import { useTaskLifecycle } from "../../context/LoaderContext";
 import "./Autoridades.css";
 
 function Autoridades() {
   const [autoridades, setAutoridades] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useTaskLifecycle("autoridades:list", loading);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -26,7 +30,7 @@ function Autoridades() {
   if (loading) {
     return (
       <section className="autoridades-section">
-        <div className="loading-spinner"></div>
+        <PageLoader variant="section" mensaje="Cargando autoridades" />
       </section>
     );
   }

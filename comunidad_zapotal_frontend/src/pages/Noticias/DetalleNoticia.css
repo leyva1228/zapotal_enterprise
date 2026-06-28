@@ -997,7 +997,6 @@ body, .detalle-page {
 .modal-btn-register:hover { background: var(--yt-surface2); }
 
 /* ─── LOADING / ERROR ───────────────────────────────────────── */
-.loading-container,
 .error-container {
   display: flex;
   flex-direction: column;
@@ -1008,15 +1007,6 @@ body, .detalle-page {
   color: var(--yt-text-sec);
   font-size: 15px;
 }
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--yt-border);
-  border-top-color: var(--yt-accent);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 .error-icon {
   font-size: 40px;
   color: var(--yt-red);

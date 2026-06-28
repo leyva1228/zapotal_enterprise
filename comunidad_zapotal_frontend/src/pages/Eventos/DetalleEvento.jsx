@@ -17,6 +17,8 @@ import { RiSendPlaneFill, RiShareForwardLine } from "react-icons/ri";
 import api, { extractList } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import BotonFavorito from "../../components/BotonFavorito";
+import { useTaskLifecycle } from "../../context/LoaderContext";
+import RelacionadosSidebar from "../../components/common/RelacionadosSidebar/RelacionadosSidebar";
 import "./DetalleEvento.css";
 
 const MAX_COMMENT_LENGTH = 500;
@@ -223,48 +225,17 @@ const GaleriaMedia = memo(({ imagenPrincipal, multimedia = [], titulo = "" }) =>
   );
 });
 
-const EventosRelacionados = memo(({ eventos }) => {
-  if (!eventos.length) return null;
-
-  const obtenerPreview = (evento) => {
-    const imagen = evento.multimedia?.find(m => m.tipo === "IMAGEN");
-    const src = imagen?.archivo_url || evento.imagen_url || evento.miniatura;
-    if (src) {
-      return <img src={src} alt={evento.titulo} onError={(e) => { e.currentTarget.src = "/images/placeholder-event.jpg"; }} />;
-    }
-    return (
-      <div className="gm-thumb__placeholder">
-        <FaCalendarAlt />
-      </div>
-    );
-  };
-
-  const tieneVideo = (evento) => evento.multimedia?.some(m => m.tipo === "VIDEO") || false;
-
+const EventosRelacionados = memo(({ grupos }) => {
+  if (!grupos || grupos.length === 0) return null;
   return (
-    <aside className="eventos-relacionados">
-      <h4><FaCalendarAlt /> Eventos relacionados</h4>
-      <div className="relacionadas-lista">
-        {eventos.map(evento => (
-          <Link to={`/eventos/${evento.id}`} key={evento.id} className="relacionada-card-horizontal">
-            <div className="relacionada-miniatura">
-              {obtenerPreview(evento)}
-              {tieneVideo(evento) && <span className="video-badge-horizontal"><FaPlay /></span>}
-            </div>
-            <div className="relacionada-contenido">
-              <h5 className="relacionada-titulo-horizontal">{evento.titulo}</h5>
-              <div className="relacionada-meta">
-                <span className="relacionada-canal-horizontal">{evento.lugar || "Comunidad"}</span>
-                <span className="relacionada-puntos">•</span>
-                {evento.vistas != null && <span className="relacionada-views-horizontal">{evento.vistas} vistas</span>}
-                <span className="relacionada-puntos">•</span>
-                <span className="relacionada-fecha-horizontal">{formatFecha(evento.fecha_evento || evento.fecha)}</span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </aside>
+    <RelacionadosSidebar
+      titulo="Eventos relacionados"
+      icono={<FaCalendarAlt />}
+      grupos={grupos}
+      kind="EVENTO"
+      linkBase="/evento/detalle/"
+      imagenPlaceholder="/images/placeholder-event.jpg"
+    />
   );
 });
 
@@ -286,6 +257,8 @@ function DetalleEvento() {
   const [evento,              setEvento]            = useState(null);
   const [error,               setError]             = useState("");
   const [loading,             setLoading]           = useState(true);
+
+  useTaskLifecycle("evento:detalle", loading);
   const [reacciones,          setReacciones]        = useState([]);
   const [reaccsComent,        setReaccsComent]      = useState({});
   const [comentarios,         setComentarios]       = useState([]);
@@ -297,7 +270,7 @@ function DetalleEvento() {
   const [rateLimit,           setRateLimit]         = useState({ count: 0, lastReset: Date.now() });
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingReply,   setIsSubmittingReply]   = useState(false);
-  const [relacionados,        setRelacionados]      = useState([]);
+  const [relacionados,        setRelacionados]      = useState({ grupos: [] });
   const [compartido,          setCompartido]        = useState(false);
   const [descExpanded,        setDescExpanded]      = useState(false);
   const [editando,            setEditando]          = useState({});
@@ -345,13 +318,25 @@ function DetalleEvento() {
   // Cargar relacionados
   useEffect(() => {
     if (!eventoId) return;
-    api.get(`/eventos/`)
-      .then(({ data }) => {
-        const lista = extractList(data).filter(e => e.id !== eventoId).slice(0, 5);
-        setRelacionados(lista);
+    // Endpoint singular con /detalle/ (nomenclatura estandar).
+    // Se pasa ?cat=<id> para filtrar por la misma categoria del evento
+    // base y que la sidebar muestre el grupo "mismo tema" arriba.
+    const catParam = evento && evento.categoria ? `?cat=${evento.categoria}` : "";
+    api.get(`/evento/detalle/${eventoId}/relacionados/${catParam}`)
+      .then(res => {
+        const data = res.data;
+        if (Array.isArray(data)) {
+          setRelacionados({
+            grupos: [{ categoria: null, label: "General", items: data }],
+          });
+        } else if (data && Array.isArray(data.grupos)) {
+          setRelacionados(data);
+        } else {
+          setRelacionados({ grupos: [] });
+        }
       })
-      .catch(() => setRelacionados([]));
-  }, [eventoId]);
+      .catch(() => setRelacionados({ grupos: [] }));
+  }, [eventoId, evento]);
 
   const cargarReacciones = useCallback(() => {
     if (!eventoId) return Promise.resolve();
@@ -551,13 +536,12 @@ function DetalleEvento() {
   const { multimedia, principales, totalLikes, totalDislikes, userReaccion, imagenPrincipal } = useMemo(() => {
     if (!evento) return { multimedia: [], principales: [], totalLikes: 0, totalDislikes: 0, userReaccion: null, imagenPrincipal: null };
     const multi  = (evento.multimedia || []).slice();
-    const princ  = obtenerComentariosOrdenados;
     const likes  = reacciones.filter(r => r.tipo === "LIKE").length;
     const dislikes = reacciones.filter(r => r.tipo === "DISLIKE").length;
     const userReact = reacciones.find(r => r.autor === usuarioId);
     return {
       multimedia: multi,
-      principales: princ,
+      principales: obtenerComentariosOrdenados,
       totalLikes: likes,
       totalDislikes: dislikes,
       userReaccion: userReact?.tipo || null,
@@ -574,11 +558,7 @@ function DetalleEvento() {
 
   const accionLabel = { reaccion: "reaccionar", comentario: "comentar", respuesta: "responder", like: "interactuar", reporte: "reportar" };
 
-  if (loading) return (
-    <main className="detalle-page">
-      <div className="loading-container"><div className="loading-spinner" /><p>Cargando evento…</p></div>
-    </main>
-  );
+  if (loading) return null;
 
   if (error) return (
     <main className="detalle-page">
@@ -592,7 +572,7 @@ function DetalleEvento() {
 
   if (!evento) return null;
 
-  const tieneRelacionados = relacionados.length > 0;
+  const tieneRelacionados = Array.isArray(relacionados?.grupos) && relacionados.grupos.length > 0;
   const fechaEvento = evento.fecha_evento ? new Date(evento.fecha_evento) : null;
   const ubicacion = evento.ubicacion || evento.lugar || "Lugar por confirmar";
 
@@ -850,7 +830,7 @@ function DetalleEvento() {
 
         {tieneRelacionados && (
           <div className="detalle-sidebar">
-            <EventosRelacionados eventos={relacionados} />
+            <EventosRelacionados grupos={relacionados.grupos || []} />
           </div>
         )}
       </div>

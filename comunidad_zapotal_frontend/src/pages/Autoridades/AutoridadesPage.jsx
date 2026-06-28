@@ -10,6 +10,8 @@ import {
 import api, { extractList } from "../../api";
 import AutoridadDetalle from "../../components/Autoridades/AutoridadDetalle";
 import useConfiguracion from "../../hooks/useConfiguracion";
+import PageLoader from "../../components/common/PageLoader/PageLoader";
+import { useTaskLifecycle } from "../../context/LoaderContext";
 import "./AutoridadesPage.css";
 
 // Tabs en orden jerarquico: Centro Poblado > Directiva Comunal > Autoridad Politica
@@ -312,6 +314,8 @@ export default function AutoridadesPage() {
   const [niveles, setNiveles] = useState({});
   const [comites, setComites] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useTaskLifecycle("autoridades:page", loading);
   const [tabActiva, setTabActiva] = useState("MUNICIPAL");
   const [busqueda, setBusqueda] = useState("");
   const [autoridadDetalle, setAutoridadDetalle] = useState(null);
@@ -444,8 +448,7 @@ export default function AutoridadesPage() {
 
         {loading ? (
           <div className="au-loading">
-            <div className="au-loading-spinner" />
-            <p>Cargando autoridades...</p>
+            <PageLoader variant="section" mensaje="Cargando autoridades" />
           </div>
         ) : listaActual.length === 0 ? (
           <div className="au-empty">

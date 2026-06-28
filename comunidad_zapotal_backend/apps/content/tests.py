@@ -29,6 +29,141 @@ class TestNoticiaViewSet:
         n1 = Noticia.objects.create(titulo='Noticia 1', contenido='C', categoria=cat)
         Noticia.objects.create(titulo='Noticia 2', contenido='C', categoria=cat)
 
+    def test_detalle_singular_noticia_public(self, api_client):
+        """GET /noticia/detalle/<pk>/ (singular) debe ser público y devolver 200."""
+        from apps.content.models import Noticia
+        n = Noticia.objects.create(titulo='Detalle Singular', contenido='C')
+        response = api_client.get(f'/api/v1/noticia/detalle/{n.id}/')
+        assert response.status_code == 200
+        assert response.data['id'] == n.id
+        assert response.data['titulo'] == 'Detalle Singular'
+
+    def test_relacionadas_singular_public(self, api_client):
+        """GET /noticia/detalle/<pk>/relacionadas/ (singular) debe ser público."""
+        from apps.content.models import Noticia, Categoria
+        from django.utils import timezone
+        cat = Categoria.objects.create(nombre='Cultura')
+        base = Noticia.objects.create(
+            titulo='Base', contenido='C', categoria=cat,
+            estado='PUBLICADA', fecha_publicacion=timezone.now(),
+        )
+        Noticia.objects.create(
+            titulo='Otra', contenido='C', categoria=cat,
+            estado='PUBLICADA', fecha_publicacion=timezone.now(),
+        )
+        response = api_client.get(f'/api/v1/noticia/detalle/{base.id}/relacionadas/')
+        assert response.status_code == 200
+        assert 'grupos' in response.data
+
+    def test_relacionadas_filtro_por_categoria(self, api_client):
+        """GET /noticia/detalle/<pk>/relacionadas/?cat=<id> filtra por categoria."""
+        from apps.content.models import Noticia, Categoria
+        from django.utils import timezone
+        cat_a = Categoria.objects.create(nombre='Cultura')
+        cat_b = Categoria.objects.create(nombre='Deporte')
+        base = Noticia.objects.create(
+            titulo='Base', contenido='C', categoria=cat_a,
+            estado='PUBLICADA', fecha_publicacion=timezone.now(),
+        )
+        Noticia.objects.create(
+            titulo='A1', contenido='C', categoria=cat_a,
+            estado='PUBLICADA', fecha_publicacion=timezone.now(),
+        )
+        Noticia.objects.create(
+            titulo='B1', contenido='C', categoria=cat_b,
+            estado='PUBLICADA', fecha_publicacion=timezone.now(),
+        )
+        response = api_client.get(
+            f'/api/v1/noticia/detalle/{base.id}/relacionadas/?cat={cat_b.id}'
+        )
+        assert response.status_code == 200
+        # Todos los items devueltos deben pertenecer a la categoria filtrada
+        for grupo in response.data.get('grupos', []):
+            if grupo.get('categoria'):
+                assert grupo['categoria']['id'] == cat_b.id
+            for item in grupo.get('items', []):
+                if item.get('categoria') is not None:
+                    assert item['categoria'] == cat_b.id
+
+
+@pytest.mark.django_db
+class TestEventoViewSet:
+    """Tests del ViewSet de eventos (incluye rutas singulares nuevas)."""
+
+    def test_detalle_singular_evento_public(self, api_client):
+        """GET /evento/detalle/<pk>/ (singular) debe ser público y devolver 200."""
+        from apps.content.models import Evento
+        from django.utils import timezone
+        e = Evento.objects.create(
+            titulo='Detalle Singular Evento',
+            descripcion='D',
+            fecha=timezone.now(),
+        )
+        response = api_client.get(f'/api/v1/evento/detalle/{e.id}/')
+        assert response.status_code == 200
+        assert response.data['id'] == e.id
+
+    def test_relacionados_singular_public(self, api_client):
+        """GET /evento/detalle/<pk>/relacionados/ (singular) debe ser público."""
+        from apps.content.models import Evento, Categoria
+        from django.utils import timezone
+        cat = Categoria.objects.create(nombre='Cultura')
+        base = Evento.objects.create(
+            titulo='Base', descripcion='D', lugar='L',
+            fecha=timezone.now(), categoria=cat,
+        )
+        Evento.objects.create(
+            titulo='Otro', descripcion='D', lugar='L',
+            fecha=timezone.now(), categoria=cat,
+        )
+        response = api_client.get(f'/api/v1/evento/detalle/{base.id}/relacionados/')
+        assert response.status_code == 200
+        assert 'grupos' in response.data
+
+    def test_relacionados_filtro_por_categoria(self, api_client):
+        """GET /evento/detalle/<pk>/relacionados/?cat=<id> filtra por categoria."""
+        from apps.content.models import Evento, Categoria
+        from django.utils import timezone
+        cat_a = Categoria.objects.create(nombre='Cultura')
+        cat_b = Categoria.objects.create(nombre='Deporte')
+        base = Evento.objects.create(
+            titulo='Base', descripcion='D', lugar='L',
+            fecha=timezone.now(), categoria=cat_a,
+        )
+        Evento.objects.create(
+            titulo='A1', descripcion='D', lugar='L',
+            fecha=timezone.now(), categoria=cat_a,
+        )
+        Evento.objects.create(
+            titulo='B1', descripcion='D', lugar='L',
+            fecha=timezone.now(), categoria=cat_b,
+        )
+        response = api_client.get(
+            f'/api/v1/evento/detalle/{base.id}/relacionados/?cat={cat_b.id}'
+        )
+        assert response.status_code == 200
+        for grupo in response.data.get('grupos', []):
+            if grupo.get('categoria'):
+                assert grupo['categoria']['id'] == cat_b.id
+            for item in grupo.get('items', []):
+                if item.get('categoria') is not None:
+                    assert item['categoria'] == cat_b.id
+
+    def test_rutas_plurales_siguen_funcionando(self, api_client):
+        """Las rutas plurales NO se eliminan (regression test)."""
+        from apps.content.models import Evento
+        from django.utils import timezone
+        e = Evento.objects.create(
+            titulo='Plural', descripcion='D',
+            fecha=timezone.now(),
+        )
+        # Plural
+        assert api_client.get(f'/api/v1/eventos/{e.id}/').status_code == 200
+        assert api_client.get(f'/api/v1/eventos/{e.id}/relacionados/').status_code == 200
+        # Singular
+        assert api_client.get(f'/api/v1/evento/detalle/{e.id}/').status_code == 200
+        assert api_client.get(f'/api/v1/evento/detalle/{e.id}/relacionados/').status_code == 200
+
 
 @pytest.mark.django_db
 class TestModelStrRobustness:

@@ -8,9 +8,94 @@ from apps.core.permissions import IsAdminOrReadOnly, IsComuneroOrAdmin, IsAdminU
 from .models import Noticia, Categoria, Evento, Multimedia, Comentario, Reaccion
 from .serializers import (
     NoticiaSerializer, NoticiaEscrituraSerializer, NoticiaRelacionadaSerializer,
+    NoticiaRelacionadaAgrupadaSerializer,
     CategoriaSerializer, EventoSerializer, EventoEscrituraSerializer,
+    EventoRelacionadoSerializer, EventoRelacionadoAgrupadoSerializer,
     MultimediaSerializer, ComentarioSerializer, ReaccionSerializer,
 )
+
+
+def _agrupar_por_categoria(items, item_serializer, sin_categoria_label="General", request=None):
+    """Agrupa una lista de objetos (Noticia/Evento) por su FK categoria.
+
+    Devuelve un dict con clave `grupos` que contiene la lista
+    [{categoria: {id, nombre} | None, items: [...]}, ...].
+    Los items sin categoria caen en un unico grupo etiquetado como
+    `sin_categoria_label`. Los grupos se ordenan por nombre de categoria;
+    el grupo "General" va al final.
+
+    `request` se propaga al sub-serializer para que pueda resolver
+    URLs absolutas cuando el `imagen_url` externo no este disponible.
+    """
+    grupos_map = {}
+    fallback_items = []
+    for obj in items:
+        if obj.categoria_id:
+            cid = obj.categoria_id
+            grupos_map.setdefault(cid, {"categoria": {"id": cid, "nombre": obj.categoria.nombre}, "items": []})
+            grupos_map[cid]["items"].append(obj)
+        else:
+            fallback_items.append(obj)
+
+    grupos = list(grupos_map.values())
+    grupos.sort(key=lambda g: (g["categoria"]["nombre"] or "").lower())
+
+    if fallback_items:
+        grupos.append({
+            "categoria": None,
+            "items": fallback_items,
+            "label": sin_categoria_label,
+        })
+
+    sub_context = {"request": request} if request is not None else None
+
+    return {
+        "grupos": [
+            {
+                "categoria": g.get("categoria"),
+                "label": g.get("label") or (g["categoria"]["nombre"] if g["categoria"] else sin_categoria_label),
+                "items": item_serializer(
+                    g["items"], many=True, context=sub_context
+                ).data,
+            }
+            for g in grupos
+        ]
+    }
+
+
+def _parse_categoria_filtro(request, default_label="General"):
+    """Lee el query param `?cat=<id>` (filtro opcional del endpoint
+    de relacionadas/relacionados).
+
+    Usamos `cat` (no `categoria`) para NO chocar con
+    `filterset_fields = [..., 'categoria', ...]` del viewset: si el
+    cliente envia `?categoria=<id>`, el filter backend lo aplicaria
+    al queryset base antes de `get_object()` y la entidad base
+    dejaria de encontrarse.
+
+    Retorna (categoria_id, categoria_obj|None). Si el parametro no viene
+    o no es un entero valido, retorna (None, None) para indicar "sin
+    filtro". Esto es seguro contra valores basura (None, '', 'abc', etc).
+    """
+    raw = request.query_params.get("cat")
+    if raw is None or str(raw).strip() == "":
+        return None, None
+    try:
+        cid = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None, None
+    from .models import Categoria
+    cat = Categoria.objects.filter(pk=cid).first()
+    if cat is None:
+        return cid, None
+    return cid, cat
+
+
+def _filtrar_por_categoria(items, categoria_id):
+    """Filtra una lista de objetos (Noticia/Evento) por categoria_id."""
+    if categoria_id is None:
+        return items
+    return [obj for obj in items if obj.categoria_id == categoria_id]
 
 
 class CategoriaViewSet(viewsets.ModelViewSet):
@@ -54,20 +139,75 @@ class NoticiaViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return NoticiaEscrituraSerializer
         if self.action == 'relacionadas':
-            return NoticiaRelacionadaSerializer
+            return NoticiaRelacionadaAgrupadaSerializer
         return NoticiaSerializer
 
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def relacionadas(self, request, pk=None):
+        """Devuelve noticias relacionadas agrupadas por categoria.
+
+        Prioridad:
+          1. Si la noticia base tiene categoria: traer hasta 5 de esa categoria.
+          2. Si la noticia base no tiene categoria: traer las 5 mas recientes.
+        Adicionalmente se devuelven hasta 5 mas por cada otra categoria que
+          tenga noticias PUBLICADAS, para que la sidebar pueda mostrar multiples
+          grupos (incluyendo el de la categoria de la noticia base).
+
+        Query params opcionales:
+          - `cat=<id>`: si se envia, limita los resultados a esa
+            categoria. Util para endpoints como
+            `/noticia/detalle/<id>/relacionadas/?cat=2`.
+            NOTA: usamos `cat` y no `categoria` para no chocar con
+            `filterset_fields` del viewset.
+        """
         noticia = self.get_object()
-        if noticia.categoria:
-            relacionadas = Noticia.objects.filter(
-                categoria=noticia.categoria
-            ).exclude(id=noticia.id).order_by('-fecha_publicacion')[:5]
+        base_qs = Noticia.objects.filter(estado=Noticia.EstadoNoticia.PUBLICADA).exclude(id=noticia.id)
+
+        categoria_filtro, _ = _parse_categoria_filtro(request)
+
+        ids_por_categoria = {}
+        if noticia.categoria_id:
+            mismas = list(
+                base_qs.filter(categoria_id=noticia.categoria_id)
+                .order_by('-fecha_publicacion')[:5]
+            )
+            ids_por_categoria[noticia.categoria_id] = mismas
+
+        otras = list(
+            base_qs.exclude(categoria_id=noticia.categoria_id)
+            .order_by('-fecha_publicacion')[:30]
+        )
+        for obj in otras:
+            if not obj.categoria_id:
+                continue
+            bucket = ids_por_categoria.setdefault(obj.categoria_id, [])
+            if len(bucket) < 3 and obj.id not in {x.id for x in bucket}:
+                bucket.append(obj)
+
+        if not ids_por_categoria:
+            recientes = list(base_qs.order_by('-fecha_publicacion')[:5])
+            recientes = _filtrar_por_categoria(recientes, categoria_filtro)
+            payload = {
+                "grupos": [
+                    {
+                        "categoria": None,
+                        "label": "General",
+                        "items": NoticiaRelacionadaSerializer(
+                            recientes, many=True, context={"request": request}
+                        ).data,
+                    }
+                ]
+            }
         else:
-            relacionadas = Noticia.objects.exclude(id=noticia.id).order_by('-fecha_publicacion')[:5]
-        serializer = NoticiaRelacionadaSerializer(relacionadas, many=True)
-        return Response(serializer.data)
+            objetos = [n for ns in ids_por_categoria.values() for n in ns]
+            objetos = _filtrar_por_categoria(objetos, categoria_filtro)
+            if not objetos:
+                payload = {"grupos": []}
+            else:
+                payload = _agrupar_por_categoria(
+                    objetos, NoticiaRelacionadaSerializer, request=request
+                )
+        return Response(payload)
 
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def comentarios(self, request, pk=None):
@@ -98,24 +238,89 @@ class EventoViewSet(viewsets.ModelViewSet):
     Eventos de la comunidad.
     - Lectura pública.
     - Escritura solo ADMIN o COMUNERO.
-    - Endpoint personalizado: /eventos/{id}/comentarios/
+    - Endpoint personalizado: /eventos/{id}/comentarios/ y /eventos/{id}/relacionados/
     """
-    queryset = Evento.objects.prefetch_related('multimedia', 'reacciones', 'comentarios')
+    queryset = Evento.objects.select_related('categoria').prefetch_related('multimedia', 'reacciones', 'comentarios')
     serializer_class = EventoSerializer
     permission_classes = [IsAdminOrReadOnly]
-    filterset_fields = ['fecha', 'lugar']
+    filterset_fields = ['fecha', 'lugar', 'categoria']
     search_fields = ['titulo', 'descripcion', 'lugar']
     ordering_fields = ['fecha', 'titulo']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return EventoEscrituraSerializer
+        if self.action == 'relacionados':
+            return EventoRelacionadoAgrupadoSerializer
         return EventoSerializer
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsComuneroOrAdmin()]
         return super().get_permissions()
+
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    def relacionados(self, request, pk=None):
+        """Devuelve eventos relacionados agrupados por categoria.
+
+        Misma logica que `NoticiaViewSet.relacionadas`: prioriza la
+        categoria del evento base, y completa con hasta 3 eventos de
+        cada otra categoria. Si el evento no tiene categoria, devuelve
+        un grupo "General" con los 5 mas recientes.
+
+        Query params opcionales:
+          - `cat=<id>`: si se envia, limita los resultados a esa
+            categoria. Usamos `cat` y no `categoria` para no chocar con
+            `filterset_fields` del viewset.
+        """
+        evento = self.get_object()
+        base_qs = Evento.objects.exclude(id=evento.id)
+
+        categoria_filtro, _ = _parse_categoria_filtro(request)
+
+        ids_por_categoria = {}
+        if evento.categoria_id:
+            mismos = list(
+                base_qs.filter(categoria_id=evento.categoria_id)
+                .order_by('-fecha')[:5]
+            )
+            ids_por_categoria[evento.categoria_id] = mismos
+
+        otros = list(
+            base_qs.exclude(categoria_id=evento.categoria_id)
+            .order_by('-fecha')[:30]
+        )
+        for obj in otros:
+            if not obj.categoria_id:
+                continue
+            bucket = ids_por_categoria.setdefault(obj.categoria_id, [])
+            if len(bucket) < 3 and obj.id not in {x.id for x in bucket}:
+                bucket.append(obj)
+
+        if not ids_por_categoria:
+            recientes = list(base_qs.order_by('-fecha')[:5])
+            recientes = _filtrar_por_categoria(recientes, categoria_filtro)
+            payload = {
+                "grupos": [
+                    {
+                        "categoria": None,
+                        "label": "General",
+                        "items": EventoRelacionadoSerializer(
+                            recientes, many=True, context={"request": request}
+                        ).data,
+                    }
+                ]
+            }
+        else:
+            objetos = [e for es in ids_por_categoria.values() for e in es]
+            objetos = _filtrar_por_categoria(objetos, categoria_filtro)
+            if not objetos:
+                payload = {"grupos": []}
+            else:
+                payload = _agrupar_por_categoria(
+                    objetos, EventoRelacionadoSerializer, request=request
+                )
+        return Response(payload)
 
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def comentarios(self, request, pk=None):

@@ -61,16 +61,7 @@
   gap: 0;
 }
 
-/* Punto azul antes del título */
-.nc-cabecera__titulo::before {
-  content: "•";
-  color: #0a3d1f;
-  font-size: 50px;
-  line-height: 0;
-  margin-right: 8px;
-  position: relative;
-  top: 2px;
-}
+/* Punto eliminado por solicitud */
 
 /* ============================================
    BLOQUE HERO: grande izq + 2 laterales der
@@ -451,58 +442,8 @@
 }
 
 /* ============================================
-   LOADER
+   LOADER (migrado a PageLoader)
    ============================================ */
-.loader-container {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: var(--nc-blanco);
-}
-
-.loader-wrapper { position: relative; width: 90px; height: 90px; }
-
-.loader-ring {
-  position: absolute;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  border: 4px solid transparent;
-  border-top: 4px solid var(--nc-verde);
-  animation: nc-spin 1s linear infinite;
-}
-
-.loader-ring.ring-2 {
-  width: 65px; height: 65px;
-  top: 12px; left: 12px;
-  border-top-color: #7bc98d;
-  animation-direction: reverse;
-  animation-duration: 0.8s;
-}
-
-.loader-title {
-  margin-top: 28px;
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--nc-negro);
-  font-family: var(--nc-font-sans);
-  letter-spacing: -0.2px;
-}
-
-.loader-subtitle {
-  margin-top: 8px;
-  font-size: 14px;
-  color: var(--nc-gris-med);
-  font-family: var(--nc-font-sans);
-}
-
-@keyframes nc-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
 
 /* ============================================
    RESPONSIVE

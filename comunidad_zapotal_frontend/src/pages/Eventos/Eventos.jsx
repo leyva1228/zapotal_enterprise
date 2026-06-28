@@ -26,6 +26,7 @@ import {
 import { BsCalendarEvent, BsCalendarCheck, BsCalendarX } from "react-icons/bs";
 import { GiPartyPopper } from "react-icons/gi";
 import { MdLocationOn } from "react-icons/md";
+import { useTaskLifecycle } from "../../context/LoaderContext";
 import "./Eventos.css";
 
 /* Cuántos eventos (sin el hero) se muestran por página */
@@ -39,6 +40,8 @@ function Eventos() {
   const [filtroFecha, setFiltroFecha] = useState("todos");
   const [vista, setVista]           = useState("grid");
   const [pagina, setPagina]         = useState(1);   // ← paginación
+
+  useTaskLifecycle("eventos:list", cargando);
 
   useEffect(() => {
     setCargando(true);
@@ -168,16 +171,7 @@ function Eventos() {
   // ============================================
 
   if (cargando) {
-    return (
-      <div className="contenedor-carga">
-        <div className="animacion-carga">
-          <div className="anillo-carga"></div>
-          <div className="anillo-carga anillo-2"></div>
-        </div>
-        <h2 className="titulo-carga">Cargando eventos</h2>
-        <p className="subtitulo-carga">Espere un momento...</p>
-      </div>
-    );
+    return null;
   }
 
   // ============================================

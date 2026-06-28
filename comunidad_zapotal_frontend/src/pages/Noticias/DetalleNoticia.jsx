@@ -16,6 +16,8 @@ import { RiSendPlaneFill, RiShareForwardLine } from "react-icons/ri";
 import api, { extractList } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import BotonFavorito from "../../components/BotonFavorito";
+import { useTaskLifecycle } from "../../context/LoaderContext";
+import RelacionadosSidebar from "../../components/common/RelacionadosSidebar/RelacionadosSidebar";
 import "./DetalleNoticia.css";
 
 const MAX_COMMENT_LENGTH = 500;
@@ -225,50 +227,17 @@ const GaleriaMedia = memo(({ imagenPrincipal, multimedia, titulo }) => {
   );
 });
 
-const NoticiasRelacionadas = memo(({ noticias }) => {
-  if (!noticias.length) return null;
-
-  const obtenerPreview = (noticia) => {
-    const imagen = noticia.multimedia?.find(m => m.tipo === "IMAGEN");
-    const src = imagen?.archivo_url || noticia.imagen_url || noticia.miniatura;
-    if (src) {
-      return <img src={src} alt={noticia.titulo} onError={(e) => { e.currentTarget.src = "/images/placeholder-news.jpg"; }} />;
-    }
-    return (
-      <div className="gm-thumb__placeholder">
-        <FaNewspaper />
-      </div>
-    );
-  };
-
-  const tieneVideo = (noticia) => noticia.multimedia?.some(m => m.tipo === "VIDEO") || false;
-
+const NoticiasRelacionadas = memo(({ grupos }) => {
+  if (!grupos || grupos.length === 0) return null;
   return (
-    <aside className="noticias-relacionadas">
-      <h4><FaNewspaper /> Noticias relacionadas</h4>
-      <div className="relacionadas-lista">
-        {noticias.map(noticia => (
-          <Link to={`/noticias/${noticia.id}`} key={noticia.id} className="relacionada-card-horizontal">
-            <div className="relacionada-miniatura">
-              {obtenerPreview(noticia)}
-              {tieneVideo(noticia) && (
-                <span className="video-badge-horizontal"><FaPlay /></span>
-              )}
-            </div>
-            <div className="relacionada-contenido">
-              <h5 className="relacionada-titulo-horizontal">{noticia.titulo}</h5>
-              <div className="relacionada-meta">
-                <span className="relacionada-canal-horizontal">{noticia.categoria_nombre || "Comunidad"}</span>
-                <span className="relacionada-puntos">•</span>
-                {noticia.vistas != null && <span className="relacionada-views-horizontal">{noticia.vistas} vistas</span>}
-                <span className="relacionada-puntos">•</span>
-                <span className="relacionada-fecha-horizontal">{formatFecha(noticia.fecha_publicacion)}</span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </aside>
+    <RelacionadosSidebar
+      titulo="Noticias relacionadas"
+      icono={<FaNewspaper />}
+      grupos={grupos}
+      kind="NOTICIA"
+      linkBase="/noticia/detalle/"
+      imagenPlaceholder="/images/placeholder-news.jpg"
+    />
   );
 });
 
@@ -290,6 +259,8 @@ function DetalleNoticia() {
   const [noticia,             setNoticia]            = useState(null);
   const [error,               setError]              = useState("");
   const [loading,             setLoading]            = useState(true);
+
+  useTaskLifecycle("noticia:detalle", loading);
   const [reacciones,          setReacciones]         = useState([]);
   const [reaccsComent,        setReaccsComent]       = useState({});
   const [comentarios,         setComentarios]        = useState([]);
@@ -301,7 +272,7 @@ function DetalleNoticia() {
   const [rateLimit,           setRateLimit]          = useState({ count: 0, lastReset: Date.now() });
   const [isSubmittingComment, setIsSubmittingComment]= useState(false);
   const [isSubmittingReply,   setIsSubmittingReply]  = useState(false);
-  const [relacionadas,        setRelacionadas]       = useState([]);
+  const [relacionadas,        setRelacionadas]       = useState({ grupos: [] });
   const [compartido,          setCompartido]         = useState(false);
   const [descExpanded,        setDescExpanded]       = useState(false);
   const [editando,            setEditando]           = useState({});
@@ -349,10 +320,25 @@ function DetalleNoticia() {
   // Cargar relacionadas
   useEffect(() => {
     if (!noticiaId) return;
-    api.get(`/noticias/${noticiaId}/relacionadas/`)
-      .then(res => setRelacionadas(res.data))
-      .catch(() => setRelacionadas([]));
-  }, [noticiaId]);
+    // Endpoint singular con /detalle/ (nomenclatura estandar).
+    // Se pasa ?cat=<id> para filtrar por la misma categoria de la noticia
+    // base y que la sidebar muestre el grupo "mismo tema" arriba.
+    const catParam = noticia && noticia.categoria ? `?cat=${noticia.categoria}` : "";
+    api.get(`/noticia/detalle/${noticiaId}/relacionadas/${catParam}`)
+      .then(res => {
+        const data = res.data;
+        if (Array.isArray(data)) {
+          setRelacionadas({
+            grupos: [{ categoria: null, label: "General", items: data }],
+          });
+        } else if (data && Array.isArray(data.grupos)) {
+          setRelacionadas(data);
+        } else {
+          setRelacionadas({ grupos: [] });
+        }
+      })
+      .catch(() => setRelacionadas({ grupos: [] }));
+  }, [noticiaId, noticia]);
 
   const cargarReacciones = useCallback(() => {
     if (!noticiaId) return Promise.resolve();
@@ -552,13 +538,12 @@ function DetalleNoticia() {
   const { multimedia, principales, totalLikes, totalDislikes, userReaccion, imagenPrincipal } = useMemo(() => {
     if (!noticia) return { multimedia: [], principales: [], totalLikes: 0, totalDislikes: 0, userReaccion: null, imagenPrincipal: null };
     const multi  = (noticia.multimedia || []).slice();
-    const princ  = obtenerComentariosOrdenados;
     const likes  = reacciones.filter(r => r.tipo === "LIKE").length;
     const dislikes = reacciones.filter(r => r.tipo === "DISLIKE").length;
     const userReact = reacciones.find(r => r.autor === usuarioId);
     return {
       multimedia: multi,
-      principales: princ,
+      principales: obtenerComentariosOrdenados,
       totalLikes: likes,
       totalDislikes: dislikes,
       userReaccion: userReact?.tipo || null,
@@ -575,11 +560,7 @@ function DetalleNoticia() {
 
   const accionLabel = { reaccion: "reaccionar", comentario: "comentar", respuesta: "responder", like: "interactuar", reporte: "reportar" };
 
-  if (loading) return (
-    <main className="detalle-page">
-      <div className="loading-container"><div className="loading-spinner" /><p>Cargando noticia…</p></div>
-    </main>
-  );
+  if (loading) return null;
 
   if (error) return (
     <main className="detalle-page">
@@ -593,7 +574,7 @@ function DetalleNoticia() {
 
   if (!noticia) return null;
 
-  const tieneRelacionadas = relacionadas.length > 0;
+  const tieneRelacionadas = Array.isArray(relacionadas?.grupos) && relacionadas.grupos.length > 0;
 
   const renderComentario = (c, esRespuesta = false) => {
     const nombre         = c.autor_nombre || c.autor?.email || c.usuario_nombre || c.usuario_data?.nombre_completo || "Usuario";
@@ -837,7 +818,7 @@ function DetalleNoticia() {
 
         {tieneRelacionadas && (
           <div className="detalle-sidebar">
-            <NoticiasRelacionadas noticias={relacionadas} />
+            <NoticiasRelacionadas grupos={relacionadas.grupos || []} />
           </div>
         )}
       </div>

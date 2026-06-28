@@ -9,6 +9,12 @@ import RequireAuth from './components/RequireAuth';
 import RequireAdmin from './components/RequireAdmin';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider, useToast } from './components/ToastCenter';
+import {
+  LoaderProvider,
+  useLoader,
+  RouteChangeListener,
+} from './context/LoaderContext';
+import LoaderOverlay from './components/common/LoaderOverlay/LoaderOverlay';
 
 import Donaciones from './pages/Donaciones/Donaciones';
 import Noticias from './pages/Noticias/Noticias';
@@ -28,7 +34,6 @@ import BannerCookies from './components/Legal/BannerCookies';
 import LibroReclamaciones from './components/LibroReclamaciones/LibroReclamaciones';
 import Login from './pages/Login/Login';
 import Perfil from './pages/Perfil/Perfil';
-import LoadingScreen from './pages/LoadingScreen/LoadingScreen';
 import Registro from './pages/Registro/Registro';
 import RegistroPendiente from './pages/Registro/RegistroPendiente';
 import TwoFactorVerify from './components/TwoFactorVerify';
@@ -110,6 +115,7 @@ function Home() {
 function Layout() {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { isLoading } = useLoader();
   const ocultarNavbar =
     location.pathname.startsWith('/login') ||
     location.pathname.startsWith('/registro') ||
@@ -129,6 +135,7 @@ function Layout() {
   return (
     <>
       <ScrollToTop />
+      <RouteChangeListener minMs={300} />
       {!ocultarNavbar && <Navbar />}
       {esperandoAprobacion && (
         <div className="lp-aprobacion-banner" role="alert">
@@ -143,10 +150,10 @@ function Layout() {
         <Breadcrumb
           items={(() => {
             const p = location.pathname;
-            if (p.match(/^\/noticias\/\d+/)) {
+            if (p.match(/^\/noticias\/\d+/) || p.match(/^\/noticia\/detalle\/\d+/)) {
               return [{ label: 'Noticias', to: '/noticias' }, { label: 'Detalle' }];
             }
-            if (p.match(/^\/eventos\/\d+/)) {
+            if (p.match(/^\/eventos\/\d+/) || p.match(/^\/evento\/detalle\/\d+/)) {
               return [{ label: 'Eventos', to: '/eventos' }, { label: 'Detalle' }];
             }
             if (p === '/noticias') return [{ label: 'Noticias' }];
@@ -165,8 +172,12 @@ function Layout() {
         <Route path="/" element={<Home />} />
         <Route path="/noticias" element={<Noticias />} />
         <Route path="/noticias/:id" element={<DetalleNoticia />} />
+        {/* Rutas singulares con /detalle/ (nomenclatura estandar).
+            Conviven con las plurales para no romper consumidores. */}
+        <Route path="/noticia/detalle/:id" element={<DetalleNoticia />} />
         <Route path="/eventos" element={<Eventos />} />
         <Route path="/eventos/:id" element={<DetalleEvento />} />
+        <Route path="/evento/detalle/:id" element={<DetalleEvento />} />
         <Route path="/nosotros/historia" element={<NuestraHistoria />} />
         <Route path="/nosotros/conocenos" element={<Conocenos />} />
         <Route path="/nosotros/marco-legal" element={<MarcoLegalPage />} />
@@ -237,22 +248,86 @@ function Layout() {
         />
       </Routes>
       {!ocultarFooter && <Footer />}
+      <LoaderOverlay
+        active={isLoading}
+        variant={ocultarNavbar ? 'no-navbar' : 'with-navbar'}
+        mensaje="Cargando"
+      />
     </>
   );
 }
 
-function App() {
-  const [loading, setLoading] = useState(true);
+function BodyScrollLock() {
+  const { isLoading } = useLoader();
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1200);
-    return () => clearTimeout(t);
-  }, []);
-  if (loading) return <LoadingScreen />;
+    if (isLoading) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+    return undefined;
+  }, [isLoading]);
+  return null;
+}
+
+function App() {
+  return (
+    <LoaderProvider>
+      <AppShell />
+    </LoaderProvider>
+  );
+}
+
+function AppShell() {
+  const { setRouteLoading } = useLoader();
+  const [booting, setBooting] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const start = Date.now();
+    const minVisibleMs = 400;
+
+    const finish = () => {
+      const elapsed = Date.now() - start;
+      const wait = Math.max(0, minVisibleMs - elapsed);
+      setTimeout(() => {
+        if (cancelled) return;
+        setBooting(false);
+        setRouteLoading(false);
+      }, wait);
+    };
+
+    setRouteLoading(true);
+    if (document.readyState === 'complete') {
+      finish();
+    } else {
+      window.addEventListener('load', finish, { once: true });
+      const fallback = setTimeout(finish, 8000);
+      return () => {
+        cancelled = true;
+        window.removeEventListener('load', finish);
+        clearTimeout(fallback);
+        setRouteLoading(false);
+      };
+    }
+
+    return () => {
+      cancelled = true;
+      setRouteLoading(false);
+    };
+  }, [setRouteLoading]);
+
+  if (booting) {
+    return <LoaderOverlay active={true} variant="no-navbar" mensaje="Cargando sistema" />;
+  }
 
   return (
     <AuthProvider>
       <ToastProvider>
         <BrowserRouter>
+          <BodyScrollLock />
           <Layout />
           <BannerCookies />
         </BrowserRouter>
