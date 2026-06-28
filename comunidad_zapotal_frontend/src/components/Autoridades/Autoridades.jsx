@@ -58,7 +58,7 @@ function Autoridades() {
         <h5>Nuestras Autoridades</h5>
 
         <h2>
-          Líderes de la Comunidad Campesina Zapotal
+          Líderes de la Comunidad Campesina Niño Dios de Zapotal
         </h2>
 
         <p>

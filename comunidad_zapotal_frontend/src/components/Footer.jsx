@@ -10,7 +10,7 @@ function Footer() {
       <div className="footer-container">
 
         <div className="footer-brand">
-          <h2>Comunidad Campesina Zapotal</h2>
+            <h2>Comunidad Campesina Niño Dios de Zapotal</h2>
           <p>
             Plataforma digital institucional creada para informar,
             conectar y fortalecer la identidad de nuestra comunidad
@@ -62,7 +62,7 @@ function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <p>© 2026 Comunidad Campesina Zapotal. Todos los derechos reservados.</p>
+        <p>© 2026 Comunidad Campesina Niño Dios de Zapotal. Todos los derechos reservados.</p>
       </div>
 
     </footer>

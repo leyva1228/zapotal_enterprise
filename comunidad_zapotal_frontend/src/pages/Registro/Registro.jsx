@@ -218,7 +218,7 @@ export default function Registro() {
             <img src="/img/Logo-comunidad/Logo-principal.png" alt="Escudo" className="h-20 w-20" />
           </div>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-white leading-tight">
-            Comunidad Campesina<br />Zapotal
+              Comunidad Campesina<br />Niño Dios de Zapotal
           </h1>
           {/* Adorno con el oro del navbar (mismo que Login) */}
           <div className="my-5 flex items-center justify-center gap-3 text-white/80">
@@ -443,10 +443,10 @@ export default function Registro() {
             </p>
 
             <p className="text-center mt-4 text-xs text-soft">
-              © 2026 Comunidad Campesina Zapotal. Todos los derechos reservados.
+              © 2026 Comunidad Campesina Niño Dios de Zapotal. Todos los derechos reservados.
             </p>
           </form>
-        )}
+          )}
 
         {step === 2 && (
           <form onSubmit={(e) => { e.preventDefault(); handleVerificarOtp(otp); }} noValidate className="w-full max-w-md">
@@ -521,10 +521,10 @@ export default function Registro() {
             </p>
 
             <p className="text-center mt-4 text-xs text-soft">
-              © 2026 Comunidad Campesina Zapotal. Todos los derechos reservados.
+              © 2026 Comunidad Campesina Niño Dios de Zapotal. Todos los derechos reservados.
             </p>
           </form>
-        )}
+          )}
       </section>
     </div>
   );

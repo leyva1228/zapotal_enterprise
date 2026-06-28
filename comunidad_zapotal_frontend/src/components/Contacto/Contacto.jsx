@@ -308,7 +308,7 @@ function Contacto() {
         <aside className="contacto-info" aria-label="Información de contacto">
 
           <div className="contacto-info__cabecera">
-            <span className="contacto-info__eyebrow">Comunidad Zapotal</span>
+            <span className="contacto-info__eyebrow">Comunidad Campesina Niño Dios de Zapotal</span>
             <h2>Información de contacto</h2>
             <p>
               {cfg?.descripcion_corta ||

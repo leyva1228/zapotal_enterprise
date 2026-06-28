@@ -102,7 +102,7 @@ function Home() {
             ¿Por qué Zapotal? Somos una comunidad campesina comprometida con
             el desarrollo, la unión y la preservación de nuestra identidad.
           </h1>
-          <p>Comunidad Campesina Zapotal</p>
+          <p>Comunidad Campesina Niño Dios de Zapotal</p>
           <Link to="/nosotros/conocenos" className="btn-principal">
             CONÓCENOS <FaArrowRight />
           </Link>

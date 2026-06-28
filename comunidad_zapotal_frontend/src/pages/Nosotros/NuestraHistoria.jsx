@@ -16,7 +16,7 @@ function NuestraHistoria() {
         <div className="hero-bg-extra"></div>
         <div className="historia-overlay">
           <span className="historia-label">
-            {cfg ? cfg.nombre_oficial : 'Comunidad Campesina Zapotal'}
+            {cfg ? cfg.nombre_oficial : 'Comunidad Campesina Niño Dios de Zapotal'}
           </span>
           <h1>Nuestra historia</h1>
           <p>

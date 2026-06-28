@@ -552,7 +552,7 @@ def _enviar_email_confirmacion(donacion):
     asunto = f"Gracias por tu donacion de S/ {donacion.monto} a Comunidad Zapotal"
     cuerpo_texto = (
         f"Hola {donacion.nombre_display},\n\n"
-        f"Gracias por tu donacion de S/ {donacion.monto} a la Comunidad Campesina Zapotal.\n\n"
+        f"Gracias por tu donacion de S/ {donacion.monto} a la Comunidad Campesina Niño Dios de Zapotal.\n\n"
         f"Tu pago fue aprobado por Mercado Pago.\n"
         f"ID de transaccion: {donacion.mp_payment_id}\n"
         f"Fecha: {donacion.aprobado_at.strftime('%d/%m/%Y %H:%M') if donacion.aprobado_at else 'ahora'}\n"
@@ -562,7 +562,7 @@ def _enviar_email_confirmacion(donacion):
         cuerpo_texto += f"\nTu mensaje: \"{donacion.mensaje}\"\n"
     cuerpo_texto += (
         "\nTu aporte se traduce en obras concretas para nuestra comunidad.\n\n"
-        "Comunidad Campesina Zapotal\n"
+        "Comunidad Campesina Niño Dios de Zapotal\n"
     )
     try:
         EmailService.enviar_notificacion(

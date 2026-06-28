@@ -229,7 +229,7 @@ class EmailService:
             f'Valido por 10 minutos.\n'
             f'Nunca compartas este codigo con nadie.\n\n'
             f'---\n'
-            f'Comunidad Campesina Zapotal\n'
+            f'Comunidad Campesina Niño Dios de Zapotal\n'
             f'www.comunidadzapotal.com\n\n'
             f'Recibiste este correo porque solicitaste un codigo de acceso '
             f'en nuestra plataforma. Si no realizaste esta solicitud, '
@@ -245,7 +245,7 @@ class EmailService:
             f'style="max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">'
             # Header con branding
             f'<tr><td style="background:linear-gradient(135deg,#0a3d1f 0%,#1a7a42 100%);padding:24px;text-align:center">'
-            f'<h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:600;letter-spacing:0.5px">Comunidad Campesina Zapotal</h1>'
+            f'<h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:600;letter-spacing:0.5px">Comunidad Campesina Niño Dios de Zapotal</h1>'
             f'<p style="color:#b8d4c4;margin:4px 0 0;font-size:13px">Plataforma Institucional</p>'
             f'</td></tr>'
             # Body
@@ -270,7 +270,7 @@ class EmailService:
             # Footer
             f'<tr><td style="background:#f9fafb;padding:20px 32px;border-top:1px solid #e5e7eb">'
             f'<p style="color:#999;margin:0;font-size:12px;line-height:1.5">'
-            f'Comunidad Campesina Zapotal<br>'
+            f'Comunidad Campesina Niño Dios de Zapotal<br>'
             f'<a href="https://comunidadzapotal.com" style="color:#1a7a42;text-decoration:none">www.comunidadzapotal.com</a><br><br>'
             f'No respondas a este correo. Si no solicitaste este codigo, '
             f'puedes <a href="https://comunidadzapotal.com/api/v1/unsubscribe?email={destinatario}" '
@@ -325,14 +325,14 @@ class EmailService:
         subject = 'Tu cuenta ha sido aprobada - Comunidad Zapotal'
         body = (
             f'Hola {nombre},\n\n'
-            'Tu cuenta en la Comunidad Campesina Zapotal ha sido aprobada por un administrador.\n\n'
+            'Tu cuenta en la Comunidad Campesina Niño Dios de Zapotal ha sido aprobada por un administrador.\n\n'
             'Ya puedes iniciar sesion en la plataforma institucional:\n'
             'https://comunidadzapotal.com/login\n\n'
             'Tus credenciales de acceso son:\n'
             f'  - Correo electronico: {destinatario}\n'
             '  - Contrasena: la que utilizaste al momento de registrarte\n\n'
             'Si no realizaste este registro o tienes dudas, contactanos.\n\n'
-            'Comunidad Campesina Zapotal'
+            'Comunidad Campesina Niño Dios de Zapotal'
         )
         html = (
             f'<div style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;'
@@ -350,7 +350,7 @@ class EmailService:
             f'<li><strong>Correo:</strong> {destinatario}</li>'
             f'<li><strong>Contrasena:</strong> la que registraste (no podemos enviartela por seguridad)</li>'
             f'</ul>'
-            f'<p style="color:#999;font-size:12px;margin-top:24px">Comunidad Campesina Zapotal</p>'
+            f'<p style="color:#999;font-size:12px;margin-top:24px">Comunidad Campesina Niño Dios de Zapotal</p>'
             f'</div>'
         )
         return EmailService.enviar_notificacion(destinatario, subject, body, html=html)
@@ -362,7 +362,7 @@ class EmailService:
             'Tu solicitud de registro no fue aprobada por el administrador.\n\n'
             f'Motivo: {motivo or "No especificado"}\n\n'
             'Si consideras que se trata de un error, contactanos.\n\n'
-            'Comunidad Campesina Zapotal'
+            'Comunidad Campesina Niño Dios de Zapotal'
         )
         return EmailService.enviar_notificacion(destinatario, subject, body)
 

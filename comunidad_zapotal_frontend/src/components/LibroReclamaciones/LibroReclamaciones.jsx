@@ -133,7 +133,7 @@ function LibroReclamaciones() {
           <p>
             Este espacio permite registrar reclamos, quejas o sugerencias
             relacionadas con la atención y servicios brindados por la Comunidad
-            Campesina Zapotal. Nuestro compromiso es garantizar una atención
+            Campesina Niño Dios de Zapotal. Nuestro compromiso es garantizar una atención
             transparente, responsable y orientada al bienestar de todos los
             comuneros y visitantes.
           </p>

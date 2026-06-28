@@ -187,7 +187,7 @@ export default function Donaciones() {
           <FaHandHoldingHeart className="don-hero__icon" />
           <h1 className="don-hero__title">Tu donacion construye futuro</h1>
           <p className="don-hero__subtitle">
-            Tus aportes permiten a la Comunidad Campesina Zapotal financiar proyectos de
+            Tus aportes permiten a la Comunidad Campesina Niño Dios de Zapotal financiar proyectos de
             infraestructura, becas educativas, programas de salud y desarrollo agricola
             que benefician a las familias de nuestra comunidad.
           </p>

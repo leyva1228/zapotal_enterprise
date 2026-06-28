@@ -233,7 +233,7 @@ export default function Login() {
             <img src="/img/Logo-comunidad/Logo-principal.png" alt="Escudo" className="h-20 w-20" />
           </div>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-white leading-tight">
-            Comunidad Campesina<br />Zapotal
+            Comunidad Campesina<br />Niño Dios de Zapotal
           </h1>
           {/* Adorno con el oro del navbar (--nb-dorado / --nb-dorado-light) */}
           <div className="my-5 flex items-center justify-center gap-3 text-white/80">
@@ -370,7 +370,7 @@ export default function Login() {
           </p>
 
           <p className="text-center mt-4 text-xs text-soft">
-            © 2026 Comunidad Campesina Zapotal. Todos los derechos reservados.
+            © 2026 Comunidad Campesina Niño Dios de Zapotal. Todos los derechos reservados.
           </p>
         </form>
       </section>

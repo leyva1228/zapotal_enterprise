@@ -61,7 +61,7 @@ CONTENIDO_INICIAL = [
     },
     {
         'seccion': 'INICIO_HERO',
-        'titulo': 'Comunidad Campesina Zapotal',
+        'titulo': 'Comunidad Campesina Niño Dios de Zapotal',
         'contenido': (
             'Somos una comunidad campesina comprometida con el desarrollo, '
             'la union y la preservacion de nuestra identidad.'

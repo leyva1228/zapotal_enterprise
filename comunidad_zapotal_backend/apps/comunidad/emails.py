@@ -259,7 +259,7 @@ def enviar_respuesta_reclamo(rec, respuesta, admin_user) -> dict:
         f'Estimado/a {rec.nombre},\n\n'
         f'Respuesta a su reclamo {rec.numero_reclamo}:\n\n'
         f'{respuesta}\n\n'
-        f'-- \nComunidad Campesina Zapotal'
+        f'-- \nComunidad Campesina Niño Dios de Zapotal'
     )
     asunto = f'Respuesta a su reclamo {rec.numero_reclamo} - Comunidad Zapotal'
 
@@ -322,7 +322,7 @@ def notificar_consumidor_cambio_estado_reclamo(rec, estado_anterior, estado_nuev
         f'Estimado/a {rec.nombre},\n\n'
         f'Su reclamo {rec.numero_reclamo} cambio de estado: '
         f'{estado_anterior} -> {estado_nuevo}.\n\n'
-        f'-- \nComunidad Campesina Zapotal'
+        f'-- \nComunidad Campesina Niño Dios de Zapotal'
     )
     asunto = f'Actualizacion de su reclamo {rec.numero_reclamo} - {estado_nuevo}'
 
@@ -379,7 +379,7 @@ def enviar_respuesta_contacto(msg: MensajeContacto, respuesta: str, admin_user) 
         f'Estimado/a {msg.nombre},\n\n'
         f'Respuesta a su mensaje de contacto:\n\n'
         f'{respuesta}\n\n'
-        f'-- \nComunidad Campesina Zapotal'
+        f'-- \nComunidad Campesina Niño Dios de Zapotal'
     )
     asunto = _sanitize_subject(f'Re: {msg.asunto} - Comunidad Zapotal')
 
