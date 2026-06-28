@@ -305,15 +305,29 @@ function DetalleEvento() {
   // si EXISTE cualquier clave con el prefijo del item: si existe, NO
   // se cuenta. Asi se evita doble conteo al cambiar entre anonimo y
   // logueado en el mismo navegador.
+  //
+  // Si localStorage falla (modo privado, etc.), se usa sessionStorage
+  // como fallback (persiste durante la sesion del browser, no
+  // sobrevive a cerrar el browser, pero al menos evita doble conteo
+  // en recargas).
   useEffect(() => {
     if (!eventoId || !evento) return;
-    if (typeof window === "undefined" || !window.localStorage) return;
+    if (typeof window === "undefined") return;
 
     const prefijo = `visto_evento_${eventoId}_`;
+
+    // Elegir storage: localStorage (preferido) o sessionStorage (fallback).
+    let storage = null;
+    try { if (window.localStorage) storage = window.localStorage; } catch (e) { /* noop */ }
+    if (!storage) {
+      try { if (window.sessionStorage) storage = window.sessionStorage; } catch (e) { /* noop */ }
+    }
+    if (!storage) return; // sin storage disponible, no contamos
+
     let yaVisto = false;
     try {
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const k = window.localStorage.key(i);
+      for (let i = 0; i < storage.length; i++) {
+        const k = storage.key(i);
         if (k && k.startsWith(prefijo)) { yaVisto = true; break; }
       }
     } catch (e) { /* noop */ }
@@ -322,15 +336,21 @@ function DetalleEvento() {
     const identificador = (estaAuth && usuarioId)
       ? `user_${usuarioId}`
       : (anonId ? `anon_${anonId}` : null);
-    if (!identificador) return; // sin identificador estable, no contamos
+    if (!identificador) {
+      console.warn("[vistas evento] sin identificador estable; no se incrementa", { estaAuth, usuarioId, anonId });
+      return;
+    }
 
     const clavePropia = `${prefijo}${identificador}`;
     api.post(`/eventos/${eventoId}/incrementar_vistas/`)
       .then(({ data }) => {
         setEvento((prev) => prev ? { ...prev, vistas: data.vistas } : prev);
-        try { window.localStorage.setItem(clavePropia, new Date().toISOString()); } catch (e) { /* noop */ }
+        try { storage.setItem(clavePropia, new Date().toISOString()); } catch (e) { /* noop */ }
       })
-      .catch(err => console.warn("Error al incrementar vistas:", err));
+      .catch(err => {
+        console.warn("[vistas evento] fallo al incrementar:", err?.response?.status, err?.message);
+        // NO guardar la clave en localStorage si fallo: permitimos retry.
+      });
   }, [eventoId, evento, estaAuth, usuarioId, anonId]);
 
   // Cargar relacionados
