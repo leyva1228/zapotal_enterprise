@@ -15,6 +15,15 @@ function Footer() {
             Plataforma digital institucional para informar y conectar
             a nuestra comunidad.
           </p>
+          <div className="libro-reclamaciones-item">
+            <Link to="/libro-reclamaciones" className="libro-reclamaciones-link">
+              <img
+                src="img/Libro _de_reclamaciones/libro_de_recalmaciones.png"
+                alt="Libro de reclamaciones"
+                className="libro-reclamaciones-img"
+              />
+            </Link>
+          </div>
         </div>
 
         <div className="footer-section">
@@ -44,15 +53,6 @@ function Footer() {
             <li><Link to="/privacidad">Politica de Privacidad</Link></li>
             <li><Link to="/cookies">Politica de Cookies</Link></li>
           </ul>
-          <div className="libro-reclamaciones-item">
-            <Link to="/libro-reclamaciones" className="libro-reclamaciones-link">
-              <img
-                src="img/Libro _de_reclamaciones/libro_de_recalmaciones.png"
-                alt="Libro de reclamaciones"
-                className="libro-reclamaciones-img"
-              />
-            </Link>
-          </div>
         </div>
 
       </div>
