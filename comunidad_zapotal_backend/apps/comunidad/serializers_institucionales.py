@@ -102,21 +102,42 @@ class HitoHistoricoSerializer(serializers.ModelSerializer):
 class GaleriaImagenSerializer(serializers.ModelSerializer):
     categoria_display = serializers.CharField(source='get_categoria_display', read_only=True)
     imagen_url = serializers.SerializerMethodField()
+    noticia_titulo = serializers.SerializerMethodField()
+    evento_titulo = serializers.SerializerMethodField()
 
     class Meta:
         model = GaleriaImagen
         fields = [
             'id', 'titulo', 'descripcion', 'imagen', 'imagen_url',
+            'imagen_url_externa',
             'categoria', 'categoria_display', 'fecha', 'orden', 'activo',
+            'noticia', 'noticia_titulo',
+            'evento', 'evento_titulo',
         ]
 
     def get_imagen_url(self, obj):
+        # Priorizar URL externa (R2/CDN) si existe.
+        url_externa = (getattr(obj, 'imagen_url_externa', '') or '').strip()
+        if url_externa:
+            return url_externa
         if not obj.imagen:
             return None
         request = self.context.get('request')
         if request:
-            return request.build_absolute_uri(obj.imagen.url)
-        return obj.imagen.url
+            try:
+                return request.build_absolute_uri(obj.imagen.url)
+            except Exception:
+                pass
+        try:
+            return obj.imagen.url
+        except Exception:
+            return None
+
+    def get_noticia_titulo(self, obj):
+        return obj.noticia.titulo if obj.noticia_id else None
+
+    def get_evento_titulo(self, obj):
+        return obj.evento.titulo if obj.evento_id else None
 
 
 class MensajeContactoSerializer(serializers.ModelSerializer):
