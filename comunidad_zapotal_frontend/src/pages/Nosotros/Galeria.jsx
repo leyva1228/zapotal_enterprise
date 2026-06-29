@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { FaTimes } from "react-icons/fa";
+import { FaTimes, FaNewspaper, FaCalendarAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import useGaleria from "../../hooks/useGaleria";
 import { useCategoriasGaleria, useTextosSeccion } from "../../hooks/useTextosSeccion";
 import useConfiguracion from "../../hooks/useConfiguracion";
@@ -8,6 +9,7 @@ import "./Galeria.css";
 export default function Galeria() {
   const [categoria, setCategoria] = useState(null);
   const [lightbox, setLightbox] = useState(null);
+  const navigate = useNavigate();
 
   // Antes: las categorias estaban hardcodeadas en este archivo. Ahora
   // se sirven desde la BD via /api/v1/galerias/categorias/.
@@ -97,6 +99,46 @@ export default function Galeria() {
           </button>
           {lightbox.imagen_url && (
             <img src={lightbox.imagen_url} alt={lightbox.titulo} className="galeria-lightbox__img" />
+          )}
+          {(lightbox.noticia || lightbox.evento) && (
+            <div className="galeria-lightbox__action">
+              {lightbox.noticia && (
+                <button
+                  type="button"
+                  className="galeria-lightbox__btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/noticias/${lightbox.noticia}`);
+                  }}
+                >
+                  <FaNewspaper />
+                  Ver noticia completa
+                  {lightbox.noticia_titulo && (
+                    <span className="galeria-lightbox__btn-sub">
+                      {lightbox.noticia_titulo}
+                    </span>
+                  )}
+                </button>
+              )}
+              {lightbox.evento && (
+                <button
+                  type="button"
+                  className="galeria-lightbox__btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/eventos/${lightbox.evento}`);
+                  }}
+                >
+                  <FaCalendarAlt />
+                  Ver evento completo
+                  {lightbox.evento_titulo && (
+                    <span className="galeria-lightbox__btn-sub">
+                      {lightbox.evento_titulo}
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
           )}
           <div className="galeria-lightbox__caption">
             <h3>{lightbox.titulo}</h3>
