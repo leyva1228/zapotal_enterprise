@@ -3,6 +3,7 @@
 # ============================================================================
 # Arquitectura:
 #   - zapotal-backend  (Web Service Django + gunicorn, plan starter)
+#   - zapotal-pdf-worker (Microservicio Spring Boot para PDFs async, Docker)
 #   - zapotal-db       (Postgres database, plan starter)
 #
 # Para deployar: en el dashboard de Render, "New > Blueprint",
@@ -84,6 +85,44 @@ services:
       - key: TURNSTILE_SECRET_KEY
         sync: false
 
+      # Microservicio PDF worker (Spring Boot). Django le delega la
+      # generacion del PDF + email via HTTP. Si no esta accesible,
+      # hace fallback local con xhtml2pdf.
+      - key: INTERNAL_API_KEY
+        sync: false  # mismo valor que el PDF worker
+      - key: PDF_WORKER_URL
+        value: "https://zapotal-pdf-worker.onrender.com"
+
+  # ---------- PDF worker (Spring Boot, Docker) ----------
+  # Microservicio async que genera boletas de donacion en PDF y las envia
+  # por email. Django lo invoca en background con X-Internal-API-Key.
+  # Docker detecta el Dockerfile en spring-services/pdf-worker/ automaticamente.
+  - type: web
+    name: zapotal-pdf-worker
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: main
+    rootDir: spring-services/pdf-worker
+    dockerfilePath: Dockerfile
+    healthCheckPath: /api/v1/internal/health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "8081"
+      - key: INTERNAL_API_KEY
+        sync: false  # Render pedira el valor; debe coincidir con el de Django
+      - key: SMTP_HOST
+        value: "smtp.resend.com"
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: "resend"
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        value: "Comunidad Zapotal <noreply@comunidadzapotal.org>"
+
 # ---------- Databases: Render Postgres ----------
 databases:
   - name: zapotal-db
@@ -99,24 +138,36 @@ databases:
 # 1. El backend se construye desde la subcarpeta 'comunidad_zapotal_backend/'
 #    gracias a 'rootDir: comunidad_zapotal_backend' en el servicio web.
 #
-# 2. Para popular la base de datos con datos de demo, abrir el Shell de Render
+# 2. El PDF worker (Spring Boot) se construye desde spring-services/pdf-worker/
+#    usando el Dockerfile multi-stage incluido. Render detecta Docker
+#    automaticamente por runtime: docker + dockerfilePath.
+#
+# 3. Al crear el Blueprint, Render pedira el valor de INTERNAL_API_KEY
+#    DOS veces (una para el backend, otra para el PDF worker). Setear
+#    el MISMO valor en ambos.
+#
+# 4. Para popular la base de datos con datos de demo, abrir el Shell de Render
 #    en el dashboard y correr:
 #        python manage.py seed_all
 #    Esto ejecuta 13 seeders en orden (idempotente). Tarda ~1-2 min.
 #
-# 3. Para crear solo el superuser admin sin popular mas datos:
+# 5. Para crear solo el superuser admin sin popular mas datos:
 #        python manage.py seed_superusers --admin-password=MiclaveSegura
 #
-# 4. Para saltar seeders especificos (ej. no cargar eventos):
+# 6. Para saltar seeders especificos (ej. no cargar eventos):
 #        python manage.py seed_all --skip seed_eventos
 #
-# 5. Para ejecutar solo un subconjunto (ej. solo configuracion + superuser):
+# 7. Para ejecutar solo un subconjunto (ej. solo configuracion + superuser):
 #        python manage.py seed_all --only seed_superusers seed_configuracion
 #
-# 6. El DATABASE_URL lo inyecta Render automaticamente desde la DB
+# 8. El DATABASE_URL lo inyecta Render automaticamente desde la DB
 #    definida en el array 'databases'. No es necesario setearlo manual.
 #
-# 7. Variables secretas (con sync: false): Render las pedira en el
+# 9. Variables secretas (con sync: false): Render las pedira en el
 #    dashboard al crear el Blueprint. Despues se editan desde
 #    Environment > Environment Variables del servicio.
+#
+# 10. El PDF worker usa el dominio por defecto de Render
+#     (https://zapotal-pdf-worker.onrender.com). Si quieres un dominio
+#     custom, edita PDF_WORKER_URL en el backend tras el primer deploy.
 # ============================================================================

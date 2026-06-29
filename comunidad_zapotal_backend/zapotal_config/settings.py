@@ -11,7 +11,11 @@ DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config(
     'DJANGO_ALLOWED_HOSTS',
-    default='localhost,127.0.0.1',
+    # Por defecto incluye el dominio de produccion y el subdominio de la API.
+    # En Render, setear DJANGO_ALLOWED_HOSTS=api.comunidadzapotal.org,comunidadzapotal.org,localhost,127.0.0.1
+    # El subdominio api es donde corre el backend; el apex es donde corre el
+    # frontend (Pages) y desde donde se hacen las requests.
+    default='api.comunidadzapotal.org,comunidadzapotal.org,www.comunidadzapotal.org,localhost,127.0.0.1',
     cast=Csv(),
 )
 
@@ -71,6 +75,15 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'zapotal_config.wsgi.application'
+
+# CSRF_TRUSTED_ORIGINS: origenes desde los que se aceptan tokens CSRF.
+# Esencial en produccion cuando el frontend esta en un dominio distinto
+# al backend. Sin esta lista, Django rechaza los POST con HTTP 403.
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='https://comunidadzapotal.org,https://www.comunidadzapotal.org,http://localhost:5173',
+    cast=Csv(),
+)
 
 DATABASES = {
     'default': {
@@ -137,7 +150,9 @@ MERCADO_PAGO_WEBHOOK_SECRET = config('MERCADO_PAGO_WEBHOOK_SECRET', default='')
 
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:5173,http://localhost:3000',
+    # Produccion (Cloudflare Pages): el frontend corre en comunidadzapotal.org y www.
+    # Desarrollo local: localhost:5173 (Vite) y localhost:3000 (CRA legacy).
+    default='http://localhost:5173,http://localhost:3000,https://comunidadzapotal.org,https://www.comunidadzapotal.org',
     cast=Csv(),
 )
 CORS_ALLOW_CREDENTIALS = True
@@ -327,6 +342,14 @@ DEFAULT_FROM_EMAIL = config(
     'DEFAULT_FROM_EMAIL',
     default='Comunidad Zapotal <noreply@comunidadzapotal.com>',
 )
+
+# ===== Microservicio PDF worker (Spring Boot) =====
+# Si PDF_WORKER_URL esta configurado, Django delega la generacion del PDF
+# y el envio del email al worker via HTTP. Si no, hace fallback local
+# con xhtml2pdf + django-anymail (compatibilidad con dev).
+# La API key debe coincidir con INTERNAL_API_KEY del PDF worker.
+PDF_WORKER_URL = config('PDF_WORKER_URL', default='')
+INTERNAL_API_KEY = config('INTERNAL_API_KEY', default='')
 
 # Backend de email:
 # - Si RESEND_API_KEY esta configurado: usar django-anymail (HTTP API, robusto).

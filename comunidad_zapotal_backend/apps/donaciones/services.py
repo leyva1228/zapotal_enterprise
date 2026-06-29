@@ -9,6 +9,7 @@ Por que este wrapper:
 """
 import hashlib
 import hmac
+import io
 import json
 import logging
 from decimal import Decimal
@@ -332,3 +333,115 @@ class MercadoPagoService:
             'charged_back': 'REEMBOLSADO',
         }
         return mapping.get(mp_status, 'EN_PROCESO')
+
+
+# ============================================================================
+# Generacion de PDFs de boletas de donacion
+# ============================================================================
+
+class BoletaPDFService:
+    """
+    Renderiza la plantilla HTML de la boleta de donacion a PDF usando
+    xhtml2pdf (pure-Python, sin dependencias nativas como GTK).
+
+    La plantilla `donaciones/boleta_donacion.html` se renderiza con el
+    mismo contexto que el email HTML para mantener paridad visual
+    entre el correo y el PDF descargable.
+    """
+
+    @staticmethod
+    def generar_pdf(donacion, numero_boleta):
+        """
+        Devuelve los bytes del PDF listo para adjuntar al email
+        o servir como descarga HTTP.
+
+        :param donacion: instancia de Donacion (debe tener .aprobado_at
+                        y los datos del donante ya guardados)
+        :param numero_boleta: string tipo '2026-000123'
+        :return: bytes del PDF
+        """
+        from django.template.loader import render_to_string
+
+        # xhtml2pdf parsea el raw_response como dict (la plantilla usa
+        # sintaxis de punto para acceder a mp_raw_response.ultimos_4).
+        # Usamos un dict auxiliar para NO mutar la instancia, que es
+        # necesaria en otras peticiones concurrentes del mismo request.
+        raw = donacion.mp_raw_response or {}
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw)
+            except (ValueError, TypeError):
+                raw = {}
+        # Creamos un dict auxiliar de solo lectura para no mutar la instancia
+        donacion_dict = {
+            'id': donacion.id,
+            'monto': str(donacion.monto),
+            'moneda': donacion.moneda,
+            'mensaje': donacion.mensaje,
+            'anonima': donacion.anonima,
+            'destinatario': donacion.destinatario,
+            'estado': donacion.estado,
+            'estado_detalle': donacion.estado_detalle,
+            'aprobado_at': donacion.aprobado_at,
+            'mp_payment_id': donacion.mp_payment_id,
+            'mp_status': donacion.mp_status,
+            'mp_status_detail': donacion.mp_status_detail,
+            'mp_payment_method': donacion.mp_payment_method,
+            'mp_payment_type': donacion.mp_payment_type,
+            'mp_installments': donacion.mp_installments,
+            'created_at': donacion.created_at,
+            'updated_at': donacion.updated_at,
+            'nombre_donante': donacion.nombre_donante,
+            'email_donante': donacion.email_donante,
+            'documento_donante': donacion.documento_donante,
+            'nombre_display': donacion.nombre_display,
+            'email_display': donacion.email_display,
+            'get_destinatario_display': donacion.get_destinatario_display(),
+            'mp_raw_response': raw,
+        }
+
+        html_string = render_to_string(
+            'donaciones/boleta_donacion.html',
+            {
+                'donacion': donacion_dict,
+                'numero_boleta': numero_boleta,
+            },
+        )
+
+        # xhtml2pdf no soporta todos los modenos CSS (no soporta flexbox
+        # ni grid). La plantilla ya esta escrita con tablas y estilos
+        # legacy para que el PDF se vea bien. Aun asi, el email HTML
+        # mantiene el diseno moderno.
+        #
+        # Forzamos tamano A4 con margenes minimos (10mm) para que la
+        # boleta completa entre en una sola pagina.
+        import xhtml2pdf.pisa as pisa
+
+        resultado_pdf = io.BytesIO()
+        try:
+            pisa_status = pisa.CreatePDF(
+                src=html_string.encode('utf-8'),
+                dest=resultado_pdf,
+                encoding='utf-8',
+                pagesize='A4',
+                # margin_left / margin_right en mm
+                leftMargin=10,
+                rightMargin=10,
+                topMargin=10,
+                bottomMargin=10,
+            )
+        except Exception as exc:
+            logger.exception('Error inesperado generando PDF: %s', exc)
+            return None
+
+        if pisa_status.err:
+            logger.error('xhtml2pdf reporto errores al generar PDF de donacion %s', donacion.id)
+            return None
+
+        resultado_pdf.seek(0)
+        return resultado_pdf.getvalue()
+
+    @staticmethod
+    def nombre_archivo(numero_boleta):
+        """Nombre de archivo consistente para descargas y adjuntos."""
+        return f'boleta-donacion-BOL-{numero_boleta}.pdf'

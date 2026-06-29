@@ -12,12 +12,14 @@ La seguridad se basa en:
 - Webhook firmado de MP (en produccion, validar source IP).
 """
 import logging
+import random
 from decimal import Decimal
 
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -27,6 +29,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.services import EmailService
 from apps.core.utils import log_audit_event, get_client_ip
+from apps.messaging.models import Notificacion
 
 from .models import Donacion
 from .serializers import (
@@ -543,33 +546,402 @@ class AdminCancelarDonacionView(APIView):
         return Response({'status': 'ok', 'donation_id': donacion.id})
 
 
+class ProcesarPagoSimuladoView(APIView):
+    """
+    POST /api/v1/donaciones/procesar-simulado/
+
+    Loop 3.5: endpoint que simula el procesamiento del pago mediante
+    un modal propio del frontend (no usa Mercado Pago Brick). El
+    frontend envia los ultimos 4 digitos de la tarjeta y el tipo
+    (debito/credito), y el backend determina el resultado segun
+    reglas deterministicas (las tarjetas terminadas en 0000 siempre
+    fallan, las terminadas en 1111 quedan pendientes, las demas se
+    aprueban). Esto permite testear todos los caminos de UI sin
+    depender de una pasarela real.
+
+    Actualiza el estado de la donacion, envia notificaciones al
+    donante y a todos los admins activos.
+    """
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [DonacionRateThrottle]
+
+    def post(self, request):
+        donation_id = request.data.get('donation_id')
+        ultimos_4 = (request.data.get('ultimos_4') or '').strip()
+        tipo_tarjeta = (request.data.get('tipo_tarjeta') or '').strip().lower()
+
+        if not donation_id:
+            return Response(
+                {'detail': 'Falta donation_id.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            donacion = Donacion.objects.get(id=donation_id)
+        except Donacion.DoesNotExist:
+            return Response(
+                {'detail': f'No existe la donacion #{donation_id}.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if donacion.usuario_id and donacion.usuario_id != request.user.id:
+            return Response(
+                {'detail': 'No tienes permiso para procesar esta donacion.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if donacion.estado in ('APROBADO', 'EN_PROCESO', 'REEMBOLSADO', 'CANCELADO'):
+            return Response(
+                {'status': donacion.estado.lower(), 'detail': f'La donacion ya esta en estado {donacion.estado}.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if donacion.estado == 'RECHAZADO':
+            return Response(
+                {'status': 'rejected', 'detail': 'Esta donacion ya fue rechazada. Inicia una nueva.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Reglas deterministicas de simulacion:
+        # - ultimos_4 == "0000": siempre rechazada (fondos insuficientes)
+        # - ultimos_4 == "1111": siempre pendiente (requiere verificacion)
+        # - cualquier otro: aprobada
+        # Esto permite al equipo de QA testear todos los caminos.
+        if ultimos_4 == '0000':
+            nuevo_estado = 'RECHAZADO'
+            detalle = 'Fondos insuficientes. Intenta con otra tarjeta.'
+        elif ultimos_4 == '1111':
+            nuevo_estado = 'EN_PROCESO'
+            detalle = 'Pago en verificacion por el emisor de la tarjeta.'
+        else:
+            nuevo_estado = 'APROBADO'
+            detalle = 'Pago aprobado exitosamente.'
+
+        # ID de transaccion simulado (numero pseudo-aleatorio grande)
+        sim_payment_id = random.randint(10_000_000_000, 99_999_999_999)
+
+        with transaction.atomic():
+            donacion.estado = nuevo_estado
+            donacion.estado_detalle = detalle
+            donacion.mp_payment_id = sim_payment_id
+            donacion.mp_status = nuevo_estado.lower()
+            donacion.mp_status_detail = detalle
+            donacion.mp_payment_method = tipo_tarjeta or 'simulado'
+            donacion.mp_payment_type = 'credit_card' if tipo_tarjeta == 'credito' else 'debit_card'
+            donacion.mp_installments = 1
+            donacion.mp_raw_response = {
+                'simulado': True,
+                'ultimos_4': ultimos_4,
+                'tipo_tarjeta': tipo_tarjeta,
+                'resultado': nuevo_estado,
+            }
+            if nuevo_estado == 'APROBADO':
+                donacion.aprobado_at = timezone.now()
+            donacion.save()
+
+        log_audit_event(
+            usuario=request.user,
+            accion=f'DONACION_{nuevo_estado}',
+            objeto_id=donacion.id,
+            modelo_afectado='Donacion',
+            descripcion=(
+                f'Donacion {donacion.id} (simulada): {nuevo_estado} '
+                f'por S/ {donacion.monto} con tarjeta ****{ultimos_4} ({tipo_tarjeta})'
+            ),
+            ip_address=get_client_ip(request),
+            metadata={
+                'simulado': True,
+                'ultimos_4': ultimos_4,
+                'tipo_tarjeta': tipo_tarjeta,
+                'estado': nuevo_estado,
+            },
+        )
+
+        # Notificaciones: al donante (si tiene user) y a todos los admins activos.
+        url_admin = reverse('admin:donaciones_donacion_changelist') if False else '/admin/donaciones'
+        self._crear_notificaciones(donacion, nuevo_estado, detalle, url_admin)
+
+        # Email de confirmacion al donante (solo si fue aprobado).
+        if nuevo_estado == 'APROBADO':
+            try:
+                _enviar_email_confirmacion(donacion)
+            except Exception as e:
+                logger.exception("Fallo email de confirmacion para donacion %s: %s", donacion.id, e)
+
+        return Response({
+            'donation_id': donacion.id,
+            'status': nuevo_estado.lower(),
+            'status_detail': detalle,
+            'sim_payment_id': sim_payment_id,
+            'monto': str(donacion.monto),
+            'ultimos_4': ultimos_4,
+            'tipo_tarjeta': tipo_tarjeta,
+        })
+
+    @staticmethod
+    def _crear_notificaciones(donacion, estado, detalle, url_admin):
+        """Crea notificaciones para el donante (si esta logueado) y para
+        todos los admins activos."""
+        from apps.accounts.models import Usuario
+
+        nombre = donacion.nombre_display
+        monto = f"S/ {donacion.monto}"
+        anonima = ' (anonima)' if donacion.anonima else ''
+
+        if estado == 'APROBADO':
+            titulo_donante = 'Tu donacion fue aprobada'
+            msg_donante = (
+                f'Gracias {nombre}! Tu donacion de {monto} a la Comunidad Zapotal '
+                f'fue aprobada exitosamente. Tu aporte se traduce en obras concretas.'
+            )
+            titulo_admin = f'Nueva donacion recibida: {monto}'
+            msg_admin = (
+                f'{nombre}{anonima} realizo una donacion de {monto} '
+                f'(destino: {donacion.get_destinatario_display()}). '
+                f'ID transaccion: {donacion.mp_payment_id}.'
+            )
+            tipo_notif_donante = Notificacion.Tipo.DONACION_APROBADA
+            tipo_notif_admin = Notificacion.Tipo.DONACION_RECIBIDA
+        elif estado == 'EN_PROCESO':
+            titulo_donante = 'Tu donacion esta en verificacion'
+            msg_donante = (
+                f'Estamos verificando tu donacion de {monto} con el emisor de tu tarjeta. '
+                f'Te avisaremos por aqui cuando se confirme.'
+            )
+            titulo_admin = f'Donacion pendiente de verificacion: {monto}'
+            msg_admin = (
+                f'{nombre}{anonima} intento donar {monto}. Estado: {detalle}. '
+                f'ID transaccion: {donacion.mp_payment_id}.'
+            )
+            tipo_notif_donante = Notificacion.Tipo.DONACION_RECIBIDA
+            tipo_notif_admin = Notificacion.Tipo.DONACION_RECIBIDA
+        else:  # RECHAZADO
+            titulo_donante = 'No pudimos procesar tu donacion'
+            msg_donante = (
+                f'Tu donacion de {monto} no fue aprobada. {detalle} '
+                f'Puedes intentar nuevamente con otra tarjeta.'
+            )
+            titulo_admin = f'Donacion rechazada: {monto}'
+            msg_admin = (
+                f'{nombre}{anonima} intento donar {monto} pero la operacion fue rechazada. '
+                f'Motivo: {detalle}'
+            )
+            tipo_notif_donante = Notificacion.Tipo.DONACION_RECHAZADA
+            tipo_notif_admin = Notificacion.Tipo.DONACION_RECHAZADA
+
+        # Notificacion al donante (si esta logueado).
+        if donacion.usuario_id:
+            try:
+                Notificacion.objects.create(
+                    destinatario_id=donacion.usuario_id,
+                    titulo=titulo_donante,
+                    mensaje=msg_donante,
+                    tipo=tipo_notif_donante,
+                    url_destino='/donaciones',
+                    referencia_tipo=Notificacion.ReferenciaTipo.DONACION,
+                    referencia_id=donacion.id,
+                )
+            except Exception as e:
+                logger.exception("No se pudo crear notificacion para donante: %s", e)
+
+        # Notificaciones a todos los admins activos.
+        admins = Usuario.objects.filter(tipo_usuario='ADMIN', estado='ACTIVO')
+        notifs = [
+            Notificacion(
+                destinatario=admin,
+                titulo=titulo_admin,
+                mensaje=msg_admin,
+                tipo=tipo_notif_admin,
+                url_destino='/admin/donaciones',
+                referencia_tipo=Notificacion.ReferenciaTipo.DONACION,
+                referencia_id=donacion.id,
+            )
+            for admin in admins
+        ]
+        if notifs:
+            try:
+                Notificacion.objects.bulk_create(notifs, batch_size=50)
+                logger.info(
+                    'Creadas %d notificaciones admin por donacion %s (%s).',
+                    len(notifs), donacion.id, estado,
+                )
+            except Exception as e:
+                logger.exception("No se pudieron crear notificaciones admin: %s", e)
+
+
+def _generar_numero_boleta(donacion):
+    """Genera un numero de boleta correlativo tipo BOL-{anio}-{id_padded}."""
+    if not donacion.id:
+        return "000000"
+    anio = donacion.aprobado_at.year if donacion.aprobado_at else donacion.created_at.year
+    return f"{anio}-{str(donacion.id).zfill(6)}"
+
+
 def _enviar_email_confirmacion(donacion):
-    """Envia email de confirmacion al donante tras pago aprobado."""
+    """Envia email con la boleta de donacion al donante tras pago aprobado.
+
+    Estrategia de dos niveles:
+    1) Si el microservicio PDF worker (Spring Boot) esta configurado
+       via PDF_WORKER_URL, lo encolamos en background con @Async.
+       Django responde en <100ms con un job_id.
+    2) Fallback: si no hay worker configurado, generamos el PDF + email
+       sincronamente con BoletaPDFService local (xhtml2pdf).
+    """
     email_dest = donacion.email_display
     if not email_dest:
-        logger.warning("Donacion %s aprobada sin email, no se envia confirmacion.", donacion.id)
+        logger.warning("Donacion %s aprobada sin email, no se envia boleta.", donacion.id)
         return
-    asunto = f"Gracias por tu donacion de S/ {donacion.monto} a Comunidad Zapotal"
+
+    # Intentar delegar al PDF worker (Spring Boot) primero
+    from apps.donaciones.services import PdfWorkerClient, BoletaPDFService
+    job_id = PdfWorkerClient.encolar_boleta(donacion)
+    if job_id:
+        # El worker procesara en background y enviara el email.
+        return
+
+    # Fallback: procesar localmente (modo compatibilidad para dev sin worker)
+    numero_boleta = _generar_numero_boleta(donacion)
+    pdf_bytes = BoletaPDFService.generar_pdf(donacion, numero_boleta)
+    if not pdf_bytes:
+        logger.error("No se pudo generar el PDF local ni delegar al worker")
+        return
+    _enviar_email_con_pdf_local(donacion, numero_boleta, pdf_bytes)
+
+
+def _enviar_email_con_pdf_local(donacion, numero_boleta, pdf_bytes):
+    """Fallback local: envia el email con el PDF adjunto cuando el
+    microservicio PDF worker (Spring Boot) no esta disponible.
+    Usado solo en desarrollo o si PDF_WORKER_URL no esta configurado.
+    """
+    from django.core.mail import EmailMultiAlternatives
+    from django.template.loader import render_to_string
+
+    email_dest = donacion.email_display
+    asunto = f'Boleta de donacion BOL-{numero_boleta} - S/ {donacion.monto} - Comunidad Zapotal'
     cuerpo_texto = (
-        f"Hola {donacion.nombre_display},\n\n"
-        f"Gracias por tu donacion de S/ {donacion.monto} a la Comunidad Campesina Niño Dios de Zapotal.\n\n"
-        f"Tu pago fue aprobado por Mercado Pago.\n"
-        f"ID de transaccion: {donacion.mp_payment_id}\n"
-        f"Fecha: {donacion.aprobado_at.strftime('%d/%m/%Y %H:%M') if donacion.aprobado_at else 'ahora'}\n"
-        f"Destino: {donacion.get_destinatario_display()}\n"
+        f'Hola {donacion.nombre_display},\n\n'
+        f'Adjuntamos tu boleta de donacion BOL-{numero_boleta} por S/ {donacion.monto} '
+        f'a la Comunidad Campesina Nino Dios de Zapotal.\n\n'
+        f'ID de transaccion: #{donacion.mp_payment_id}\n'
+        f'Fecha: {donacion.aprobado_at.strftime("%d/%m/%Y %H:%M") if donacion.aprobado_at else "ahora"}\n'
+        f'Destino: {donacion.get_destinatario_display()}\n\n'
+        'Tu aporte se traduce en obras concretas para nuestra comunidad.\n\n'
+        'Comunidad Campesina Nino Dios de Zapotal\n'
     )
-    if donacion.mensaje:
-        cuerpo_texto += f"\nTu mensaje: \"{donacion.mensaje}\"\n"
-    cuerpo_texto += (
-        "\nTu aporte se traduce en obras concretas para nuestra comunidad.\n\n"
-        "Comunidad Campesina Niño Dios de Zapotal\n"
-    )
+
+    raw = donacion.mp_raw_response or {}
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except (ValueError, TypeError):
+            raw = {}
+    donacion_dict = {
+        'id': donacion.id,
+        'monto': str(donacion.monto),
+        'moneda': donacion.moneda,
+        'mensaje': donacion.mensaje or '',
+        'anonima': donacion.anonima,
+        'aprobado_at': donacion.aprobado_at,
+        'mp_payment_id': donacion.mp_payment_id,
+        'mp_payment_type': donacion.mp_payment_type,
+        'mp_raw_response': raw,
+        'nombre_donante': donacion.nombre_display,
+        'email_display': donacion.email_display,
+        'documento_donante': donacion.documento_donante or '',
+        'get_destinatario_display': donacion.get_destinatario_display(),
+    }
+
     try:
-        EmailService.enviar_notificacion(
-            destinatario=email_dest,
-            asunto=asunto,
-            cuerpo=cuerpo_texto,
-        )
+        html_body = render_to_string('donaciones/boleta_donacion.html', {
+            'donacion': donacion_dict,
+            'numero_boleta': numero_boleta,
+        })
     except Exception as e:
-        logger.exception("Error enviando email de confirmacion: %s", e)
+        logger.exception("Error renderizando plantilla de boleta: %s", e)
+        html_body = None
+
+    try:
+        msg = EmailMultiAlternatives(
+            subject=asunto,
+            body=cuerpo_texto,
+            from_email=EmailService._from_email(),
+            to=[email_dest],
+        )
+        if html_body:
+            msg.attach_alternative(html_body, 'text/html')
+        msg.attach(
+            BoletaPDFService.nombre_archivo(numero_boleta),
+            pdf_bytes,
+            'application/pdf',
+        )
+        msg.send(fail_silently=True)
+        logger.info('Boleta %s enviada (fallback local) a %s para donacion %s',
+                    numero_boleta, email_dest, donacion.id)
+    except Exception as e:
+        logger.exception('Error enviando email de boleta: %s', e)
         raise
+
+
+class DescargarBoletaPDFView(APIView):
+    """
+    GET /api/v1/donaciones/<id>/boleta-pdf/
+
+    Genera y devuelve el PDF de la boleta para una donacion APROBADA.
+    Acceso:
+    - El dueno de la donacion (usuario autenticado) puede descargar su boleta.
+    - Cualquier admin puede descargar cualquier boleta.
+    - Si la donacion no esta aprobada, devuelve 400.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        donacion = get_object_or_404(Donacion, pk=pk)
+
+        es_admin = (
+            request.user.is_staff
+            or getattr(request.user, 'tipo_usuario', None) == 'ADMIN'
+        )
+        es_dueno = donacion.usuario_id == request.user.id
+
+        if not (es_admin or es_dueno):
+            return Response(
+                {'detail': 'No tienes permiso para descargar esta boleta.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if donacion.estado != 'APROBADO':
+            return Response(
+                {'detail': f'Solo se puede descargar la boleta de donaciones aprobadas. Estado actual: {donacion.estado}.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from apps.donaciones.services import BoletaPDFService
+
+        numero_boleta = _generar_numero_boleta(donacion)
+        try:
+            pdf_bytes = BoletaPDFService.generar_pdf(donacion, numero_boleta)
+        except Exception as e:
+            import traceback as tb_mod
+            logger.exception("Error generando PDF: %s\n%s", e, tb_mod.format_exc())
+            from django.conf import settings as _s
+            detail = 'No se pudo generar el PDF.'
+            if _s.DEBUG:
+                detail = f'No se pudo generar el PDF: {type(e).__name__}: {e}'
+            return Response(
+                {'detail': detail},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if not pdf_bytes:
+            return Response(
+                {'detail': 'No se pudo generar el PDF (xhtml2pdf no respondio).'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        from django.http import HttpResponse
+
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = (
+            f'attachment; filename="{BoletaPDFService.nombre_archivo(numero_boleta)}"'
+        )
+        return response
