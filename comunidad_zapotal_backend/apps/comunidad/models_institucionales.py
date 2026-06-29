@@ -314,6 +314,18 @@ class GaleriaImagen(models.Model):
     fecha = models.DateField('Fecha', null=True, blank=True)
     orden = models.PositiveIntegerField('Orden', default=0)
     activo = models.BooleanField('Activo', default=True)
+    noticia = models.ForeignKey(
+        'content.Noticia', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='galeria_imagenes',
+        verbose_name='Noticia asociada',
+    )
+    evento = models.ForeignKey(
+        'content.Evento', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='galeria_imagenes',
+        verbose_name='Evento asociado',
+    )
 
     class Meta:
         ordering = ['orden', '-fecha']
