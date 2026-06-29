@@ -71,25 +71,19 @@ export default function NotificationBell() {
 
   // Cuando el usuario hace click en una notificacion:
   //   1) cerramos el dropdown inmediatamente para feedback visual
-  //   2) navegamos al destino correspondiente:
-  //      - Si la notificacion trae url_destino interna, vamos ahi.
-  //      - Si no trae url_destino o es externa, vamos al tab de
-  //        notificaciones en /perfil (que es donde estan todas).
-  //   3) marcamos como leida en background (best-effort: si falla por
-  //      401 NO queremos perder la sesion del usuario, asi que usamos
-  //      el flag skipAuthRedirect para que el interceptor no redirija
-  //      al login en caso de token expirado).
+  //   2) SIEMPRE navegamos al tab de notificaciones en /perfil.
+  //      Alli el usuario abrira un modal de detalle que SI ofrece
+  //      un boton para ir al destino (noticia, evento, donacion, etc).
+  //      Asi evitamos que el usuario pierda el contexto de la campanita.
+  //   3) marcamos como leida en background (best-effort con
+  //      skipAuthRedirect para no cerrar sesion si el token expiro).
   const marcarLeida = async (n) => {
     setOpen(false);
-    const destino = destinoInterno(n.url_destino) || '/perfil?tab=notificaciones';
-    navigate(destino);
+    navigate('/perfil?tab=notificaciones');
     try {
       await api.patch(
         `/notificaciones/${n.id}/`,
         { leido: true },
-        // skipAuthRedirect: si el token expiro, NO cerramos la sesion
-        // ni redirigimos a /login. La notificacion queda como no leida
-        // pero la UX del click sigue funcionando correctamente.
         { meta: { skipAuthRedirect: true } },
       );
       setItems((prev) => prev.filter((x) => x.id !== n.id));

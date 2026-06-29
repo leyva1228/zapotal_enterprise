@@ -1253,6 +1253,48 @@
   white-space: nowrap;
 }
 
+.donaciones-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px dashed rgba(58, 96, 25, 0.18);
+}
+
+.donaciones-btn-boleta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background: var(--nb-verde, #1a3209);
+  color: #ffffff;
+  border: 1.5px solid var(--nb-dorado, #b8963e);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.donaciones-btn-boleta:hover {
+  background: linear-gradient(135deg, var(--nb-dorado, #b8963e), #d4ae5a);
+  color: var(--nb-verde, #1a3209);
+  border-color: var(--nb-verde, #1a3209);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(26, 50, 9, 0.25);
+}
+
+.donaciones-btn-boleta:active {
+  transform: translateY(0);
+}
+
+.donaciones-btn-boleta:focus-visible {
+  outline: 2px solid var(--nb-dorado-light, #d4ae5a);
+  outline-offset: 2px;
+}
+
 @media (max-width: 640px) {
   .donaciones-card-head {
     flex-direction: column;

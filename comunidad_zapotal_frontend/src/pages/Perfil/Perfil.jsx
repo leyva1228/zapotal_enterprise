@@ -5,7 +5,8 @@ import {
   FaCamera, FaUserCircle, FaKey, FaMobileAlt, FaTrashAlt,
   FaCheckCircle, FaCalendarAlt, FaIdCard, FaEnvelope, FaCheck,
   FaHandHoldingHeart, FaExternalLinkAlt, FaHourglassHalf, FaTimesCircle,
-  FaCloudUploadAlt,
+  FaCloudUploadAlt, FaDownload, FaFilePdf,
+  FaNewspaper, FaMapMarkerAlt, FaDonate, FaLink, FaArrowRight, FaBullhorn,
 } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import { useAuth } from "../../context/AuthContext";
@@ -78,6 +79,110 @@ function timeAgo(str) {
   return `hace ${Math.floor(h / 24)} d`;
 }
 
+// Mapea el tipo de notificacion al icono y color del navbar
+function notifIcon(tipo) {
+  const t = String(tipo || "").toUpperCase();
+  if (t.includes("DONAC")) return { icon: <FaDonate />, color: "var(--nb-verde-claro, #3a6019)" };
+  if (t.includes("NOTICIA")) return { icon: <FaNewspaper />, color: "var(--nb-dorado, #b8963e)" };
+  if (t.includes("EVENTO")) return { icon: <FaCalendarAlt />, color: "var(--nb-dorado, #b8963e)" };
+  if (t.includes("RECLAMO")) return { icon: <FaFilePdf />, color: "#b91c1c" };
+  if (t.includes("APROB")) return { icon: <FaCheck />, color: "var(--nb-verde-claro, #3a6019)" };
+  if (t.includes("RECHAZ")) return { icon: <FaTimesCircle />, color: "#b91c1c" };
+  return { icon: <FaBell />, color: "var(--nb-verde, #1a3209)" };
+}
+
+function isExternalUrl(url) {
+  if (!url) return false;
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
+function getDestinoLabel(tipo) {
+  const t = String(tipo || "").toUpperCase();
+  if (t.includes("NOTICIA")) return "Ver noticia";
+  if (t.includes("EVENTO")) return "Ver evento";
+  if (t.includes("DONAC")) return "Ver donacion";
+  if (t.includes("RECLAMO")) return "Ver reclamo";
+  if (t.includes("APROB")) return "Ver detalles";
+  return "Ir al detalle";
+}
+
+// Modal de detalle de una notificacion
+function NotifDetalleModal({ notificacion, onClose, onIrDestino }) {
+    if (!notificacion) return null;
+    const { icon, color } = notifIcon(notificacion.tipo);
+    const isExternal = isExternalUrl(notificacion.url_destino);
+    const tieneDestino = !!notificacion.url_destino;
+
+    return (
+      <div
+        className="notif-modal-backdrop"
+        onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="notif-modal-title"
+      >
+        <div
+          className="notif-modal"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="notif-modal__close"
+            onClick={onClose}
+            aria-label="Cerrar"
+          >
+            <FaTimesCircle />
+          </button>
+
+          <div className="notif-modal__icon" style={{ background: color }}>
+            {icon}
+          </div>
+
+          <div className="notif-modal__type">
+            {notificacion.tipo_display || notificacion.tipo || "Notificacion"}
+          </div>
+
+          <h3 id="notif-modal-title" className="notif-modal__title">
+            {notificacion.titulo}
+          </h3>
+
+          <div className="notif-modal__time">
+            <FaCalendarAlt /> {timeAgo(notificacion.fecha)}
+          </div>
+
+          <div className="notif-modal__message">
+            {notificacion.mensaje}
+          </div>
+
+          <div className="notif-modal__actions">
+            {tieneDestino ? (
+              <button
+                type="button"
+                className="notif-modal__btn notif-modal__btn--primary"
+                onClick={() => onIrDestino(notificacion)}
+              >
+                {isExternal ? <FaExternalLinkAlt /> : <FaArrowRight />}
+                {' '}{getDestinoLabel(notificacion.tipo)}
+              </button>
+            ) : (
+              <span className="notif-modal__no-link">
+                Esta notificacion no tiene enlace asociado.
+              </span>
+            )}
+
+            <button
+              type="button"
+              className="notif-modal__btn notif-modal__btn--ghost"
+              onClick={onClose}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+}
+
 export default function Perfil() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -120,6 +225,33 @@ export default function Perfil() {
   const [donacionesError, setDonacionesError] = useState('');
   const [donacionDetalle, setDonacionDetalle] = useState(null);
 
+  // Modal de detalle de notificacion (tab "Notificaciones")
+  const [notifDetalle, setNotifDetalle] = useState(null);
+  const abrirDetalleNotif = (n) => {
+    if (!n.leido) {
+      // marcamos como leida en background (no rompe sesion si falla)
+      api.patch(`/notificaciones/${n.id}/`, { leido: true },
+        { meta: { skipAuthRedirect: true } })
+        .then(() => {
+          setNotificaciones((prev) => prev.map((x) => x.id === n.id ? { ...x, leido: true } : x));
+        })
+        .catch(() => { /* best-effort */ });
+    }
+    setNotifDetalle(n);
+  };
+  const cerrarDetalleNotif = () => setNotifDetalle(null);
+  const irADestinoNotif = (n) => {
+    if (!n || !n.url_destino) return;
+    const url = n.url_destino;
+    // Si es URL externa -> nueva pestana
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(url);
+    }
+    cerrarDetalleNotif();
+  };
+
   const cargarDonaciones = useCallback(async () => {
     setDonacionesLoading(true);
     setDonacionesError('');
@@ -141,6 +273,29 @@ export default function Perfil() {
       setDonacionDetalle(res.data);
     } catch (err) {
       setDonacionError?.('No se pudo cargar el detalle de la donacion.');
+    }
+  };
+
+  const descargarBoleta = async (donacionId) => {
+    try {
+      const response = await api.get(
+        `/donaciones/${donacionId}/boleta-pdf/`,
+        { responseType: 'blob' },
+      );
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const cd = response.headers['content-disposition'] || '';
+      const match = cd.match(/filename="?([^"]+)"?/);
+      link.download = match ? match[1] : `boleta-donacion-${donacionId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Error descargando boleta:', e);
+      setMsg({ text: 'No se pudo descargar la boleta. Intenta nuevamente.', type: 'error' });
     }
   };
 
@@ -375,15 +530,11 @@ export default function Perfil() {
     setTwofaError('');
   };
 
-  const verNotificacion = async (n) => {
-    if (!n.leido) {
-      try { await api.patch(`/notificaciones/${n.id}/`, { leido: true }); } catch (e) {}
-      setNotificaciones((prev) => prev.map((x) => x.id === n.id ? { ...x, leido: true } : x));
-    }
-    if (n.url_destino && (n.url_destino.startsWith('/') || (!n.url_destino.startsWith('http')))) {
-      navigate(n.url_destino);
-    }
-  };
+  // Antes: navegaba al destino directamente.
+  // Ahora: abre un modal de detalle. El modal ofrece un boton para ir al
+  // destino (url_destino). Asi el usuario siempre llega primero al
+  // tab de notificaciones en /perfil (via la campanita), y desde alli decide.
+  const verNotificacion = abrirDetalleNotif;
 
   const marcarNotifLeida = async (id) => {
     try {
@@ -1011,6 +1162,15 @@ export default function Perfil() {
               </div>
             )}
 
+            {/* Modal de detalle de notificacion */}
+            {notifDetalle && (
+              <NotifDetalleModal
+                notificacion={notifDetalle}
+                onClose={cerrarDetalleNotif}
+                onIrDestino={irADestinoNotif}
+              />
+            )}
+
             {tab === 'favoritos' && (
               <div>
                 <h2 className="perfil-section-title">Favoritos</h2>
@@ -1138,6 +1298,18 @@ export default function Perfil() {
                               </span>
                             )}
                           </div>
+                          {d.estado === 'APROBADO' && (
+                            <div className="donaciones-card-actions">
+                              <button
+                                type="button"
+                                className="donaciones-btn-boleta"
+                                onClick={() => descargarBoleta(d.id)}
+                                aria-label="Descargar boleta en PDF"
+                              >
+                                <FaFilePdf /> Descargar boleta (PDF)
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
