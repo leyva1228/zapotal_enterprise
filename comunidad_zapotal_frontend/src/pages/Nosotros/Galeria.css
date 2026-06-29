@@ -195,3 +195,55 @@
   .galeria-container { padding: 24px 6%; }
   .galeria-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 }
+
+/* Botones de redireccion del lightbox (frontend Task 2) */
+.galeria-lightbox__action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  margin: 16px 0;
+  width: 100%;
+  max-width: 90vw;
+}
+.galeria-lightbox__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--nb-verde, #1a3209);
+  color: #fff;
+  border: 1px solid var(--nb-verde, #1a3209);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  text-decoration: none;
+  max-width: 100%;
+}
+.galeria-lightbox__btn:hover {
+  background: var(--nb-verde-med, #0f2206);
+  transform: translateY(-1px);
+}
+.galeria-lightbox__btn:active {
+  transform: translateY(0);
+}
+.galeria-lightbox__btn-sub {
+  display: inline-block;
+  margin-left: 8px;
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.85;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+@media (max-width: 640px) {
+  .galeria-lightbox__btn { padding: 8px 14px; font-size: 13px; }
+  .galeria-lightbox__btn-sub { display: none; }
+}
