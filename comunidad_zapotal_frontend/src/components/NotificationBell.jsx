@@ -69,28 +69,47 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  // Cuando el usuario hace click en una notificacion:
+  //   1) cerramos el dropdown inmediatamente para feedback visual
+  //   2) navegamos al destino correspondiente:
+  //      - Si la notificacion trae url_destino interna, vamos ahi.
+  //      - Si no trae url_destino o es externa, vamos al tab de
+  //        notificaciones en /perfil (que es donde estan todas).
+  //   3) marcamos como leida en background (best-effort: si falla por
+  //      401 NO queremos perder la sesion del usuario, asi que usamos
+  //      el flag skipAuthRedirect para que el interceptor no redirija
+  //      al login en caso de token expirado).
   const marcarLeida = async (n) => {
+    setOpen(false);
+    const destino = destinoInterno(n.url_destino) || '/perfil?tab=notificaciones';
+    navigate(destino);
     try {
-      await api.patch(`/notificaciones/${n.id}/`, { leido: true });
+      await api.patch(
+        `/notificaciones/${n.id}/`,
+        { leido: true },
+        // skipAuthRedirect: si el token expiro, NO cerramos la sesion
+        // ni redirigimos a /login. La notificacion queda como no leida
+        // pero la UX del click sigue funcionando correctamente.
+        { meta: { skipAuthRedirect: true } },
+      );
       setItems((prev) => prev.filter((x) => x.id !== n.id));
       setUnread((u) => Math.max(0, u - 1));
-      const destino = destinoInterno(n.url_destino);
-      if (destino) {
-        setOpen(false);
-        navigate(destino);
-      }
     } catch (e) {
-      // ignore
+      // best-effort: la navegacion YA ocurrio arriba, no importa si falla
     }
   };
 
   const marcarTodas = async () => {
     try {
-      await api.post('/notificaciones/marcar-todas-leidas/');
+      await api.post(
+        '/notificaciones/marcar-todas-leidas/',
+        {},
+        { meta: { skipAuthRedirect: true } },
+      );
       setItems([]);
       setUnread(0);
     } catch (e) {
-      // ignore
+      // ignore: best-effort, no debe romper la sesion
     }
   };
 

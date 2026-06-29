@@ -1,8 +1,66 @@
 import axios from 'axios';
 
-const API_BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
-  'http://127.0.0.1:8000/api/v1';
+/**
+ * Resuelve la URL base de la API siguiendo este orden de prioridad:
+ *  1. VITE_API_URL definido en .env (build-time) -> valor fijo de la API.
+ *  2. Mismo origen del frontend pero en el subdominio `api.` (produccion).
+ *     Ej: si el sitio corre en https://comunidadzapotal.org,
+ *     automaticamente se usa https://api.comunidadzapotal.org/api/v1.
+ *  3. localhost en puerto 8000 (desarrollo local sin .env).
+ *
+ * Esto permite que el MISMO bundle funcione tanto en local como en
+ * produccion sin cambiar el .env entre entornos.
+ */
+function resolverApiBaseUrl() {
+  // 1) Variable de entorno (prioridad maxima)
+  if (
+    typeof import.meta !== 'undefined' &&
+    import.meta.env &&
+    import.meta.env.VITE_API_URL
+  ) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // 2) Auto-deteccion por hostname (solo en el browser, no en build-time)
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+
+    // Dominios de produccion conocidos -> apuntar a api.<dominio>
+    const dominiosProduccion = [
+      'comunidadzapotal.org',
+      'www.comunidadzapotal.org',
+    ];
+    for (const d of dominiosProduccion) {
+      if (host === d) {
+        return `${protocol}//api.${d}/api/v1`;
+      }
+    }
+    // Custom domain en Cloudflare Pages: si el subdominio actual es
+    // "www" quitar el prefijo; si tiene cualquier otro prefijo, usarlo tal cual.
+    if (host.endsWith('.comunidadzapotal.org')) {
+      // Si es un subdominio que NO es "www" ni "api", no aplicar logica
+      // de api.* (probablemente es el admin o un alias).
+    }
+    if (host.endsWith('.pages.dev')) {
+      // Cloudflare Pages preview deployments: no hay backend,
+      // pero al menos devolvemos algo sensato.
+      return `${protocol}//api.comunidadzapotal.org/api/v1`;
+    }
+
+    // 3) localhost / 127.0.0.1 -> backend en :8000
+    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+      return 'http://localhost:8000/api/v1';
+    }
+  }
+
+  // Fallback final (build-time sin window, p.ej. tests de vitest)
+  return 'http://127.0.0.1:8000/api/v1';
+}
+
+const API_BASE_URL = resolverApiBaseUrl();
+
+export { API_BASE_URL, resolverApiBaseUrl };
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -83,11 +141,17 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    // Algunas llamadas son best-effort (ej. marcar notificacion como
+    // leida). Si fallan con 401 no queremos cerrar la sesion del
+    // usuario ni redirigirlo al login. Esas llamadas pasan
+    // { meta: { skipAuthRedirect: true } } en su config.
+    const skipAuthRedirect = originalRequest?.meta?.skipAuthRedirect === true;
     if (
       error.response &&
       error.response.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('token/refresh')
+      !originalRequest.url.includes('token/refresh') &&
+      !skipAuthRedirect
     ) {
       if (_isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -163,5 +227,4 @@ export const SessionStore = {
   getRefresh: _getRefresh,
 };
 
-export { API_BASE_URL };
 export default api;
