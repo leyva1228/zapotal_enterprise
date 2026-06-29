@@ -1,10 +1,24 @@
+# ============================================================================
+# Render Blueprint - Comunidad Zapotal
+# ============================================================================
+# Arquitectura:
+#   - zapotal-backend  (Web Service Django + gunicorn, plan starter)
+#   - zapotal-db       (Postgres database, plan starter)
+#
+# Para deployar: en el dashboard de Render, "New > Blueprint",
+# apuntar al repo leyva1228/zapotal_enterprise, branch master.
+# Render detectara este render.yaml automaticamente.
+# ============================================================================
+
 services:
+  # ---------- Web service: Django backend ----------
   - type: web
     name: zapotal-backend
     runtime: python
     plan: starter
     region: oregon
     branch: main
+    # rootDir indica a Render donde esta el codigo Django dentro del monorepo.
     rootDir: comunidad_zapotal_backend
     buildCommand: |
       pip install --upgrade pip &&
@@ -18,12 +32,16 @@ services:
     envVars:
       - key: DJANGO_DEBUG
         value: "False"
+
       - key: DJANGO_ALLOWED_HOSTS
         value: "api.comunidadzapotal.org,comunidadzapotal.org,www.comunidadzapotal.org,localhost,127.0.0.1"
+
       - key: CORS_ALLOWED_ORIGINS
         value: "https://comunidadzapotal.org,https://www.comunidadzapotal.org,http://localhost:5173"
+
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://comunidadzapotal.org,https://www.comunidadzapotal.org,http://localhost:5173"
+
       - key: SECURE_SSL_REDIRECT
         value: "True"
       - key: SESSION_COOKIE_SECURE
@@ -34,61 +52,71 @@ services:
         value: "True"
       - key: WHITENOISE_USE_FINDERS_NORMALIZE
         value: "True"
+
       - key: DJANGO_SETTINGS_MODULE
         value: zapotal_config.settings
-      # Las siguientes variables se deben setear en el panel de Render
-      # (no en este archivo por seguridad - son secretas):
-      # - DJANGO_SECRET_KEY
-      # - DJANGO_DATABASE_URL (o las variables DB_* individuales)
-      # - MERCADO_PAGO_ACCESS_TOKEN
-      # - MERCADO_PAGO_PUBLIC_KEY
-      # - MERCADO_PAGO_ENV=production
-      # - MERCADO_PAGO_WEBHOOK_URL
-      # - MERCADO_PAGO_WEBHOOK_SECRET
-      # - CLOUDFLARE_R2_ACCESS_KEY_ID
-      # - CLOUDFLARE_R2_SECRET_ACCESS_KEY
-      # - CLOUDFLARE_R2_BUCKET
-      # - CLOUDFLARE_R2_ENDPOINT
-      # - CLOUDFLARE_R2_PUBLIC_DOMAIN
-      # - RESEND_API_KEY (o EMAIL_HOST_PASSWORD)
-      # - TURNSTILE_SECRET_KEY
-      # Ver DEPLOY_PRODUCCION.md para instrucciones detalladas.
 
-  - type: pserv
-    name: zapotal-db
-    plan: starter
-    region: oregon
-    branch: main
-    ipAllowList: []  # Solo accesible internamente desde zapotal-backend
-    envVars:
+      # URL de conexion a la base de datos Postgres de Render.
+      # fromDatabase: referencia a la base de datos definida en el array
+      # 'databases' mas abajo. property: connectionString es la URL
+      # completa postgresql://user:pass@host:port/db.
       - key: DATABASE_URL
-        fromService:
-          type: pserv
+        fromDatabase:
           name: zapotal-db
           property: connectionString
+
+      # Las siguientes variables son SECRETAS. Render las pedira
+      # en el dashboard al crear el Blueprint. NO hardcodear en este archivo.
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADO_PAGO_PUBLIC_KEY
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_SECRET
+        sync: false
+      - key: CLOUDFLARE_R2_ACCESS_KEY_ID
+        sync: false
+      - key: CLOUDFLARE_R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+
+# ---------- Databases: Render Postgres ----------
+databases:
+  - name: zapotal-db
+    plan: basic-256mb
+    region: oregon
+    # No ipAllowList: por defecto permite todas las conexiones autenticadas.
+    # La seguridad viene del usuario/contrasena de la DATABASE_URL.
 
 # ============================================================================
 # NOTAS DE USO
 # ============================================================================
 #
-# 1. El backend se construye desde la subcarpeta `comunidad_zapotal_backend/`
-#    gracias a `rootDir: comunidad_zapotal_backend` en el servicio web.
+# 1. El backend se construye desde la subcarpeta 'comunidad_zapotal_backend/'
+#    gracias a 'rootDir: comunidad_zapotal_backend' en el servicio web.
 #
 # 2. Para popular la base de datos con datos de demo, abrir el Shell de Render
 #    en el dashboard y correr:
-#      python manage.py seed_all
-#    Esto ejecuta todos los seeders en orden (idempotente). Tarda ~1-2 min.
+#        python manage.py seed_all
+#    Esto ejecuta 13 seeders en orden (idempotente). Tarda ~1-2 min.
 #
 # 3. Para crear solo el superuser admin sin popular mas datos:
-#      python manage.py seed_superusers --admin-password=MiclaveSegura
+#        python manage.py seed_superusers --admin-password=MiclaveSegura
 #
 # 4. Para saltar seeders especificos (ej. no cargar eventos):
-#      python manage.py seed_all --skip seed_eventos
+#        python manage.py seed_all --skip seed_eventos
 #
 # 5. Para ejecutar solo un subconjunto (ej. solo configuracion + superuser):
-#      python manage.py seed_all --only seed_superusers seed_configuracion
+#        python manage.py seed_all --only seed_superusers seed_configuracion
 #
-# 6. Si necesitas resetear TODO (PELIGRO, borra toda la BD):
-#      python manage.py seed_completo --reset   (legacy)
-#      python manage.py seed_all --reset        (nuevo, pendiente de implementar)
+# 6. El DATABASE_URL lo inyecta Render automaticamente desde la DB
+#    definida en el array 'databases'. No es necesario setearlo manual.
 #
+# 7. Variables secretas (con sync: false): Render las pedira en el
+#    dashboard al crear el Blueprint. Despues se editan desde
+#    Environment > Environment Variables del servicio.
+# ============================================================================
