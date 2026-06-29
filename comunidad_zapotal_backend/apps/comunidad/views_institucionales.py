@@ -15,6 +15,14 @@ from .zerobounce import validar_email as zb_validar, obtener_creditos as zb_cred
 from .models_institucionales import (
     ConfiguracionComunidad, MarcoLegalItem, PaginaLegal,
     HitoHistorico, GaleriaImagen, MensajeContacto,
+    CategoriaGaleria, TextoSeccionInterna,
+)
+from .serializers_institucionales import (
+    ConfiguracionComunidadSerializer, MarcoLegalItemSerializer,
+    PaginaLegalSerializer, PaginaLegalPublicSerializer,
+    HitoHistoricoSerializer, GaleriaImagenSerializer,
+    MensajeContactoSerializer, MensajeContactoCreateSerializer,
+    CategoriaGaleriaSerializer, TextoSeccionInternaSerializer,
 )
 from .serializers_institucionales import (
     ConfiguracionComunidadSerializer, MarcoLegalItemSerializer,
@@ -164,7 +172,7 @@ class HitoHistoricoViewSet(viewsets.ModelViewSet):
 
 class GaleriaImagenViewSet(viewsets.ModelViewSet):
     """Galeria de imagenes (publica lectura, admin escritura con upload)."""
-    queryset = GaleriaImagen.objects.filter(activo=True)
+    queryset = GaleriaImagen.objects.select_related('noticia', 'evento').filter(activo=True)
     serializer_class = GaleriaImagenSerializer
     permission_classes = [IsAdminOrReadOnly]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -480,3 +488,49 @@ class MensajeContactoAdminViewSet(viewsets.ModelViewSet):
             metadata={'caracteres': len(nota)},
         )
         return Response({'status': 'ok'})
+
+
+# ============================================================================
+# Loop 1 v2: Categorias de Galeria + Textos de Secciones Internas
+# ============================================================================
+# Estas vistas existen para que Kotlin/Spring Boot y React consuman
+# la misma fuente de verdad (single source of truth) de los textos
+# que antes estaban hardcodeados en el frontend.
+
+
+class CategoriaGaleriaViewSet(viewsets.ReadOnlyModelViewSet):
+    """Lista de categorias de galeria (publico).
+
+    GET /api/v1/galerias/categorias/ -> lista todas las categorias activas
+    """
+    queryset = CategoriaGaleria.objects.filter(activo=True)
+    serializer_class = CategoriaGaleriaSerializer
+    pagination_class = None
+    ordering = ['orden', 'nombre']
+
+
+class CategoriaGaleriaAdminViewSet(viewsets.ModelViewSet):
+    """CRUD admin para gestionar las categorias de la galeria."""
+    queryset = CategoriaGaleria.objects.all()
+    serializer_class = CategoriaGaleriaSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+
+class TextoSeccionInternaViewSet(viewsets.ReadOnlyModelViewSet):
+    """Lista de textos de secciones internas (publico, filtrable por idioma).
+
+    GET /api/v1/textos-seccion/?idioma=es-PE
+    GET /api/v1/textos-seccion/?seccion=CONOCENOS_HERO
+    """
+    queryset = TextoSeccionInterna.objects.filter(activo=True)
+    serializer_class = TextoSeccionInternaSerializer
+    pagination_class = None
+    filterset_fields = ['seccion', 'idioma', 'activo']
+    ordering = ['seccion', 'key']
+
+
+class TextoSeccionInternaAdminViewSet(viewsets.ModelViewSet):
+    """CRUD admin para textos de secciones internas."""
+    queryset = TextoSeccionInterna.objects.all()
+    serializer_class = TextoSeccionInternaSerializer
+    permission_classes = [IsAdminOrReadOnly]
