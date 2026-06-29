@@ -1,8 +1,19 @@
+/* ============================================================================
+   Nuestra Historia - Paleta verde/dorado del navbar
+   ============================================================================
+   Variables del navbar reutilizadas:
+     --nb-verde:        #1a3209
+     --nb-verde-med:    #243f0f
+     --nb-verde-claro:  #3a6019
+     --nb-dorado:       #b8963e
+     --nb-dorado-light: #d4ae5a
+   ============================================================================ */
+
 .historia-page {
   width: 100%;
   font-family: Georgia, "Times New Roman", serif;
-  background: #fffaf2;
-  color: #111;
+  background: linear-gradient(180deg, #faf6ec 0%, #f5efe0 100%);
+  color: #1a2620;
   overflow: hidden;
 }
 
@@ -57,21 +68,29 @@
   animation: fadeUp 1s ease forwards;
 }
 
+/* Etiqueta superior: dorado claro con sombra dorada suave */
 .historia-label {
   display: inline-block;
   font-size: 14px;
   letter-spacing: 3px;
   text-transform: uppercase;
   margin-bottom: 18px;
-  color: #e8f5d7;
-  text-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  color: var(--nb-dorado-light, #d4ae5a);
+  text-shadow:
+    0 0 8px rgba(184, 150, 62, 0.85),
+    0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
+/* Titulo principal: verde navbar con sombra dorada */
 .historia-overlay h1 {
   font-size: 64px;
   line-height: 1.1;
   margin-bottom: 18px;
-  text-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  color: var(--nb-verde, #1a3209);
+  text-shadow:
+    0 0 10px rgba(184, 150, 62, 0.85),
+    0 0 24px rgba(184, 150, 62, 0.55),
+    0 12px 30px rgba(0, 0, 0, 0.45);
 }
 
 .historia-overlay p {
@@ -89,7 +108,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #e8f5d7;
+  color: var(--nb-dorado-light, #d4ae5a);
 }
 
 /* ══════════════════ CONTENIDO HISTORIA ══════════════════ */
@@ -109,17 +128,31 @@
 
 .historia-texto span {
   color: var(--nb-verde, #1a3209);
-  font-weight: bold;
+  font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
   font-size: 14px;
+  letter-spacing: 2.5px;
 }
 
 .historia-texto h2 {
   font-size: 42px;
   line-height: 1.2;
   margin: 15px 0 20px;
-  color: #1a2620;
+  color: var(--nb-verde-med, #243f0f);
+  position: relative;
+  padding-bottom: 14px;
+}
+
+.historia-texto h2::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 64px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--nb-verde) 0%, var(--nb-dorado) 100%);
+  border-radius: 2px;
 }
 
 .historia-texto p {
@@ -133,7 +166,9 @@
   height: 390px;
   border-radius: 30px;
   overflow: hidden;
-  box-shadow: 0 28px 50px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 28px 50px rgba(26, 50, 9, 0.20),
+    0 0 0 4px var(--nb-dorado, #b8963e);
   animation: slideRight 1s ease;
 }
 
@@ -162,7 +197,7 @@
 .historia-html h2,
 .historia-html h3,
 .historia-html h4 {
-  color: #1a2620;
+  color: var(--nb-verde-med, #243f0f);
   margin: 24px 0 12px;
   line-height: 1.3;
 }
@@ -193,7 +228,7 @@
   margin: 12px 0;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
-.historia-html strong { color: #1a2620; }
+.historia-html strong { color: var(--nb-verde-med, #243f0f); }
 
 /* ══════════════════ TIMELINE ══════════════════ */
 .historia-timeline-section {
@@ -208,16 +243,16 @@
   justify-content: center;
   gap: 12px;
   font-size: 36px;
-  color: #1a2620;
+  color: var(--nb-verde, #1a3209);
   margin: 0 0 14px;
   text-align: center;
 }
 
-.historia-timeline-section > h2 svg { color: var(--nb-verde, #1a3209); }
+.historia-timeline-section > h2 svg { color: var(--nb-dorado, #b8963e); }
 
 .historia-timeline-section > p {
   text-align: center;
-  color: #6b7280;
+  color: var(--nb-verde-med, #243f0f);
   font-size: 16px;
   margin: 0 0 50px;
   font-style: italic;
@@ -235,8 +270,8 @@
   padding: 30px 28px;
   position: relative;
   border-top: 5px solid var(--nb-verde, #1a3209);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  box-shadow: 0 14px 32px rgba(26, 50, 9, 0.08);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -244,20 +279,24 @@
 
 .historia-timeline__item:hover {
   transform: translateY(-10px);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.15);
+  border-top-color: var(--nb-dorado, #b8963e);
+  box-shadow:
+    0 24px 50px rgba(184, 150, 62, 0.18),
+    0 0 0 1px var(--nb-dorado, #b8963e);
 }
 
 .historia-timeline__anio {
   display: inline-block;
   align-self: flex-start;
-  background: linear-gradient(135deg, var(--nb-verde, #1a3209), var(--nb-verde-med, #243f0f));
-  color: #e8f5d7;
+  background: linear-gradient(135deg, var(--nb-verde, #1a3209) 0%, var(--nb-verde-med, #243f0f) 100%);
+  color: var(--nb-dorado-light, #d4ae5a);
   font-size: 22px;
   font-weight: 700;
   padding: 6px 16px;
   border-radius: 8px;
   letter-spacing: 1px;
   font-family: Georgia, serif;
+  box-shadow: 0 4px 12px rgba(26, 50, 9, 0.25);
 }
 
 .historia-timeline__contenido {
@@ -269,8 +308,8 @@
 
 .historia-timeline__contenido h3 {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--nb-verde, #1a3209);
+  font-weight: 700;
+  color: var(--nb-dorado, #b8963e);
   letter-spacing: 2px;
   text-transform: uppercase;
   margin: 0;
@@ -279,7 +318,7 @@
 .historia-timeline__contenido h4 {
   font-size: 20px;
   font-weight: 700;
-  color: #1a2620;
+  color: var(--nb-verde-med, #243f0f);
   margin: 0;
   line-height: 1.3;
 }
@@ -293,10 +332,11 @@
 
 .text-mute {
   text-align: center;
-  color: #9ca3af;
+  color: var(--nb-verde-med, #243f0f);
   font-style: italic;
   font-size: 15px;
   margin: 24px 0;
+  opacity: 0.7;
 }
 
 /* ══════════════════ ANIMACIONES ══════════════════ */
