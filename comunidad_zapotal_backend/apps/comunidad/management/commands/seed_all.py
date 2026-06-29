@@ -35,6 +35,7 @@ from django.core.management.base import BaseCommand
 SEEDERS = [
     ('seed_superusers',         'apps.accounts.management.commands.seed_superusers'),
     ('seed_configuracion',      'apps.comunidad.management.commands.seed_configuracion'),
+    ('seed_textos_internos',     'apps.comunidad.management.commands.seed_textos_internos'),
     ('seed_comuneros',          'apps.accounts.management.commands.seed_comuneros'),
     ('seed_autoridades',        'apps.comunidad.management.commands.seed_autoridades'),
     ('seed_marco_legal',        'apps.comunidad.management.commands.seed_marco_legal'),

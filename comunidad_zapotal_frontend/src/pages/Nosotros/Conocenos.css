@@ -116,8 +116,10 @@
 .conocenos-valores > h2 {
   text-align: center;
   font-size: 36px;
-  color: #1a2620;
+  color: var(--nb-verde, #1a3209);
   margin: 0 0 12px;
+  position: relative;
+  padding-bottom: 16px;
 }
 
 .conocenos-valores > h2::after {
@@ -143,6 +145,7 @@
   padding: 28px 24px;
   text-align: center;
   border: 1px solid #e8e6db;
+  border-top: 3px solid var(--nb-dorado, #b8963e);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
@@ -189,6 +192,7 @@
   border-radius: 20px;
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.06);
   border: 1px solid #e8e6db;
+  border-left: 5px solid var(--nb-verde, #1a3209);
 }
 
 .conocenos-ubicacion h2 {
@@ -237,8 +241,22 @@
   justify-content: center;
   gap: 10px;
   font-size: 32px;
-  color: #1a2620;
+  color: var(--nb-verde, #1a3209);
   margin: 0 0 36px;
+  position: relative;
+  padding-bottom: 14px;
+}
+
+.conocenos-galeria > h2::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--nb-verde, #1a3209), var(--nb-dorado, #b8963e));
+  border-radius: 2px;
 }
 
 .conocenos-galeria > h2 svg { color: var(--nb-verde, #1a3209); }

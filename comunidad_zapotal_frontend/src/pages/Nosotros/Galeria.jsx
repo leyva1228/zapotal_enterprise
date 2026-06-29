@@ -1,11 +1,109 @@
 import React, { useState, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 import useGaleria from "../../hooks/useGaleria";
+import { useCategoriasGaleria, useTextosSeccion } from "../../hooks/useTextosSeccion";
+import useConfiguracion from "../../hooks/useConfiguracion";
 import "./Galeria.css";
-const CATEGORIAS = [  { value: null,             label: "Todas" },  { value: "COMUNIDAD",      label: "Comunidad" },  { value: "AUTORIDADES",    label: "Autoridades" },  { value: "FESTIVIDADES",   label: "Festividades" },  { value: "INFRAESTRUCTURA",label: "Infraestructura" },  { value: "NATURALEZA",     label: "Naturaleza" },  { value: "PATRIMONIO",     label: "Patrimonio" },];
-export default function Galeria() {  const [categoria, setCategoria] = useState(null);
-  
-const [lightbox, setLightbox] = useState(null);
-  
-const { data: items, loading, error } = useGaleria(categoria);
-  // Cerrar lightbox con ESC  useEffect(() => {    if (!lightbox) return undefined;    const onKey = (e) => { if (e.key === "Escape") setLightbox(null); };    document.addEventListener("keydown", onKey);    return () => document.removeEventListener("keydown", onKey);  }, [lightbox]);  return (    <main className="galeria-page">      <section className="galeria-hero">        <div>          <h1>Galeria</h1>          <p>Imagenes de la comunidad, sus autoridades, festividades, infraestructura y patrimonio cultural.</p>        </div>      </section>      <div className="galeria-container">        <div className="galeria-filtros">          {CATEGORIAS.map((c) => (            <button              key={c.value || "todas"}              type="button"              className={categoria === c.value ? "activo" : ""}              onClick={() => setCategoria(c.value)}            >              {c.label}            </button>          ))}        </div>        {loading ? (          <div className="galeria-loading">Cargando imagenes...</div>        ) : error ? (          <div className="galeria-empty">No se pudieron cargar las imagenes.</div>        ) : items.length === 0 ? (          <div className="galeria-empty">Aun no hay imagenes en esta categoria.</div>        ) : (          <div className="galeria-grid">            {items.map((it) => (              <article                key={it.id}                className="galeria-card"                onClick={() => setLightbox(it)}                role="button"                tabIndex={0}                onKeyDown={(e) => { if (e.key === "Enter") setLightbox(it); }}              >                {it.imagen_url ? (                  <img src={it.imagen_url} alt={it.titulo} loading="lazy" />                ) : (                  <div style={{ aspectRatio: "1/1", display: "flex", alignItems: "center", justifyContent: "center", background: "#e5e7eb" }}>                    <span style={{ color: "#9ca3af" }}>Sin imagen</span>                  </div>                )}                <div className="galeria-card-body">                  <h3>{it.titulo}</h3>                  <p>{it.categoria_display || it.categoria}</p>                </div>              </article>            ))}          </div>        )}      </div>      {lightbox && (        <div          className="galeria-modal-backdrop"          onClick={() => setLightbox(null)}          role="dialog"          aria-modal="true"        >          <div className="galeria-modal-content" onClick={(e) => e.stopPropagation()}>            <button              type="button"              className="galeria-modal-close"              onClick={() => setLightbox(null)}              aria-label="Cerrar"            >              <FaTimes />            </button>            {lightbox.imagen_url && (              <img src={lightbox.imagen_url} alt={lightbox.titulo} />            )}            <div className="galeria-modal-caption">              <strong>{lightbox.titulo}</strong>              {lightbox.descripcion && <p style={{ margin: "4px 0 0" }}>{lightbox.descripcion}</p>}            </div>          </div>        </div>      )}    </main>  );}
+
+export default function Galeria() {
+  const [categoria, setCategoria] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
+
+  // Antes: las categorias estaban hardcodeadas en este archivo. Ahora
+  // se sirven desde la BD via /api/v1/galerias/categorias/.
+  const { data: categorias } = useCategoriasGaleria();
+  const { data: cfg } = useConfiguracion();
+  // Textos editables (titulo, subtitulo) desde ConfiguracionComunidad.
+  const { data: textosGaleria } = useTextosSeccion({ seccion: 'GALERIA_HERO' });
+  const titulo = cfg?.galeria_titulo || 'Galeria';
+  const subtitulo = textosGaleria.find(t => t.key === 'galeria.hero.subtitulo')?.contenido
+    || cfg?.galeria_subtitulo
+    || 'Imagenes de la comunidad, sus autoridades, festividades, infraestructura y patrimonio cultural.';
+
+  const { data: items, loading, error } = useGaleria(categoria);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') setLightbox(null); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [lightbox]);
+
+  return (
+    <main className="galeria-page">
+      <section className="galeria-hero">
+        <div>
+          <h1>{titulo}</h1>
+          <p>{subtitulo}</p>
+        </div>
+      </section>
+      <div className="galeria-container">
+        <div className="galeria-filtros">
+          {/* "Todas" siempre la primera opcion */}
+          <button
+            type="button"
+            className={categoria === null ? 'activo' : ''}
+            onClick={() => setCategoria(null)}
+          >
+            Todas
+          </button>
+          {/* Las demas categorias vienen de la BD */}
+          {categorias && categorias.map((c) => (
+            <button
+              key={c.nombre}
+              type="button"
+              className={categoria === c.nombre ? 'activo' : ''}
+              onClick={() => setCategoria(c.nombre)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        {loading ? (
+          <div className="galeria-loading">Cargando imagenes...</div>
+        ) : error ? (
+          <div className="galeria-empty">No se pudieron cargar las imagenes.</div>
+        ) : items.length === 0 ? (
+          <div className="galeria-empty">Aun no hay imagenes en esta categoria.</div>
+        ) : (
+          <div className="galeria-grid">
+            {items.map((it) => (
+              <article
+                key={it.id}
+                className="galeria-card"
+                onClick={() => setLightbox(it)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') setLightbox(it); }}
+              >
+                {it.imagen_url ? (
+                  <img src={it.imagen_url} alt={it.titulo} loading="lazy" />
+                ) : (
+                  <div className="galeria-placeholder">{it.titulo}</div>
+                )}
+                <figcaption>
+                  <strong>{it.titulo}</strong>
+                  {it.descripcion && <span>{it.descripcion}</span>}
+                </figcaption>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {lightbox && (
+        <div className="galeria-lightbox" onClick={() => setLightbox(null)} role="dialog" aria-modal="true">
+          <button className="galeria-lightbox__close" onClick={() => setLightbox(null)} aria-label="Cerrar">
+            <FaTimes />
+          </button>
+          {lightbox.imagen_url && (
+            <img src={lightbox.imagen_url} alt={lightbox.titulo} className="galeria-lightbox__img" />
+          )}
+          <div className="galeria-lightbox__caption">
+            <h3>{lightbox.titulo}</h3>
+            {lightbox.descripcion && <p>{lightbox.descripcion}</p>}
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

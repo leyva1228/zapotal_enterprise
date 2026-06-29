@@ -8,7 +8,6 @@ import {
 } from "react-icons/fa";
 import "./MarcoLegalPage.css";
 
-// Mapeo de icono string -> componente
 const ICONOS = {
   FaGavel, FaUserShield, FaUniversity, FaShieldAlt, FaFileSignature,
   FaBalanceScale,
@@ -17,6 +16,15 @@ const ICONOS = {
 export default function MarcoLegalPage() {
   const { data, loading, error } = useMarcoLegal();
   const { data: cfg } = useConfiguracion();
+
+  // Textos que antes estaban hardcoded en el JSX. Ahora vienen de la
+  // BD (ConfiguracionComunidad, campos marcolocal_*).
+  const titulo = cfg?.marcolocal_titulo || 'Marco Legal';
+  const subtitulo =
+    cfg?.marcolocal_subtitulo
+    || (cfg
+      ? `Marco normativo que rige el funcionamiento de la ${cfg.nombre_oficial} y sus autoridades.`
+      : 'Marco normativo que rige el funcionamiento de la Comunidad y sus autoridades.');
 
   if (loading) {
     return (
@@ -40,11 +48,8 @@ export default function MarcoLegalPage() {
       <section className="ml-hero">
         <div className="ml-hero-content">
           <FaBalanceScale className="ml-hero-icon" />
-          <h1>Marco Legal</h1>
-          <p>
-            Marco normativo que rige el funcionamiento de la
-            {cfg ? ` ${cfg.nombre_oficial}` : ' Comunidad'} y sus autoridades.
-          </p>
+          <h1>{titulo}</h1>
+          <p>{subtitulo}</p>
         </div>
       </section>
 

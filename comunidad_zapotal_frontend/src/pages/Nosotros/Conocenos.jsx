@@ -14,16 +14,27 @@ function Conocenos() {
   const { data: cfg, loading: cfgLoading } = useConfiguracion();
   const { data: galeria } = useGaleria('COMUNIDAD');
 
+  // Helpers: textos que antes estaban hardcoded en el JSX. Ahora
+  // vienen de la BD (modelo ConfiguracionComunidad, campos conocenos_*).
+  // Si la BD no tiene valor configurado, usamos un fallback razonable.
+  const etiqueta = cfg?.conocenos_etiqueta || 'Conocenos';
+  const heroTitulo = cfg?.conocenos_hero_titulo || 'Una comunidad viva y organizada';
+  const heroSubtitulo = cfg?.conocenos_hero_subtitulo
+    || cfg?.eslogan
+    || 'Trabajamos unidos para fortalecer la comunicacion, la participacion y el bienestar de todos nuestros comuneros.';
+  const ubicacionTitulo = cfg?.conocenos_ubicacion_titulo || 'Donde estamos';
+  const ctaTitulo = cfg?.conocenos_cta_titulo || 'Comprometidos con el futuro';
+  const ctaDescripcion = cfg?.conocenos_cta_descripcion
+    || cfg?.descripcion_corta
+    || 'Nuestra comunidad mira hacia adelante sin olvidar sus raices.';
+
   return (
     <main className="conocenos-page">
       <section className="conocenos-hero">
         <div className="conocenos-card">
-          <span>Conocenos</span>
-          <h1>Una comunidad viva y organizada</h1>
-          <p>
-            {cfg?.eslogan ||
-              'Trabajamos unidos para fortalecer la comunicación, la participación y el bienestar de todos nuestros comuneros.'}
-          </p>
+          <span>{etiqueta}</span>
+          <h1>{heroTitulo}</h1>
+          <p>{heroSubtitulo}</p>
         </div>
       </section>
 
@@ -67,7 +78,7 @@ function Conocenos() {
       {/* DATOS DE UBICACION */}
       {cfg && (
         <section className="conocenos-ubicacion">
-          <h2><FaMapMarkerAlt /> Donde estamos</h2>
+          <h2><FaMapMarkerAlt /> {ubicacionTitulo}</h2>
           <dl>
             <dt>Direccion</dt>
             <dd>{cfg.direccion_casa_comunal}</dd>
@@ -83,7 +94,7 @@ function Conocenos() {
       {/* GALERIA - viene de GaleriaImagen categoria=COMUNIDAD */}
       {galeria && galeria.length > 0 && (
         <section className="conocenos-galeria">
-          <h2><FaImages /> Galeria</h2>
+          <h2><FaImages /> {cfg?.galeria_titulo || 'Galeria'}</h2>
           <div className="galeria-grid">
             {galeria.map((g) => (
               <figure key={g.id} className="galeria-item">
@@ -105,12 +116,8 @@ function Conocenos() {
       {/* CTA final */}
       <section className="conocenos-final">
         <div>
-          <h2>Comprometidos con el futuro</h2>
-          <p>
-            Nuestra comunidad mira hacia adelante sin olvidar sus raices.
-            Creemos en el trabajo colectivo, la transparencia y la union como
-            camino para seguir creciendo.
-          </p>
+          <h2>{ctaTitulo}</h2>
+          <p>{ctaDescripcion}</p>
         </div>
         <img src="/img/Conocenos/conocenos-dt.png" alt="Comunidad Zapotal" />
       </section>

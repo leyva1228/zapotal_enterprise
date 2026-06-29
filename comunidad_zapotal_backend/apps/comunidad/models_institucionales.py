@@ -85,6 +85,72 @@ class ConfiguracionComunidad(models.Model):
         'Foto Casa Comunal URL', blank=True, default='',
     )
 
+    # ============================================================
+    # Textos editables de las paginas internas de /nosotros
+    # (Loop 1 — antes estaban hardcoded en el frontend).
+    # Conocenos / MarcoLegal / Galeria / NuestraHistoria consumen
+    # estos campos via useConfiguracion() + useGaleria() + useMarcoLegal().
+    # ============================================================
+    conocenos_etiqueta = models.CharField(
+        'Conocenos: etiqueta superior', max_length=50, default='Conocenos',
+    )
+    conocenos_hero_titulo = models.CharField(
+        'Conocenos: titulo del hero', max_length=200,
+        default='Una comunidad viva y organizada',
+    )
+    conocenos_hero_subtitulo = models.TextField(
+        'Conocenos: subtitulo del hero', blank=True, default='',
+        help_text='Si esta vacio, se usa eslogan.',
+    )
+    conocenos_ubicacion_titulo = models.CharField(
+        'Conocenos: titulo ubicacion', max_length=100,
+        default='Donde estamos',
+    )
+    conocenos_cta_titulo = models.CharField(
+        'Conocenos: titulo CTA final', max_length=200,
+        default='Comprometidos con el futuro',
+    )
+    conocenos_cta_descripcion = models.TextField(
+        'Conocenos: descripcion CTA final', blank=True, default='',
+        help_text='Si esta vacio, se usa descripcion_corta.',
+    )
+
+    marcolocal_titulo = models.CharField(
+        'Marco Legal: titulo', max_length=100, default='Marco Legal',
+    )
+    marcolocal_subtitulo = models.TextField(
+        'Marco Legal: subtitulo', blank=True, default='',
+        help_text='Si esta vacio, usa un texto generico.',
+    )
+
+    galeria_titulo = models.CharField(
+        'Galeria: titulo', max_length=100, default='Galeria',
+    )
+    galeria_subtitulo = models.TextField(
+        'Galeria: subtitulo', blank=True, default='',
+    )
+
+    historia_etiqueta = models.CharField(
+        'Nuestra Historia: etiqueta superior', max_length=50,
+        default='Origen comunal',
+    )
+    historia_hero_titulo = models.CharField(
+        'Nuestra Historia: titulo del hero', max_length=200,
+        default='Nuestra historia',
+    )
+    historia_hero_subtitulo = models.TextField(
+        'Nuestra Historia: subtitulo del hero', blank=True, default='',
+        help_text='Si esta vacio, se usa eslogan.',
+    )
+    historia_seccion_titulo = models.CharField(
+        'Nuestra Historia: titulo seccion contenido', max_length=200,
+        default='Raices que fortalecen nuestra identidad',
+    )
+    historia_timeline_titulo = models.CharField(
+        'Nuestra Historia: titulo timeline', max_length=100,
+        default='Linea de tiempo',
+    )
+
     # Metadata
     actualizado_en = models.DateTimeField('Actualizado en', auto_now=True)
 
@@ -301,3 +367,82 @@ class MensajeContacto(models.Model):
 
     def __str__(self):
         return f'{self.nombre} - {self.asunto} ({self.fecha:%Y-%m-%d})'
+
+
+class CategoriaGaleria(models.Model):
+    """Categorias de la Galeria (ej: Comunidad, Autoridades, Festividades).
+
+    Antes estaban hardcodeadas en el frontend. Ahora se editan desde
+    el panel admin y se sirven via /api/v1/galerias/categorias/.
+    """
+    nombre = models.CharField('Nombre', max_length=50, unique=True)
+    label = models.CharField('Etiqueta visible', max_length=100)
+    descripcion = models.TextField('Descripcion', blank=True, default='')
+    orden = models.PositiveIntegerField('Orden', default=0)
+    activo = models.BooleanField('Activo', default=True)
+
+    class Meta:
+        ordering = ['orden', 'nombre']
+        verbose_name = 'Categoria de Galeria'
+        verbose_name_plural = 'Categorias de Galeria'
+
+    def __str__(self):
+        return self.label
+
+
+class TextoSeccionInterna(models.Model):
+    """Textos configurables de las paginas internas de /nosotros.
+
+    Loop 1 v2: este modelo permite que TODOS los textos de las
+    paginas internas (Conocenos, MarcoLegal, Galeria, NuestraHistoria)
+    sean editables desde el panel admin sin tocar codigo ni redeploy.
+
+    El key (slug) es unico y mapea a la posicion exacta en el frontend.
+    Ejemplos: conocenos.hero.titulo, galeria.categorias, etc.
+
+    Esto tambien permite que Kotlin/Spring Boot consuma la misma
+    informacion via el endpoint REST, manteniendo una sola fuente
+    de verdad (single source of truth).
+    """
+    SECCIONES = [
+        ('CONOCENOS_HERO',     'Conocenos - Hero'),
+        ('CONOCENOS_MV',       'Conocenos - Mision y Vision'),
+        ('CONOCENOS_UBICACION','Conocenos - Ubicacion'),
+        ('CONOCENOS_CTA',      'Conocenos - CTA Final'),
+        ('MARCOLOCAL_HERO',    'Marco Legal - Hero'),
+        ('GALERIA_HERO',       'Galeria - Hero'),
+        ('HISTORIA_HERO',      'Nuestra Historia - Hero'),
+        ('HISTORIA_CONTENIDO', 'Nuestra Historia - Contenido'),
+        ('HISTORIA_TIMELINE',  'Nuestra Historia - Timeline'),
+    ]
+    TIPO_CHOICES = [
+        ('TITULO',  'Titulo'),
+        ('SUBTITULO','Subtitulo / descripcion'),
+        ('HTML',    'HTML libre'),
+        ('JSON',    'JSON estructurado'),
+    ]
+
+    key = models.CharField('Key (slug)', max_length=100, unique=True,
+        help_text='Identificador unico. Ej: conocenos.hero.titulo')
+    seccion = models.CharField('Seccion', max_length=30, choices=SECCIONES)
+    tipo = models.CharField('Tipo de contenido', max_length=20,
+        choices=TIPO_CHOICES, default='TITULO')
+    titulo = models.CharField('Titulo descriptivo (solo admin)',
+        max_length=200, blank=True, default='')
+    contenido = models.TextField('Contenido (texto/HTML/JSON segun tipo)')
+    idioma = models.CharField('Idioma', max_length=5, default='es-PE')
+    activo = models.BooleanField('Activo', default=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+    actualizado_por = models.ForeignKey(
+        'accounts.Usuario', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='textos_seccion_modificados',
+    )
+
+    class Meta:
+        unique_together = [('key', 'idioma')]
+        ordering = ['seccion', 'key']
+        verbose_name = 'Texto de Seccion Interna'
+        verbose_name_plural = 'Textos de Secciones Internas'
+
+    def __str__(self):
+        return f'{self.key} ({self.idioma})'

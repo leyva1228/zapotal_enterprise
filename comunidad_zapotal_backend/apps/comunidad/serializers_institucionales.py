@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models_institucionales import (
     ConfiguracionComunidad, MarcoLegalItem, PaginaLegal,
     HitoHistorico, GaleriaImagen, MensajeContacto,
+    CategoriaGaleria, TextoSeccionInterna,
 )
 
 
@@ -29,6 +30,15 @@ class ConfiguracionComunidadSerializer(serializers.ModelSerializer):
             'moderacion_comentarios_previa',
             'notificaciones_email_activas',
             'tiempo_sesion_minutos',
+            # Textos editables de las paginas internas de /nosotros
+            'conocenos_etiqueta', 'conocenos_hero_titulo',
+            'conocenos_hero_subtitulo', 'conocenos_ubicacion_titulo',
+            'conocenos_cta_titulo', 'conocenos_cta_descripcion',
+            'marcolocal_titulo', 'marcolocal_subtitulo',
+            'galeria_titulo', 'galeria_subtitulo',
+            'historia_etiqueta', 'historia_hero_titulo',
+            'historia_hero_subtitulo', 'historia_seccion_titulo',
+            'historia_timeline_titulo',
             'actualizado_por', 'actualizado_por_email',
             'actualizado_en',
         ]
@@ -36,6 +46,21 @@ class ConfiguracionComunidadSerializer(serializers.ModelSerializer):
 
     def get_actualizado_por_email(self, obj):
         return obj.actualizado_por.email if obj.actualizado_por else None
+
+
+class CategoriaGaleriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CategoriaGaleria
+        fields = ['id', 'nombre', 'label', 'descripcion', 'orden', 'activo']
+
+
+class TextoSeccionInternaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TextoSeccionInterna
+        fields = [
+            'id', 'key', 'seccion', 'tipo', 'titulo', 'contenido',
+            'idioma', 'activo', 'actualizado_en',
+        ]
 
 
 class MarcoLegalItemSerializer(serializers.ModelSerializer):
@@ -140,10 +165,23 @@ class MensajeContactoCreateSerializer(serializers.ModelSerializer):
         v = (v or '').strip()
         if not v:
             raise serializers.ValidationError('El correo es obligatorio.')
+        request = self.context.get('request') if self.context else None
+        # V2.2: si el usuario esta autenticado (comunero / admin), confiar
+        # en su email: ya fue validado en el flujo de registro con
+        # ZeroBounce. Evitamos consumir un credito por cada mensaje
+        # de contacto enviado por un usuario logueado.
+        if request is not None and getattr(request.user, 'is_authenticated', False):
+            if self.context is not None:
+                self.context['email_validacion_zb'] = {
+                    'email': v, 'status': 'valid', 'sub_status': '',
+                    'es_valido': True, 'motivo': '',
+                    'did_you_mean': '', 'modo_sandbox': False,
+                    'cache': 'auth-bypass',
+                }
+            return v
         # V2.1: si el frontend ya valido contra ZB hace menos de 5 min
         # (header X-ZB-Validated), confiar en el resultado y no
         # volver a consumir un credito de ZeroBounce.
-        request = self.context.get('request') if self.context else None
         if request is not None and self._zb_ya_validado(request, v):
             from .zerobounce import ResultadoValidacion
             resultado = ResultadoValidacion(
