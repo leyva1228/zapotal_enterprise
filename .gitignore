@@ -2,6 +2,7 @@
 /*
 !/comunidad_zapotal_backend/
 !/comunidad_zapotal_frontend/
+!/agents-workflow/
 !/generate_secret_key.bat
 !/init_db.bat
 !/install_backend.bat
@@ -51,7 +52,10 @@ Thumbs.db
 .DS_Store
 
 docs/
+# *.md ignorado por defecto para evitar markdown suelto en raiz,
+# pero se hace allowlist por directorio abajo (agents-workflow/, etc.).
 *.md
+!/agents-workflow/**/*.md
 comunidad_zapotal_mobilebff_and_mobile_old/
 .playwright-mcp/
 .swarm/
