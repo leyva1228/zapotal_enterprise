@@ -1,15 +1,12 @@
-"""Seed de Marco Legal items - 6 leyes/normas clave del C.P. Zapotal.
+"""
+Seed de Marco Legal items - 6 leyes/normas clave del C.P. Zapotal.
 
 Idempotente: actualiza si existe, crea si no.
+
+Uso:
+    python manage.py seed_marco_legal
 """
-import os
-import sys
-import django
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zapotal_config.settings')
-sys.path.insert(0, '.')
-django.setup()
-
+from django.core.management.base import BaseCommand
 from apps.comunidad.models_institucionales import MarcoLegalItem
 
 
@@ -90,27 +87,31 @@ ITEMS = [
 ]
 
 
-def main():
-    creados = actualizados = 0
-    for data in ITEMS:
-        obj, created = MarcoLegalItem.objects.update_or_create(
-            titulo=data['titulo'],
-            defaults={
-                'norma': data['norma'],
-                'descripcion': data['descripcion'],
-                'icono': data['icono'],
-                'url_externa': data['url_externa'],
-                'orden': data['orden'],
-                'activo': True,
-            },
-        )
-        if created: creados += 1
-        else: actualizados += 1
-        status = '[NEW]' if created else '[UPD]'
-        print(f'  {status} {obj.titulo} ({obj.norma})')
-    print()
-    print(f'Total items: {MarcoLegalItem.objects.count()} (nuevos={creados}, actualizados={actualizados})')
+class Command(BaseCommand):
+    help = 'Carga 6 items del Marco Legal de la Comunidad.'
 
-
-if __name__ == '__main__':
-    main()
+    def handle(self, *args, **options):
+        creados = actualizados = 0
+        for data in ITEMS:
+            obj, created = MarcoLegalItem.objects.update_or_create(
+                titulo=data['titulo'],
+                defaults={
+                    'norma': data['norma'],
+                    'descripcion': data['descripcion'],
+                    'icono': data['icono'],
+                    'url_externa': data['url_externa'],
+                    'orden': data['orden'],
+                    'activo': True,
+                },
+            )
+            if created:
+                creados += 1
+            else:
+                actualizados += 1
+            self.stdout.write(
+                f'  [{"NEW" if created else "UPD"}] {obj.titulo} ({obj.norma})'
+            )
+        self.stdout.write(self.style.SUCCESS(
+            f'  Total items: {MarcoLegalItem.objects.count()} '
+            f'(nuevos={creados}, actualizados={actualizados})'
+        ))
