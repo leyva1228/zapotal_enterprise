@@ -54,6 +54,9 @@ const EMPTY = {
   orden: 0,
   activo: true,
   imagen: null,
+  imagen_url_externa: "",
+  noticia: "",
+  evento: "",
 };
 
 export default function AdminGaleria() {
@@ -69,6 +72,8 @@ export default function AdminGaleria() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [noticias, setNoticias] = useState([]);
+  const [eventos, setEventos] = useState([]);
 
   const abortRef = useRef(null);
 
@@ -110,6 +115,19 @@ export default function AdminGaleria() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.categoria, debouncedSearch]);
 
+  // Cargar listas de noticias y eventos para los selectores del modal
+  // de alta/edicion de GaleriaImagen.
+  useEffect(() => {
+    Promise.all([
+      api.get('/noticias/', { params: { page_size: 100, estado: 'PUBLICADA' } })
+        .then(r => setNoticias(extractList(r.data)))
+        .catch(() => setNoticias([])),
+      api.get('/eventos/', { params: { page_size: 100 } })
+        .then(r => setEventos(extractList(r.data)))
+        .catch(() => setEventos([])),
+    ]);
+  }, []);
+
   const abrirNuevo = () => {
     setEditItem(null);
     setForm(EMPTY);
@@ -127,6 +145,9 @@ export default function AdminGaleria() {
       orden: it.orden || 0,
       activo: it.activo !== false,
       imagen: null,
+      imagen_url_externa: it.imagen_url_externa || "",
+      noticia: it.noticia || "",
+      evento: it.evento || "",
     });
     setPreview(it.imagen_url || null);
     setModalOpen(true);
@@ -153,6 +174,9 @@ export default function AdminGaleria() {
       data.append("activo", form.activo ? "true" : "false");
       if (form.fecha) data.append("fecha", form.fecha);
       if (form.imagen) data.append("imagen", form.imagen);
+      if (form.imagen_url_externa) data.append("imagen_url_externa", form.imagen_url_externa);
+      if (form.noticia) data.append("noticia", form.noticia);
+      if (form.evento) data.append("evento", form.evento);
       const cfg = { headers: { "Content-Type": "multipart/form-data" } };
       if (editItem) {
         await api.patch(`/galeria/${editItem.id}/`, data, cfg);
@@ -285,7 +309,14 @@ export default function AdminGaleria() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center justify-end gap-1 pt-1.5 border-t border-gray-100">
+                      {(it.noticia || it.evento) && (
+                      <div className="text-[10px] text-gray-500">
+                        {it.noticia && <span>Noticia #{it.noticia}</span>}
+                        {it.noticia && it.evento && ' · '}
+                        {it.evento && <span>Evento #{it.evento}</span>}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-end gap-1 pt-1.5 border-t border-gray-100">
                         <button
                           className="admin-btn-icon admin-btn-icon--neutral"
                           onClick={() => abrirEditar(it)}
@@ -415,6 +446,35 @@ export default function AdminGaleria() {
                 />
                 <span className="text-sm text-gray-700">Visible en la galeria publica</span>
               </label>
+            </div>
+          </div>
+
+          <div className="admin-form-row">
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">Noticia asociada (opcional)</label>
+              <select
+                className="admin-select"
+                value={form.noticia || ""}
+                onChange={(e) => setForm({ ...form, noticia: e.target.value })}
+              >
+                <option value="">(Sin noticia)</option>
+                {noticias.map(n => (
+                  <option key={n.id} value={n.id}>#{n.id} - {n.titulo}</option>
+                ))}
+              </select>
+            </div>
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">Evento asociado (opcional)</label>
+              <select
+                className="admin-select"
+                value={form.evento || ""}
+                onChange={(e) => setForm({ ...form, evento: e.target.value })}
+              >
+                <option value="">(Sin evento)</option>
+                {eventos.map(ev => (
+                  <option key={ev.id} value={ev.id}>#{ev.id} - {ev.titulo}</option>
+                ))}
+              </select>
             </div>
           </div>
 
