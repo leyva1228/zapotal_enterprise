@@ -227,28 +227,31 @@ export default function Login() {
         className="relative md:w-1/2 flex items-center justify-center py-16 md:py-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/img/login/Union-fondo login.jpg')" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-950/80 via-primary-900/70 to-primary-800/60" />
-        <div className="relative z-10 text-center px-6 max-w-md">
-          <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
-            <img src="/img/Logo-comunidad/Logo-principal.png" alt="Escudo" className="h-20 w-20" />
+        <div className="absolute inset-0 bg-black/30" />
+          <div className="relative z-10 text-center px-6 max-w-md">
+            <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
+              <img src="/img/Logo-comunidad/Logo-principal.png" alt="Escudo" className="h-20 w-20" />
+            </div>
+            <h1
+              className="font-display text-3xl md:text-4xl font-bold text-white leading-tight"
+              style={{ textShadow: "0 0 8px rgba(184, 150, 62, 0.85), 0 1px 3px rgba(0, 0, 0, 0.15)" }}
+            >
+              Comunidad Campesina<br />Niño Dios de Zapotal
+            </h1>
+            {/* Adorno con el oro del navbar (--nb-dorado / --nb-dorado-light) */}
+            <div className="my-5 flex items-center justify-center gap-3 text-white/80">
+              <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
+              <FaLeaf style={{ color: "var(--nb-dorado)" }} />
+              <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
+            </div>
+            <p className="text-white/85 text-base leading-relaxed">
+              Plataforma digital institucional para la gestion eficiente y transparente.
+            </p>
+            <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm border border-white/20">
+              <FaShieldAlt className="text-primary-300" />
+              <span>Acceso seguro y autorizado</span>
+            </div>
           </div>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-white leading-tight">
-            Comunidad Campesina<br />Niño Dios de Zapotal
-          </h1>
-          {/* Adorno con el oro del navbar (--nb-dorado / --nb-dorado-light) */}
-          <div className="my-5 flex items-center justify-center gap-3 text-white/80">
-            <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
-            <FaLeaf style={{ color: "var(--nb-dorado)" }} />
-            <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
-          </div>
-          <p className="text-white/85 text-base leading-relaxed">
-            Plataforma digital institucional para la gestion eficiente y transparente.
-          </p>
-          <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm border border-white/20">
-            <FaShieldAlt className="text-primary-300" />
-            <span>Acceso seguro y autorizado</span>
-          </div>
-        </div>
       </aside>
 
       {/* Form */}
@@ -261,8 +264,18 @@ export default function Login() {
               <FaLeaf />
               <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
             </div>
-            <p className="text-sm text-primary-700 uppercase tracking-wider font-semibold">Bienvenido</p>
-            <h2 className="font-display text-3xl font-bold text-primary-800 mt-1">Iniciar Sesion</h2>
+            <p
+              className="text-sm uppercase tracking-wider font-semibold"
+              style={{ color: "var(--nb-dorado, #b8963e)" }}
+            >
+              Bienvenido
+            </p>
+            <h2
+              className="font-display text-3xl font-bold mt-1"
+              style={{ color: "var(--nb-verde, #1a3209)" }}
+            >
+              Iniciar Sesion
+            </h2>
             <hr className="my-3 border-t" style={{ borderColor: "var(--nb-dorado-light)" }} />
             <p className="text-mute text-sm">
               Ingresa tus credenciales para acceder a la plataforma institucional.
@@ -341,11 +354,16 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading || bloqueado}
-            className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md font-semibold text-sm transition-colors ${
+            className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md font-semibold text-sm border-2 transition-all duration-300 shadow-md ${
               loading || bloqueado
-                ? 'bg-primary-300 text-white cursor-not-allowed'
-                : 'bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900'
+                ? 'cursor-not-allowed opacity-60 border-[var(--nb-dorado)] bg-[var(--nb-verde)] text-white'
+                : 'border-[var(--nb-dorado)] bg-gradient-to-br from-[var(--nb-verde)] to-[var(--nb-verde-claro)] text-white hover:from-[var(--nb-dorado)] hover:to-[var(--nb-dorado-light)] hover:text-[var(--nb-verde)] hover:border-[var(--nb-verde)] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--nb-dorado-light)] focus-visible:ring-offset-2'
             }`}
+            style={{
+              boxShadow: loading || bloqueado
+                ? undefined
+                : '0 10px 24px rgba(26, 50, 9, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
+            }}
           >
             {loading ? <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : (
               <>
@@ -364,7 +382,11 @@ export default function Login() {
 
           <p className="text-center mt-5 text-sm text-mute">
             ¿No tienes una cuenta?{' '}
-            <Link to="/registro" className="text-primary-700 hover:text-primary-900 font-semibold inline-flex items-center gap-1">
+            <Link
+              to="/registro"
+              className="font-semibold inline-flex items-center gap-1 transition-colors"
+              style={{ color: "var(--nb-verde, #1a3209)" }}
+            >
               <FaUserPlus /> Registrate aqui
             </Link>
           </p>

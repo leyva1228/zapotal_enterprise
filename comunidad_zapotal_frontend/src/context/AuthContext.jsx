@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { SessionStore } from '../api';
+import { SessionStore, API_BASE_URL } from '../api';
 
 const AuthContext = createContext(null);
 
@@ -42,9 +42,8 @@ export function AuthProvider({ children }) {
     try {
       const refresh = SessionStore.getRefresh();
       if (refresh) {
-        // Construir URL absoluta a partir de la base del API (definida en api.js).
-        const base = (import.meta.env.VITE_API_URL) || 'http://127.0.0.1:8000/api/v1';
-        await fetch(`${base}/token/blacklist/`,
+        // URL base del API resuelta en api.js (mismo helper que usa axios).
+        await fetch(`${API_BASE_URL}/token/blacklist/`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

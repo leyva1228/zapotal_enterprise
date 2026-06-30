@@ -117,7 +117,7 @@
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 100%);
+  background: linear-gradient(135deg, var(--nb-verde, #1a3209) 0%, var(--nb-verde-claro, #3a6019) 100%);
 }
 
 /* Imagen real (cuando hay URL) */
@@ -142,7 +142,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0a3d1f 0%, #1a7a42 60%, #0a3d1f 100%);
+  background: linear-gradient(135deg, var(--nb-verde, #1a3209) 0%, var(--nb-verde-claro, #3a6019) 60%, var(--nb-verde, #1a3209) 100%);
   color: #fff;
   font-family: var(--au-font-serif);
   font-size: 64px;
@@ -170,7 +170,7 @@
   transform: translateX(-50%);
   width: 36px;
   height: 3px;
-  background: #b8972a;
+  background: var(--nb-dorado, var(--nb-dorado, #b8963e));
   border-radius: 2px;
 }
 

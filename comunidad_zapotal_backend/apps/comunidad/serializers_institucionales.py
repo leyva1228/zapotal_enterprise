@@ -39,6 +39,7 @@ class ConfiguracionComunidadSerializer(serializers.ModelSerializer):
             'historia_etiqueta', 'historia_hero_titulo',
             'historia_hero_subtitulo', 'historia_seccion_titulo',
             'historia_timeline_titulo',
+            'contacto_casa_comunal_descripcion', 'contacto_denuncias_descripcion',
             'actualizado_por', 'actualizado_por_email',
             'actualizado_en',
         ]

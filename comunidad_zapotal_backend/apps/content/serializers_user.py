@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Favorito, SolicitudBaja, NovedadVista
+from .models import Favorito, SolicitudBaja
 
 
 class FavoritoSerializer(serializers.ModelSerializer):
@@ -46,10 +46,3 @@ class SolicitudBajaSerializer(serializers.ModelSerializer):
         if len(value.strip()) < 20:
             raise serializers.ValidationError('El motivo debe tener al menos 20 caracteres.')
         return value.strip()
-
-
-class NovedadVistaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = NovedadVista
-        fields = ['id', 'usuario', 'noticia', 'evento', 'fecha_vista']
-        read_only_fields = ['usuario', 'fecha_vista']

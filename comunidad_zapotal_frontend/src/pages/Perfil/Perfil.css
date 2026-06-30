@@ -1306,3 +1306,47 @@
     gap: 0.25rem;
   }
 }
+
+/* Card de Preferencias de cookies (tab Seguridad) - hardening 2026-06-29 */
+.perfil-cookies-card .perfil-section-title h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+}
+.perfil-cookies-summary {
+  background: #f9fafb;
+  border: 1px solid #e0e6e2;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 8px 0 14px;
+  font-size: 14px;
+  color: #1a2620;
+  line-height: 1.5;
+}
+.perfil-cookies-date {
+  color: #6b7c72;
+  font-size: 12px;
+}
+.perfil-cookies-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.perfil-cookies-actions .perfil-btn-primary,
+.perfil-cookies-actions .perfil-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+@media (max-width: 600px) {
+  .perfil-cookies-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .perfil-cookies-actions .perfil-btn-primary,
+  .perfil-cookies-actions .perfil-btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}

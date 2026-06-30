@@ -1,7 +1,13 @@
+/* Banner de cookies (hardened 2026-06-29).
+ * z-index elevado a 10000 para quedar siempre por encima del LoaderOverlay (z 900),
+ * del Navbar (z 1000-1100) y del ToastCenter (z 2000). El contenedor exterior
+ * mantiene pointer-events: none para no bloquear el scroll de la pagina; el
+ * interior recibe los eventos.
+ */
 .bc-banner {
   position: fixed;
   bottom: 16px; left: 16px; right: 16px;
-  z-index: 9999;
+  z-index: 10000;
   display: flex; justify-content: center;
   pointer-events: none;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;

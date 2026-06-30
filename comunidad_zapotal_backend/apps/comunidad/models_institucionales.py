@@ -130,6 +130,17 @@ class ConfiguracionComunidad(models.Model):
         'Galeria: subtitulo', blank=True, default='',
     )
 
+    # Contacto: parrafos editables que aparecen en la columna izquierda
+    # de /contacto (Casa Comunal y Canal de Denuncias).
+    contacto_casa_comunal_descripcion = models.TextField(
+        'Contacto: descripcion Casa Comunal', blank=True, default='',
+        help_text='Parrafo que aparece bajo el titulo "Casa Comunal" en /contacto.',
+    )
+    contacto_denuncias_descripcion = models.TextField(
+        'Contacto: descripcion Canal de Denuncias', blank=True, default='',
+        help_text='Parrafo que aparece bajo el titulo "Canal de Denuncias" en /contacto.',
+    )
+
     historia_etiqueta = models.CharField(
         'Nuestra Historia: etiqueta superior', max_length=50,
         default='Origen comunal',
@@ -421,15 +432,16 @@ class TextoSeccionInterna(models.Model):
     de verdad (single source of truth).
     """
     SECCIONES = [
-        ('CONOCENOS_HERO',     'Conocenos - Hero'),
-        ('CONOCENOS_MV',       'Conocenos - Mision y Vision'),
-        ('CONOCENOS_UBICACION','Conocenos - Ubicacion'),
-        ('CONOCENOS_CTA',      'Conocenos - CTA Final'),
-        ('MARCOLOCAL_HERO',    'Marco Legal - Hero'),
-        ('GALERIA_HERO',       'Galeria - Hero'),
-        ('HISTORIA_HERO',      'Nuestra Historia - Hero'),
-        ('HISTORIA_CONTENIDO', 'Nuestra Historia - Contenido'),
-        ('HISTORIA_TIMELINE',  'Nuestra Historia - Timeline'),
+        ('CONOCENOS_HERO',      'Conocenos - Hero'),
+        ('CONOCENOS_MV',        'Conocenos - Mision y Vision'),
+        ('CONOCENOS_UBICACION', 'Conocenos - Ubicacion'),
+        ('CONOCENOS_CTA',       'Conocenos - CTA Final'),
+        ('MARCOLOCAL_HERO',     'Marco Legal - Hero'),
+        ('GALERIA_HERO',        'Galeria - Hero'),
+        ('HISTORIA_HERO',       'Nuestra Historia - Hero'),
+        ('HISTORIA_CONTENIDO',  'Nuestra Historia - Contenido'),
+        ('HISTORIA_TIMELINE',   'Nuestra Historia - Timeline'),
+        ('AUTORIDADES_COMITES', 'Autoridades - Comites Especializados'),
     ]
     TIPO_CHOICES = [
         ('TITULO',  'Titulo'),

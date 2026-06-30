@@ -780,38 +780,24 @@ def _generar_numero_boleta(donacion):
 def _enviar_email_confirmacion(donacion):
     """Envia email con la boleta de donacion al donante tras pago aprobado.
 
-    Estrategia de dos niveles:
-    1) Si el microservicio PDF worker (Spring Boot) esta configurado
-       via PDF_WORKER_URL, lo encolamos en background con @Async.
-       Django responde en <100ms con un job_id.
-    2) Fallback: si no hay worker configurado, generamos el PDF + email
-       sincronamente con BoletaPDFService local (xhtml2pdf).
+    Genera el PDF + email sincronamente con BoletaPDFService local (xhtml2pdf).
     """
     email_dest = donacion.email_display
     if not email_dest:
         logger.warning("Donacion %s aprobada sin email, no se envia boleta.", donacion.id)
         return
 
-    # Intentar delegar al PDF worker (Spring Boot) primero
-    from apps.donaciones.services import PdfWorkerClient, BoletaPDFService
-    job_id = PdfWorkerClient.encolar_boleta(donacion)
-    if job_id:
-        # El worker procesara en background y enviara el email.
-        return
-
-    # Fallback: procesar localmente (modo compatibilidad para dev sin worker)
+    from apps.donaciones.services import BoletaPDFService
     numero_boleta = _generar_numero_boleta(donacion)
     pdf_bytes = BoletaPDFService.generar_pdf(donacion, numero_boleta)
     if not pdf_bytes:
-        logger.error("No se pudo generar el PDF local ni delegar al worker")
+        logger.error("No se pudo generar el PDF local para donacion %s", donacion.id)
         return
     _enviar_email_con_pdf_local(donacion, numero_boleta, pdf_bytes)
 
 
 def _enviar_email_con_pdf_local(donacion, numero_boleta, pdf_bytes):
-    """Fallback local: envia el email con el PDF adjunto cuando el
-    microservicio PDF worker (Spring Boot) no esta disponible.
-    Usado solo en desarrollo o si PDF_WORKER_URL no esta configurado.
+    """Envia el email con el PDF adjunto al donante.
     """
     from django.core.mail import EmailMultiAlternatives
     from django.template.loader import render_to_string

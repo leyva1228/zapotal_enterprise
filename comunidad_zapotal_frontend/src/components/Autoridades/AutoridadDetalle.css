@@ -54,7 +54,7 @@
 .ad-header {
   position: relative;
   padding: 24px 24px 28px;
-  background: linear-gradient(135deg, #0a3d1f 0%, #0f5c2e 60%, #1a7a42 100%);
+  background: linear-gradient(135deg, var(--nb-verde, #1a3209) 0%, var(--nb-verde-med, #243f0f) 60%, var(--nb-verde-claro, #3a6019) 100%);
   color: #fff;
 }
 
@@ -109,7 +109,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a7a42 0%, #0f5c2e 100%);
+  background: linear-gradient(135deg, var(--nb-verde-claro, #3a6019) 0%, var(--nb-verde-med, #243f0f) 100%);
 }
 
 .ad-iniciales {
@@ -128,7 +128,7 @@
   transform: translateX(-50%);
   width: 28px;
   height: 2px;
-  background: #b8972a;
+  background: var(--nb-dorado, var(--nb-dorado, #b8963e));
 }
 
 .ad-header-info { flex: 1; min-width: 0; }
@@ -145,7 +145,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #f4d76e;
+  color: var(--nb-dorado-light, #d4ae5a);
   margin-bottom: 8px;
 }
 
@@ -197,11 +197,11 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #0a3d1f;
+  color: var(--nb-verde, #1a3209);
 }
 
 .ad-section h3 svg {
-  color: #b8972a;
+  color: var(--nb-dorado, var(--nb-dorado, #b8963e));
   font-size: 14px;
 }
 
@@ -254,7 +254,7 @@
   font-size: 14px;
 }
 
-.ad-tiempo-restante svg { color: #b45309; font-size: 18px; }
+.ad-tiempo-restante svg { color: var(--nb-dorado, #b8963e); font-size: 18px; }
 
 .ad-tiempo-restante strong { font-weight: 800; }
 
@@ -263,11 +263,11 @@
   padding: 8px 12px;
   background: #ecfdf5;
   border-radius: 6px;
-  color: #065f46;
+  color: var(--nb-verde-med, #243f0f);
   font-size: 13px;
 }
 
-.ad-proxima strong { color: #047857; }
+.ad-proxima strong { color: var(--nb-verde, #1a3209); }
 
 .ad-contacto {
   display: inline-flex;
@@ -275,7 +275,7 @@
   gap: 8px;
   padding: 10px 14px;
   background: #f0f9f4;
-  color: #0a3d1f;
+  color: var(--nb-verde, #1a3209);
   text-decoration: none;
   border-radius: 8px;
   font-size: 14px;
@@ -286,9 +286,9 @@
 }
 
 .ad-contacto:hover {
-  background: #0a3d1f;
+  background: var(--nb-verde, #1a3209);
   color: #fff;
-  border-color: #0a3d1f;
+  border-color: var(--nb-verde, #1a3209);
 }
 
 .ad-partida {
@@ -298,14 +298,14 @@
   gap: 8px;
   padding: 10px 14px;
   background: #fef9e7;
-  border-left: 4px solid #b8972a;
+  border-left: 4px solid var(--nb-dorado, var(--nb-dorado, #b8963e));
   border-radius: 6px;
   font-size: 14px;
   color: #4a3b00;
   word-break: break-all;
 }
 
-.ad-partida svg { color: #b8972a; flex-shrink: 0; }
+.ad-partida svg { color: var(--nb-dorado, var(--nb-dorado, #b8963e)); flex-shrink: 0; }
 
 /* RESPONSIVE */
 @media (max-width: 480px) {

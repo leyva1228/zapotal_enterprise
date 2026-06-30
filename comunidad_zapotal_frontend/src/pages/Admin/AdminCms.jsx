@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { FaEdit, FaSave, FaTimes, FaFileAlt, FaRedo } from "react-icons/fa";
+import { FaEdit, FaSave, FaTimes, FaFileAlt, FaRedo, FaExclamationTriangle } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
 
@@ -53,6 +53,21 @@ export default function AdminCms() {
     <div>
       {error && <div className="admin-error">{error}</div>}
       {ok && <div className="admin-success">{ok}</div>}
+
+      <div className="admin-banner admin-banner--warn mt-4">
+        <FaExclamationTriangle />
+        <div>
+          <strong>Esta seccion esta deprecada.</strong>{' '}
+          El contenido aqui (<code>ContenidoEstatico</code> de <code>apps.cms</code>) ya no se muestra en
+          la UI publica. Usa{' '}
+          <a href="/admin/institucional" style={{ textDecoration: 'underline', fontWeight: 600 }}>
+            <code>/admin/institucional</code>
+          </a>{' '}
+          en su lugar: ahi encontraras Configuracion, Textos Internos, Marco Legal, Paginas Legales,
+          Hitos Historicos, Galeria y Categorias. Este panel se conserva solo como respaldo historico
+          y se eliminara en una version futura.
+        </div>
+      </div>
 
       <div className="admin-card mt-4">
         <div className="admin-card__header">

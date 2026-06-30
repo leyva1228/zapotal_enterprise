@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     IniciarDonacionView,
     ProcesarPagoView,
+    ProcesarPagoSimuladoView,
     DonacionesWebhookView,
     MisDonacionesView,
     DonacionDetailView,
@@ -10,6 +11,7 @@ from .views import (
     AdminDonacionesListView,
     AdminReembolsarDonacionView,
     AdminCancelarDonacionView,
+    DescargarBoletaPDFView,
 )
 
 app_name = 'donaciones'
@@ -18,6 +20,8 @@ urlpatterns = [
     # Publicos
     path('iniciar/', IniciarDonacionView.as_view(), name='iniciar'),
     path('procesar/', ProcesarPagoView.as_view(), name='procesar'),
+    # Loop 3.5: simulacion de pago desde modal del frontend
+    path('procesar-simulado/', ProcesarPagoSimuladoView.as_view(), name='procesar_simulado'),
     path('webhook/', DonacionesWebhookView.as_view(), name='webhook'),
     path('mis-donaciones/', MisDonacionesView.as_view(), name='mis_donaciones'),
     path('estadisticas/', EstadisticasDonacionesView.as_view(), name='estadisticas'),
@@ -29,4 +33,6 @@ urlpatterns = [
 
     # Detalle (ultimo porque captura todo lo no listado)
     path('<int:pk>/', DonacionDetailView.as_view(), name='detalle'),
+    # Descarga de boleta PDF (autenticado, dueno o admin)
+    path('<int:pk>/boleta-pdf/', DescargarBoletaPDFView.as_view(), name='boleta_pdf'),
 ]

@@ -1,0 +1,5 @@
+# Cloudflare Pages - SPA routing
+# Cualquier ruta desconocida debe servir el index.html para que React Router
+# tome el control del routing en el cliente.
+# Tambien permite assets /api/* (no se usa, el backend vive en api.comunidadzapotal.org).
+/*    /index.html   200

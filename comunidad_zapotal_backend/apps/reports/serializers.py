@@ -72,10 +72,37 @@ class LibroReclamacionCreateSerializer(serializers.ModelSerializer):
         v = (v or '').strip()
         if not v:
             raise serializers.ValidationError('El correo es obligatorio.')
+        request = self.context.get('request') if self.context else None
+        # V2.2: si el usuario esta autenticado (comunero / admin), confiar
+        # en su email: ya fue validado en el flujo de registro con
+        # ZeroBounce. Evitamos consumir un credito por cada reclamo
+        # enviado por un usuario logueado.
+        if request is not None and getattr(request.user, 'is_authenticated', False):
+            if self.context is not None:
+                self.context['email_validacion_zb'] = {
+                    'email': v, 'status': 'valid', 'sub_status': '',
+                    'es_valido': True, 'motivo': '',
+                    'did_you_mean': '', 'modo_sandbox': False,
+                    'cache': 'auth-bypass',
+                }
+            return v
+        # V2.1: si el frontend ya valido contra ZB hace menos de 5 min
+        # (header X-ZB-Validated), confiar en el resultado y no
+        # volver a consumir un credito de ZeroBounce.
+        if request is not None and self._zb_ya_validado(request, v):
+            from apps.comunidad.zerobounce import ResultadoValidacion
+            resultado = ResultadoValidacion(
+                email=v, status='valid', sub_status='', es_valido=True,
+                motivo='', did_you_mean='', modo_sandbox=False,
+            )
+            if self.context is not None:
+                self.context['email_validacion_zb'] = {
+                    **resultado.to_dict(), 'cache': 'frontend',
+                }
+            return v
         # Validacion ZeroBounce (fail-open).
         from apps.comunidad.zerobounce import validar_email as zb_validar
         ip = None
-        request = self.context.get('request') if self.context else None
         if request is not None:
             ip = (
                 request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
@@ -90,3 +117,24 @@ class LibroReclamacionCreateSerializer(serializers.ModelSerializer):
                 mensaje = f'{mensaje} Sugerencia: {resultado.did_you_mean}.'
             raise serializers.ValidationError(mensaje)
         return v
+
+    def _zb_ya_validado(self, request, email):
+        """Confia en la validacion del frontend si fue reciente (<5 min)
+        y el email coincide. Formato header:
+        ``X-ZB-Validated: <email>|<iso8601>``
+        """
+        from datetime import datetime, timezone, timedelta
+        raw = request.META.get('HTTP_X_ZB_VALIDATED', '')
+        if not raw or '|' not in raw:
+            return False
+        try:
+            head_email, ts = raw.split('|', 1)
+            if head_email.strip().lower() != email.lower():
+                return False
+            cuando = datetime.fromisoformat(ts.strip())
+            if cuando.tzinfo is None:
+                cuando = cuando.replace(tzinfo=timezone.utc)
+            ahora = datetime.now(timezone.utc)
+            return (ahora - cuando) < timedelta(minutes=5)
+        except (ValueError, TypeError):
+            return False

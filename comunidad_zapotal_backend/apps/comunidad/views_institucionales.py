@@ -133,7 +133,67 @@ class ConfiguracionComunidadView(generics.RetrieveUpdateAPIView):
 
     def perform_update(self, serializer):
         # Loop 1 v2: registrar quien modifico.
-        serializer.save(actualizado_por=self.request.user)
+        # Sanitizar historia_html: bloquear <script>, on*=, javascript:.
+        # Best-effort: usa bleach si esta disponible; si no, fallback a strip manual.
+        instance = serializer.save(actualizado_por=self.request.user)
+        if instance.historia_html:
+            instance.historia_html = _sanitize_html(instance.historia_html)
+            instance.save(update_fields=['historia_html'])
+
+
+# Tags y atributos permitidos para campos HTML/Markdown editables desde el
+# admin institucional. Es una lista pequena y conservadora para evitar XSS.
+ALLOWED_HTML_TAGS = [
+    'p', 'br', 'strong', 'em', 'u', 'b', 'i',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'ol', 'li',
+    'a', 'img',
+    'blockquote', 'hr', 'span', 'div',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+]
+ALLOWED_HTML_ATTRS = {
+    'a': ['href', 'title', 'target', 'rel'],
+    'img': ['src', 'alt', 'title', 'width', 'height'],
+    'span': ['class'],
+    'div': ['class'],
+    'p': ['class'],
+    'th': ['scope', 'colspan', 'rowspan'],
+    'td': ['colspan', 'rowspan'],
+}
+
+
+def _sanitize_html(html_str):
+    """Sanitiza HTML para campos editables del admin institucional.
+
+    Usa ``bleach`` si esta disponible (recomendado en requirements).
+    Si no, hace un fallback con regex que bloquea <script>, javascript:,
+    y atributos on*=. NO es perfecto, pero reduce el riesgo de XSS.
+    """
+    if not html_str:
+        return html_str
+    try:
+        import bleach
+        cleaned = bleach.clean(
+            html_str,
+            tags=ALLOWED_HTML_TAGS,
+            attributes=ALLOWED_HTML_ATTRS,
+            protocols=['http', 'https', 'mailto', 'tel'],
+            strip=True,
+        )
+        # Forzar rel="noopener noreferrer" en <a target="_blank"> para evitar tabnabbing.
+        cleaned = cleaned.replace(' target="_blank"', ' target="_blank" rel="noopener noreferrer"')
+        return cleaned
+    except ImportError:
+        # Fallback sin bleach: strip basico.
+        import re
+        # Quitar <script>...</script> y su contenido.
+        cleaned = re.sub(r'<script\b[^>]*>.*?</script>', '', html_str, flags=re.DOTALL | re.IGNORECASE)
+        # Quitar atributos on* (onclick, onerror, onload, etc).
+        cleaned = re.sub(r'\s+on\w+\s*=\s*"[^"]*"', '', cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s+on\w+\s*=\s*'[^']*'", '', cleaned, flags=re.IGNORECASE)
+        # Quitar href="javascript:..." y similares.
+        cleaned = re.sub(r'(href|src)\s*=\s*"javascript:[^"]*"', '', cleaned, flags=re.IGNORECASE)
+        return cleaned
 
 
 class MarcoLegalItemViewSet(viewsets.ModelViewSet):
@@ -152,12 +212,39 @@ class PaginaLegalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
 
-class PaginaLegalDetailView(generics.RetrieveAPIView):
-    """Endpoint publico para una pagina legal por slug."""
-    serializer_class = PaginaLegalPublicSerializer
+class PaginaLegalDetailView(generics.RetrieveUpdateAPIView):
+    """Endpoint publico GET + admin PUT/PATCH por slug.
+
+    GET publico: usa PaginaLegalPublicSerializer (campos reducidos, solo
+    lectura) para no exponer campos administrativos como `actualizado_por`.
+    PUT/PATCH admin: usa PaginaLegalSerializer (todos los campos editables).
+
+    El admin puede usar este endpoint para editar Terminos, Privacidad
+    y Cookies sin necesidad de conocer el PK numerico (usa el slug
+    estable 'terminos' / 'privacidad' / 'cookies').
+
+    Coexiste con PaginaLegalViewSet (que usa PK y acepta todo el CRUD
+    del admin via /paginas-legales/<pk>/).
+    """
     lookup_field = 'slug'
+    permission_classes = [IsAdminOrReadOnly]
+    http_method_names = ['get', 'put', 'patch', 'head', 'options']
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return PaginaLegalSerializer
+        return PaginaLegalPublicSerializer
 
     def get_queryset(self):
+        # GET publico: solo paginas activas.
+        # GET admin: cualquier pagina (para que el admin pueda editarla).
+        # PUT/PATCH admin: cualquier pagina (admin puede incluso reactivar una
+        # pagina inactiva en la misma operacion).
+        request = self.request
+        if request.method in ('PUT', 'PATCH'):
+            return PaginaLegal.objects.all()
+        if request.user and request.user.is_authenticated and request.user.is_staff:
+            return PaginaLegal.objects.all()
         return PaginaLegal.objects.filter(activo=True)
 
 

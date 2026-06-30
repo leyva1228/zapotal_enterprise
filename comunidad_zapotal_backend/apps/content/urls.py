@@ -9,7 +9,6 @@ from .views_user import (
     FavoritoViewSet,
     solicitar_baja, cancelar_baja,
     listar_solicitudes_baja, aprobar_baja, rechazar_baja,
-    listar_novedades, marcar_novedad_vista,
     buscar_global,
     contador_no_leidas, marcar_todas_leidas,
 )
@@ -66,8 +65,6 @@ urlpatterns = router.urls + [
     path('solicitudes-baja/', listar_solicitudes_baja, name='listar_solicitudes_baja'),
     path('solicitudes-baja/<int:solicitud_id>/aprobar/', aprobar_baja, name='aprobar_baja'),
     path('solicitudes-baja/<int:solicitud_id>/rechazar/', rechazar_baja, name='rechazar_baja'),
-    path('novedades/', listar_novedades, name='listar_novedades'),
-    path('novedades/<str:tipo>/<int:item_id>/marcar-vista/', marcar_novedad_vista, name='marcar_novedad_vista'),
     path('buscar/', buscar_global, name='buscar_global'),
     path('notificaciones/contador-no-leidas/', contador_no_leidas, name='contador_no_leidas'),
     path('notificaciones/marcar-todas-leidas/', marcar_todas_leidas, name='marcar_todas_leidas'),

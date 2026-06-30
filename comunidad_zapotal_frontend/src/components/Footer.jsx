@@ -1,8 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { FaCookieBite } from "react-icons/fa";
+import useBannerCookies from "../hooks/useBannerCookies";
 import "./Footer.css";
 
 function Footer() {
+  const { open } = useBannerCookies();
+
   return (
     <footer className="footer">
       <div className="footer-glow" />
@@ -52,6 +56,16 @@ function Footer() {
             <li><Link to="/terminos">Terminos y Condiciones</Link></li>
             <li><Link to="/privacidad">Politica de Privacidad</Link></li>
             <li><Link to="/cookies">Politica de Cookies</Link></li>
+            <li>
+              <button
+                type="button"
+                className="footer-admin-cookies"
+                onClick={() => open('footer')}
+                aria-label="Abrir preferencias de cookies"
+              >
+                <FaCookieBite className="footer-icon" /> Administrar cookies
+              </button>
+            </li>
           </ul>
         </div>
 

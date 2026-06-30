@@ -135,7 +135,7 @@ function Navbar() {
               alt="Logo Comunidad Campesina Niño Dios de Zapotal"
             />
             <div>
-              <strong>Comunidad Campesina Niño Dios de Zapotal</strong>
+              <strong>Comunidad Campesina <br/> Niño Dios de Zapotal</strong>
             </div>
           </Link>
 
@@ -304,7 +304,7 @@ function Navbar() {
             className="drawer-logo"
           />
           <div className="drawer-brand">
-            <p className="drawer-title">Comunidad Campesina Niño Dios de Zapotal</p>
+            <p className="drawer-title">Comunidad Campesina <br/>Niño Dios de Zapotal</p>
             <p className="drawer-sub">Portal Oficial</p>
           </div>
           <button

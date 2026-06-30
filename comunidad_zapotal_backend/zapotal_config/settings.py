@@ -343,14 +343,6 @@ DEFAULT_FROM_EMAIL = config(
     default='Comunidad Zapotal <noreply@comunidadzapotal.com>',
 )
 
-# ===== Microservicio PDF worker (Spring Boot) =====
-# Si PDF_WORKER_URL esta configurado, Django delega la generacion del PDF
-# y el envio del email al worker via HTTP. Si no, hace fallback local
-# con xhtml2pdf + django-anymail (compatibilidad con dev).
-# La API key debe coincidir con INTERNAL_API_KEY del PDF worker.
-PDF_WORKER_URL = config('PDF_WORKER_URL', default='')
-INTERNAL_API_KEY = config('INTERNAL_API_KEY', default='')
-
 # Backend de email:
 # - Si RESEND_API_KEY esta configurado: usar django-anymail (HTTP API, robusto).
 # - Si no, fallback a SMTP (config manual).

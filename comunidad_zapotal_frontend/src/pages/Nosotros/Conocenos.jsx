@@ -3,6 +3,7 @@ import { FaBullseye, FaEye, FaHandHoldingHeart, FaMapMarkerAlt, FaImages } from 
 import * as FaIcons from "react-icons/fa";
 import useConfiguracion from "../../hooks/useConfiguracion";
 import useGaleria from "../../hooks/useGaleria";
+import { useTextosSeccion } from "../../hooks/useTextosSeccion";
 import "./Conocenos.css";
 
 function getIcon(name) {
@@ -13,6 +14,13 @@ function getIcon(name) {
 function Conocenos() {
   const { data: cfg, loading: cfgLoading } = useConfiguracion();
   const { data: galeria } = useGaleria('COMUNIDAD');
+  // Los titulos "Mision", "Vision", "Nuestros valores" ahora son editables
+  // desde el panel admin (seccion CONOCENOS_MV en TextoSeccionInterna).
+  // Si la BD esta vacia, fallback a los textos canonicos.
+  const { data: textosMV } = useTextosSeccion({ seccion: 'CONOCENOS_MV' });
+  const tituloMision = textosMV.find(t => t.key === 'conocenos.mv.titulo')?.contenido || 'Mision';
+  const tituloVision = textosMV.find(t => t.key === 'conocenos.mv.vision.titulo')?.contenido || 'Vision';
+  const tituloValores = textosMV.find(t => t.key === 'conocenos.valores.titulo')?.contenido || 'Nuestros valores';
 
   // Helpers: textos que antes estaban hardcoded en el JSX. Ahora
   // vienen de la BD (modelo ConfiguracionComunidad, campos conocenos_*).
@@ -43,14 +51,14 @@ function Conocenos() {
         {cfg?.mision && (
           <div className="mv-card">
             <FaBullseye className="mv-icon" />
-            <h2>Mision</h2>
+            <h2>{tituloMision}</h2>
             <p>{cfg.mision}</p>
           </div>
         )}
         {cfg?.vision && (
           <div className="mv-card">
             <FaEye className="mv-icon" />
-            <h2>Vision</h2>
+            <h2>{tituloVision}</h2>
             <p>{cfg.vision}</p>
           </div>
         )}
@@ -59,7 +67,7 @@ function Conocenos() {
       {/* VALORES - viene de ConfiguracionComunidad.valores (JSONField) */}
       {cfg?.valores && cfg.valores.length > 0 && (
         <section className="conocenos-valores">
-          <h2>Nuestros valores</h2>
+          <h2>{tituloValores}</h2>
           <div className="valores-grid">
             {cfg.valores.map((v, i) => {
               const Icon = getIcon(v.icono);

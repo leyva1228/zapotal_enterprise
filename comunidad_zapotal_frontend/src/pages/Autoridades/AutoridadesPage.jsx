@@ -10,6 +10,7 @@ import {
 import api, { extractList } from "../../api";
 import AutoridadDetalle from "../../components/Autoridades/AutoridadDetalle";
 import useConfiguracion from "../../hooks/useConfiguracion";
+import { useTextosSeccion } from "../../hooks/useTextosSeccion";
 import PageLoader from "../../components/common/PageLoader/PageLoader";
 import { useTaskLifecycle } from "../../context/LoaderContext";
 import "./AutoridadesPage.css";
@@ -77,8 +78,13 @@ function Tarjeta({ autoridad, onClick }) {
   const vencePronto = autoridad.tiempo_restante != null
     && autoridad.tiempo_restante > 0
     && autoridad.tiempo_restante <= 90;
+
   return (
-    <button type="button" className="au-card" onClick={() => onClick(autoridad)}>
+    <button
+      type="button"
+      className="au-card h-full min-h-[100%]"
+      onClick={() => onClick(autoridad)}
+    >
       <div className="au-card-foto">
         {esTradicional && (
           <span className="au-card-cargo-tradicional" title="Cargo tradicional andino">
@@ -100,7 +106,7 @@ function Tarjeta({ autoridad, onClick }) {
           <SexoIcon sexo={autoridad.sexo} />
         </h3>
         {autoridad.nombre_tradicional && (
-          <p className="au-card-tradic" style={{ fontSize: 12, color: "#b8972a", fontStyle: "italic" }}>
+          <p className="au-card-tradic" style={{ fontSize: 12, color: "var(--nb-dorado, #b8963e)", fontStyle: "italic" }}>
             {autoridad.nombre_tradicional}
           </p>
         )}
@@ -155,7 +161,10 @@ function CalendarioElectoral({ autoridades }) {
   const nivelLabel = NIVELES.find((n) => n.dbField === proxima.nivel)?.label || proxima.nivel;
 
   return (
-    <section className="au-calendario" aria-labelledby="calendario-title">
+    <section
+      className="au-calendario grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.9fr)] lg:items-center"
+      aria-labelledby="calendario-title"
+    >
       <div>
         <h2 id="calendario-title" className="au-calendario__title">
           <FaClock /> Calendario Electoral
@@ -173,7 +182,7 @@ function CalendarioElectoral({ autoridades }) {
         <div className="au-calendario__dias">{dias}</div>
         <div className="au-calendario__dias-label">dias</div>
         <div className="au-calendario__fecha">{fmtFecha(proxima.fin)}</div>
-        <div style={{ fontSize: 13, marginTop: 4, opacity: 0.8 }}>
+        <div className="mt-1 text-[13px] opacity-80">
           {proxima.cargo} ({nivelLabel})
         </div>
       </div>
@@ -181,105 +190,29 @@ function CalendarioElectoral({ autoridades }) {
   );
 }
 
-function Organigrama({ cfg }) {
-  return (
-    <section className="au-organigrama" aria-labelledby="organigrama-title">
-      <h2 id="organigrama-title" className="au-comites__title">
-        <FaUsers /> Estructura Organica
-      </h2>
-      <p className="au-comites__subtitle">
-        Organizacion de los tres niveles de gobierno que coexisten en el ambito de la Comunidad.
-      </p>
-      <div className="au-organigrama__contenedor">
-        <svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img"
-             aria-label={`Organigrama de ${cfg?.nombre_oficial || 'la Comunidad'}`}>
-          <g>
-            <rect x="280" y="20" width="240" height="50" rx="8" fill="#0a3d1f" />
-            <text x="400" y="50" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="700">
-              Asamblea General
-            </text>
-            <text x="400" y="66" textAnchor="middle" fill="#fff" fontSize="10">
-              (Todos los comuneros)
-            </text>
-          </g>
-          <line x1="400" y1="70" x2="400" y2="95" stroke="#0a3d1f" strokeWidth="2" />
-          <g>
-            <rect x="40" y="100" width="200" height="80" rx="8" fill="#1a7a42" />
-            <text x="140" y="125" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700">
-              Directiva Comunal
-            </text>
-            <text x="140" y="145" textAnchor="middle" fill="#fff" fontSize="10">
-              Presidente, Vice, Sec, Tes, Fis, Voc
-            </text>
-            <text x="140" y="162" textAnchor="middle" fill="#b8972a" fontSize="10" fontWeight="600">
-              Periodo: 2 anos
-            </text>
-          </g>
-          <line x1="140" y1="100" x2="140" y2="95" stroke="#0a3d1f" strokeWidth="2" />
-          <line x1="400" y1="95" x2="400" y2="100" stroke="#0a3d1f" strokeWidth="2" />
-          <g>
-            <rect x="300" y="100" width="200" height="80" rx="8" fill="#0f5c2e" />
-            <text x="400" y="125" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700">
-              Comites Especializados
-            </text>
-            <text x="400" y="145" textAnchor="middle" fill="#fff" fontSize="10">
-              Electoral · Revisor · Rondas
-            </text>
-            <text x="400" y="162" textAnchor="middle" fill="#b8972a" fontSize="10" fontWeight="600">
-              Variable
-            </text>
-          </g>
-          <line x1="400" y1="100" x2="400" y2="95" stroke="#0a3d1f" strokeWidth="2" />
-          <g>
-            <rect x="560" y="100" width="200" height="80" rx="8" fill="#1a7a42" />
-            <text x="660" y="125" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700">
-              Municipalidad C.P.
-            </text>
-            <text x="660" y="145" textAnchor="middle" fill="#fff" fontSize="10">
-              Alcalde + 5 Regidores
-            </text>
-            <text x="660" y="162" textAnchor="middle" fill="#b8972a" fontSize="10" fontWeight="600">
-              Periodo: 4 anos
-            </text>
-          </g>
-          <line x1="660" y1="100" x2="660" y2="95" stroke="#0a3d1f" strokeWidth="2" />
-          <line x1="400" y1="95" x2="660" y2="95" stroke="#0a3d1f" strokeWidth="2" />
-          <line x1="400" y1="180" x2="400" y2="220" stroke="#0a3d1f" strokeWidth="2" />
-          <g>
-            <rect x="280" y="220" width="240" height="50" rx="8" fill="#b8972a" />
-            <text x="400" y="245" textAnchor="middle" fill="#0a3d1f" fontSize="13" fontWeight="700">
-              Autoridad Politica
-            </text>
-            <text x="400" y="262" textAnchor="middle" fill="#0a3d1f" fontSize="10">
-              Teniente Gobernador (designado)
-            </text>
-          </g>
-          <line x1="140" y1="180" x2="140" y2="220" stroke="#0a3d1f" strokeWidth="1" strokeDasharray="4 4" />
-          <line x1="400" y1="180" x2="400" y2="220" stroke="#0a3d1f" strokeWidth="1" strokeDasharray="4 4" />
-          <line x1="660" y1="180" x2="660" y2="220" stroke="#0a3d1f" strokeWidth="1" strokeDasharray="4 4" />
-          <text x="400" y="350" textAnchor="middle" fill="#6b7c72" fontSize="10" fontStyle="italic">
-            {cfg?.nombre_oficial || 'Comunidad'}
-          </text>
-        </svg>
-      </div>
-    </section>
-  );
-}
-
 function Comites({ comites }) {
+  // Textos del header de la seccion "Comites Especializados" ahora son
+  // editables desde el panel admin institucional (tab "Textos Internos",
+  // seccion AUTORIDADES_COMITES). Si la BD esta vacia, fallback a los
+  // textos canonicos originales.
+  const { data: textosComites } = useTextosSeccion({ seccion: 'AUTORIDADES_COMITES' });
+  const titulo = textosComites.find(t => t.key === 'autoridades.comites.titulo')?.contenido
+    || 'Comites Especializados';
+  const subtitulo = textosComites.find(t => t.key === 'autoridades.comites.subtitulo')?.contenido
+    || 'Organo de gobierno comunal que incluye Comite Electoral, Comite Revisor de Cuentas y Rondas Campesinas.';
+
   if (!comites || comites.length === 0) return null;
   return (
     <section className="au-comites" aria-labelledby="comites-title">
       <h2 id="comites-title" className="au-comites__title">
-        <FaGavel /> Comites Especializados
+        <FaGavel /> {titulo}
       </h2>
       <p className="au-comites__subtitle">
-        Organo de gobierno comunal que incluye Comite Electoral,
-        Comite Revisor de Cuentas y Rondas Campesinas.
+        {subtitulo}
       </p>
-      <div className="au-comites__grid">
+      <div className="au-comites__grid grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {comites.map((c) => (
-          <div key={c.id} className="au-comite-card">
+          <div key={c.id} className="au-comite-card h-full">
             <div className="au-comite-card__header">
               <span className="au-comite-card__icon">
                 {ICONOS_COMITE[c.tipo] || <FaUsers />}
@@ -298,7 +231,7 @@ function Comites({ comites }) {
                 <div><strong>Constituido:</strong> {new Date(c.fecha_constitucion).toLocaleDateString("es-PE")}</div>
               )}
               {c.tiempo_restante != null && c.tiempo_restante > 0 && (
-                <div style={{ color: c.tiempo_restante < 90 ? "#b91c1c" : "var(--au-text-soft)" }}>
+                <div className={c.tiempo_restante < 90 ? "text-red-700" : "text-[color:var(--au-text-soft)]"}>
                   <strong>Vence en:</strong> {c.tiempo_restante} dias
                 </div>
               )}
@@ -361,35 +294,37 @@ export default function AutoridadesPage() {
   const allAutoridades = Object.values(niveles).flat();
 
   return (
-    <main className="au-page">
-      <section className="au-hero">
+    <main className="au-page min-h-screen overflow-x-hidden">
+      <section className="au-hero px-4 pb-24 pt-24 sm:px-6 sm:pb-28 sm:pt-28 lg:px-8 lg:pb-32 lg:pt-32">
         <div className="au-hero-overlay" />
-        <div className="au-hero-content">
-          <div className="au-hero-eyebrow">
+        <div className="au-hero-content mx-auto max-w-6xl">
+          <div className="au-hero-eyebrow max-w-max px-4 py-2 text-[11px] sm:text-xs">
             <FaUsers /> Gobierno de {cfg?.nombre_corto || 'la Comunidad'}
           </div>
-          <h1>Nuestras Autoridades</h1>
-          <p>
+          <h1 className="text-center font-display text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
+            Nuestras Autoridades
+          </h1>
+          <p className="mx-auto mt-4 max-w-3xl text-pretty text-sm leading-7 sm:text-base lg:text-lg">
             {cfg?.eslogan ||
               'Conoce a los lideres que dirigen la comunidad. Tres niveles de gobierno elegidos democraticamente.'}
           </p>
           {cfg && (
-            <p style={{ fontSize: 14, opacity: 0.85, marginTop: 8 }}>
+            <p className="mt-2 inline-flex max-w-3xl items-center justify-center gap-2 text-center text-sm opacity-85">
               <FaMapMarkerAlt /> {cfg.direccion_casa_comunal}
             </p>
           )}
-          <div className="au-hero-stats">
-            <div className="au-hero-stat">
+          <div className="au-hero-stats mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:mt-10 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="au-hero-stat min-w-0 px-4 py-4 sm:px-5 sm:py-5">
               <strong>{totalAutoridades}</strong>
               <span>Autoridades activas</span>
             </div>
             {NIVELES.map((n) => (
-              <div key={n.id} className="au-hero-stat">
+              <div key={n.id} className="au-hero-stat min-w-0 px-4 py-4 sm:px-5 sm:py-5">
                 <strong>{(niveles[n.dbField] || []).length}</strong>
                 <span>{n.label}</span>
               </div>
             ))}
-            <div className="au-hero-stat">
+            <div className="au-hero-stat min-w-0 px-4 py-4 sm:px-5 sm:py-5">
               <strong>{comites.length}</strong>
               <span>Comites</span>
             </div>
@@ -397,12 +332,12 @@ export default function AutoridadesPage() {
         </div>
       </section>
 
-      <div className="au-container">
-        <CalendarioElectoral autoridades={allAutoridades} />
-
-        <Organigrama cfg={cfg} />
-
-        <div className="au-tabs" role="tablist" aria-label="Niveles de gobierno">
+      <div className="au-container relative z-[5] mx-auto -mt-10 max-w-[1200px] px-4 pb-16 sm:-mt-12 sm:px-6 lg:-mt-16 lg:px-8">
+        <div
+          className="au-tabs grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3"
+          role="tablist"
+          aria-label="Niveles de gobierno"
+        >
           {NIVELES.map((n) => {
             const count = (niveles[n.dbField] || []).length;
             const activa = tabActiva === n.id;
@@ -412,19 +347,19 @@ export default function AutoridadesPage() {
                 type="button"
                 role="tab"
                 aria-selected={activa}
-                className={`au-tab ${activa ? "au-tab--active" : ""}`}
+                className={`au-tab min-w-0 justify-start text-left sm:justify-center sm:text-center ${activa ? "au-tab--active" : ""}`}
                 onClick={() => { setTabActiva(n.id); setBusqueda(""); }}
               >
-                <span className="au-tab-icon">{n.icon}</span>
-                <span className="au-tab-label">{n.label}</span>
-                <span className="au-tab-count">{count}</span>
+                <span className="au-tab-icon shrink-0">{n.icon}</span>
+                <span className="au-tab-label min-w-0 flex-1 whitespace-normal leading-snug">{n.label}</span>
+                <span className="au-tab-count shrink-0">{count}</span>
               </button>
             );
           })}
         </div>
 
         {nivelActivo && (
-          <div className="au-nivel-info">
+          <div className="au-nivel-info mt-6 rounded-xl px-4 py-4 sm:px-5 sm:py-5">
             <h2>
               {nivelActivo.icon} {nivelActivo.label}
             </h2>
@@ -432,7 +367,7 @@ export default function AutoridadesPage() {
           </div>
         )}
 
-        <div className="au-busqueda">
+        <div className="au-busqueda mb-6 mt-6">
           <FaSearch className="au-busqueda-icon" />
           <input
             id="au-busqueda-autoridad"
@@ -447,23 +382,26 @@ export default function AutoridadesPage() {
         </div>
 
         {loading ? (
-          <div className="au-loading">
+          <div className="au-loading rounded-2xl bg-white/70 px-4 py-12 sm:px-6">
             <PageLoader variant="section" mensaje="Cargando autoridades" />
           </div>
         ) : listaActual.length === 0 ? (
-          <div className="au-empty">
+          <div className="au-empty rounded-2xl px-4 py-12 sm:px-6">
             <FaUsers className="au-empty-icon" />
             <p>No hay autoridades {busqueda ? "que coincidan con la busqueda" : `en ${nivelActivo?.label}`}.</p>
           </div>
         ) : (
-          <div className="au-grid">
+          <div className="au-grid grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
             {listaActual.map((a) => (
               <Tarjeta key={a.id} autoridad={a} onClick={setAutoridadDetalle} />
             ))}
           </div>
         )}
 
+        <CalendarioElectoral autoridades={allAutoridades} />
+
         <Comites comites={comites} />
+
       </div>
 
       {autoridadDetalle && (

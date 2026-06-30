@@ -7,11 +7,13 @@ import {
   FaHandHoldingHeart, FaExternalLinkAlt, FaHourglassHalf, FaTimesCircle,
   FaCloudUploadAlt, FaDownload, FaFilePdf,
   FaNewspaper, FaMapMarkerAlt, FaDonate, FaLink, FaArrowRight, FaBullhorn,
+  FaCookieBite,
 } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import BotonFavorito from "../../components/BotonFavorito";
 import CameraCapture from "../../components/Perfil/CameraCapture";
+import useBannerCookies from "../../hooks/useBannerCookies";
 import "./Perfil.css";
 
 const TABS = [
@@ -187,6 +189,7 @@ export default function Perfil() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user: authUser, isAuthenticated, setAuth, clearAuth } = useAuth();
+  const cookiesUI = useBannerCookies();
   const [tab, setTab] = useState(() => {
     const t = searchParams.get('tab');
     return TABS.some((x) => x.id === t) ? t : 'info';
@@ -1099,6 +1102,53 @@ export default function Perfil() {
                     </div>
                   </div>
                 )}
+
+                <hr className="perfil-divider" />
+
+                <div className="perfil-security-card perfil-cookies-card">
+                  <div className="perfil-section-title">
+                    <h2><FaCookieBite /> Preferencias de cookies</h2>
+                    <span />
+                  </div>
+                  <p className="perfil-help">
+                    Aqui puedes revisar y cambiar tu decision sobre cookies no esenciales
+                    (preferencias y analiticas). Las cookies necesarias siempre estan activas
+                    para que la plataforma funcione (autenticacion, sesion, seguridad).
+                  </p>
+                  <div className="perfil-cookies-summary">
+                    <strong>Tu decision actual:</strong>{' '}
+                    {cookiesUI.hasDecision
+                      ? cookiesUI.prefs?.analiticas
+                        ? 'Aceptaste todas las cookies.'
+                        : cookiesUI.prefs?.preferencias
+                          ? 'Aceptaste solo las cookies de preferencias.'
+                          : 'Rechazaste las cookies no esenciales.'
+                      : 'Aun no has tomado una decision.'}
+                    {cookiesUI.fecha && (
+                      <span className="perfil-cookies-date">
+                        {' '}({new Date(cookiesUI.fecha).toLocaleString('es-PE')})
+                      </span>
+                    )}
+                  </div>
+                  <div className="perfil-cookies-actions">
+                    <button
+                      type="button"
+                      className="perfil-btn-primary"
+                      onClick={() => cookiesUI.open('perfil')}
+                    >
+                      <FaCookieBite /> Administrar cookies
+                    </button>
+                    {cookiesUI.hasDecision && (
+                      <button
+                        type="button"
+                        className="perfil-btn-secondary"
+                        onClick={() => cookiesUI.reset()}
+                      >
+                        Restablecer y volver a preguntar
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

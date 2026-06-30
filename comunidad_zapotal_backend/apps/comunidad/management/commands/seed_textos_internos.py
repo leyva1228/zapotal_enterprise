@@ -124,6 +124,39 @@ TEXTOS_SECCION = [
         'tipo': 'TITULO',
         'contenido': 'Linea de tiempo',
     },
+    {
+        'key': 'conocenos.mv.titulo',
+        'seccion': 'CONOCENOS_MV',
+        'tipo': 'TITULO',
+        'contenido': 'Mision',
+    },
+    {
+        'key': 'conocenos.mv.vision.titulo',
+        'seccion': 'CONOCENOS_MV',
+        'tipo': 'TITULO',
+        'contenido': 'Vision',
+    },
+    {
+        'key': 'conocenos.valores.titulo',
+        'seccion': 'CONOCENOS_MV',
+        'tipo': 'TITULO',
+        'contenido': 'Nuestros valores',
+    },
+    {
+        'key': 'autoridades.comites.titulo',
+        'seccion': 'AUTORIDADES_COMITES',
+        'tipo': 'TITULO',
+        'contenido': 'Comites Especializados',
+    },
+    {
+        'key': 'autoridades.comites.subtitulo',
+        'seccion': 'AUTORIDADES_COMITES',
+        'tipo': 'SUBTITULO',
+        'contenido': (
+            'Organo de gobierno comunal que incluye Comite Electoral, '
+            'Comite Revisor de Cuentas y Rondas Campesinas.'
+        ),
+    },
 ]
 
 

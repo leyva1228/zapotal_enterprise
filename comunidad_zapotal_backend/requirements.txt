@@ -41,3 +41,6 @@ requests==2.33.1
 
 # === Pasarela de pagos (Mercado Pago Checkout Bricks) ===
 mercadopago==3.2.0
+
+# === Generacion de PDFs (boletas de donacion) ===
+xhtml2pdf==0.2.17

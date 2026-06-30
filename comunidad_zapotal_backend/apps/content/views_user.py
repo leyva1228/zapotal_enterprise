@@ -1,4 +1,4 @@
-"""Vistas para favoritos, solicitudes de baja y novedades."""
+"""Vistas para favoritos y solicitudes de baja."""
 import logging
 from django.db import transaction
 from django.utils import timezone
@@ -13,7 +13,7 @@ from apps.core.permissions import IsAdminUser
 from apps.core.utils import get_client_ip, log_audit_event
 from apps.messaging.models import Notificacion
 from .models import (
-    Favorito, SolicitudBaja, NovedadVista,
+    Favorito, SolicitudBaja,
     Noticia, Evento, Categoria,
 )
 from .serializers import (
@@ -24,7 +24,7 @@ try:
 except ImportError:
     AutoridadSerializer = None
 from .serializers_user import (
-    FavoritoSerializer, SolicitudBajaSerializer, NovedadVistaSerializer,
+    FavoritoSerializer, SolicitudBajaSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -235,91 +235,6 @@ def rechazar_baja(request, solicitud_id):
         metadata={'notas': notas},
     )
     return Response({'status': 'ok', 'estado': solicitud.estado})
-
-
-# ===================== NOVEDADES =====================
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def listar_novedades(request):
-    """GET /api/v1/novedades/?limit=5"""
-    try:
-        limit = int(request.query_params.get('limit', 5))
-    except (TypeError, ValueError):
-        limit = 5
-    limit = min(max(limit, 1), 20)
-
-    noticias = list(
-        Noticia.objects.filter(estado='PUBLICADA')
-        .order_by('-fecha_publicacion')[:limit]
-    )
-    eventos = list(
-        Evento.objects.all().order_by('-fecha')[:limit]
-    )
-
-    items = []
-    for n in noticias:
-        items.append({
-            'tipo': 'NOTICIA',
-            'id': n.id,
-            'titulo': n.titulo,
-            'resumen': n.resumen or n.contenido[:120],
-            'fecha': n.fecha_publicacion,
-            'imagen_url': n.imagen.url if n.imagen else None,
-            'categoria': n.categoria.nombre if n.categoria else None,
-            'url': f'/noticias/{n.id}',
-        })
-    for e in eventos:
-        items.append({
-            'tipo': 'EVENTO',
-            'id': e.id,
-            'titulo': e.titulo,
-            'resumen': e.descripcion or '',
-            'fecha': e.fecha,
-            'imagen_url': e.imagen.url if e.imagen else None,
-            'lugar': e.lugar,
-            'url': f'/eventos/{e.id}',
-        })
-    items.sort(key=lambda x: x['fecha'], reverse=True)
-    items = items[:limit]
-
-    # IDs ya vistos por este usuario
-    ids_noticias = [i['id'] for i in items if i['tipo'] == 'NOTICIA']
-    ids_eventos = [i['id'] for i in items if i['tipo'] == 'EVENTO']
-    vistos = set(
-        NovedadVista.objects.filter(
-            usuario=request.user,
-        ).filter(
-            Q(noticia_id__in=ids_noticias) | Q(evento_id__in=ids_eventos),
-        ).values_list('noticia_id', 'evento_id')
-    )
-
-    for item in items:
-        if item['tipo'] == 'NOTICIA':
-            item['visto'] = (item['id'], None) in vistos
-        else:
-            item['visto'] = (None, item['id']) in vistos
-        item['fecha'] = item['fecha'].isoformat()
-    return Response({'items': items, 'count': len(items)})
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def marcar_novedad_vista(request, tipo, item_id):
-    """POST /api/v1/novedades/<tipo>/<id>/marcar-vista/"""
-    if tipo == 'NOTICIA':
-        target_filter = {'noticia_id': item_id}
-    elif tipo == 'EVENTO':
-        target_filter = {'evento_id': item_id}
-    else:
-        return Response({'detail': 'Tipo invalido.'}, status=400)
-
-    NovedadVista.objects.update_or_create(
-        usuario=request.user,
-        defaults={},
-        **target_filter,
-    )
-    return Response({'status': 'ok'})
 
 
 # ===================== SEARCH GLOBAL =====================

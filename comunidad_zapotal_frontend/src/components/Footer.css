@@ -151,6 +151,37 @@
   filter: drop-shadow(0 10px 20px rgba(100,70,30,.1));
 }
 
+/* Boton "Administrar cookies" en el footer:看上去 identico a un <a> del listado,
+   pero es un <button type="button"> para que dispare el CustomEvent del banner. */
+.footer-admin-cookies {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  background: transparent;
+  border: 0;
+  color: #8a7a68;
+  font-family: inherit;
+  font-size: .97rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all .3s ease;
+}
+.footer-admin-cookies:hover {
+  color: #3a2c1e;
+  transform: translateX(6px);
+}
+.footer-admin-cookies:hover .footer-icon {
+  color: #8a6a45;
+  transform: scale(1.12);
+}
+.footer-admin-cookies:focus-visible {
+  outline: 2px solid #c9b48a;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .footer-bottom {
   position: relative;
   z-index: 2;
@@ -191,6 +222,7 @@
   .footer-brand p { font-size: .93rem; }
   .footer-section h3 { font-size: 1.05rem; }
   .footer-section ul li a { font-size: .93rem; }
+  .footer-admin-cookies { font-size: .93rem; justify-content: center; }
   .footer-bottom p { font-size: .82rem; }
   .libro-reclamaciones-img { width: 200px; }
 }

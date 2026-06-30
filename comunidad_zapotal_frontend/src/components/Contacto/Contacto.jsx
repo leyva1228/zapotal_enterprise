@@ -5,9 +5,11 @@ import {
   FaEnvelope, FaPhone, FaMapMarkerAlt, FaHome, FaExclamationTriangle,
   FaShieldAlt, FaClock, FaWhatsapp, FaCheckCircle, FaSpinner,
   FaTimesCircle, FaExclamationCircle, FaPrint, FaRedo,
+  FaUserCheck,
 } from "react-icons/fa";
 import useConfiguracion from "../../hooks/useConfiguracion";
 import useEmailDestino from "../../hooks/useEmailDestino";
+import { useAuth } from "../../context/AuthContext";
 import "./Contacto.css";
 
 const ESTADO_INICIAL = {
@@ -71,6 +73,7 @@ const MAPA_SATELITE =
 function Contacto() {
   const { data: cfg } = useConfiguracion();
   const { email_contacto: emailDestino, fallback: emailFallback } = useEmailDestino();
+  const { isAuthenticated, user } = useAuth();
   const [formulario, setFormulario] = useState(ESTADO_INICIAL);
   const [errores,    setErrores   ] = useState({});
   const [enviando,   setEnviando  ] = useState(false);
@@ -85,6 +88,37 @@ function Contacto() {
   // estado: idle | verificando | valido | invalido | sospechoso | error
   const [emailEstado, setEmailEstado] = useState({ estado: "idle", mensaje: "" });
   const debounceRef = useRef(null);
+  // Flag que indica si los datos de contacto fueron prellenados
+  // desde el usuario autenticado (comunero / admin). En ese caso:
+  //   - los campos nombre / email / telefono quedan bloqueados
+  //   - la validacion ZeroBounce se omite (ya se valido en registro)
+  const [prefill, setPrefill] = useState(false);
+
+  // V2.2: si el usuario esta logueado, autocompletar nombre / email
+  // y (si esta disponible) telefono. Los campos quedan como readonly
+  // para que el usuario vea de donde sale la info y no la edite por error.
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setPrefill(false);
+      return;
+    }
+    const nombreCompleto = [user.nombres, user.apellidos]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    setFormulario((prev) => ({
+      ...prev,
+      nombre: nombreCompleto || prev.nombre,
+      email: user.email || prev.email,
+      telefono: user.telefono || prev.telefono,
+    }));
+    setPrefill(true);
+    // Marcamos el email como verificado: el backend confia en el email
+    // del usuario autenticado y el frontend no consume credito ZeroBounce.
+    if (user.email) {
+      setEmailEstado({ estado: "valido", mensaje: "Correo verificado de tu cuenta" });
+    }
+  }, [isAuthenticated, user]);
 
   const wa = cfg?.whatsapp_numero
     ? `https://wa.me/${cfg.whatsapp_numero.replace(/[^0-9]/g, "")}`
@@ -97,6 +131,11 @@ function Contacto() {
     !emailEstado.mensaje.toLowerCase().includes("sospechoso");
 
   const manejarCambio = ({ target: { name, value } }) => {
+    // V2.2: si los datos vienen prellenados del usuario autenticado,
+    // los inputs de identidad (nombre, email, telefono) quedan readonly.
+    if (prefill && (name === "nombre" || name === "email" || name === "telefono")) {
+      return;
+    }
     setFormulario((prev) => ({ ...prev, [name]: value }));
     // Limpiar error del campo cuando el usuario empieza a corregir
     if (errores[name]) {
@@ -111,7 +150,16 @@ function Contacto() {
   // Live validation del email contra ZeroBounce (debounce 800ms).
   // No bloquea el envio: el backend tambien valida, esta llamada
   // es solo feedback UX.
+  //
+  // V2.2: si el usuario esta autenticado (comunero o admin), se omite
+  // la validacion live. El email del usuario ya fue verificado por
+  // ZeroBounce en el flujo de registro, no tiene sentido volver a
+  // consumir un credito en cada mensaje de contacto.
   useEffect(() => {
+    if (isAuthenticated && prefill) {
+      // No validar live: ya viene verificado de registro.
+      return undefined;
+    }
     const email = (formulario.email || "").trim();
     const formatoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!formatoValido) {
@@ -154,7 +202,7 @@ function Contacto() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [formulario.email]);
+  }, [formulario.email, isAuthenticated, prefill]);
 
   const enviarMensaje = async (e) => {
     e.preventDefault();
@@ -308,7 +356,7 @@ function Contacto() {
         <aside className="contacto-info" aria-label="Información de contacto">
 
           <div className="contacto-info__cabecera">
-            <span className="contacto-info__eyebrow">Comunidad Campesina Niño Dios de Zapotal</span>
+            <span className="contacto-info__eyebrow">{cfg?.nombre_oficial || 'Comunidad Campesina Niño Dios de Zapotal'}</span>
             <h2>Información de contacto</h2>
             <p>
               {cfg?.descripcion_corta ||
@@ -324,8 +372,8 @@ function Contacto() {
                 <h3>Casa Comunal</h3>
               </div>
               <p className="contacto-info__tarjeta-descripcion">
-                Sede institucional. Aquí sesiona la Asamblea General y la
-                Directiva Comunal.
+                {cfg.contacto_casa_comunal_descripcion ||
+                  'Sede institucional. Aqui sesiona la Asamblea General y la Directiva Comunal.'}
               </p>
               <ul className="contacto-info__lista">
                 {cfg.direccion_casa_comunal && (
@@ -390,8 +438,8 @@ function Contacto() {
                 <h3>Canal de Denuncias</h3>
               </div>
               <p className="contacto-info__tarjeta-descripcion">
-                Tu identidad será protegida conforme a la Ley 29733. Puedes
-                reportar irregularidades de forma segura y confidencial.
+                {cfg.contacto_denuncias_descripcion ||
+                  'Tu identidad sera protegida conforme a la Ley 29733. Puedes reportar irregularidades de forma segura y confidencial.'}
               </p>
               <a
                 href={`mailto:${emailDestino}?subject=Denuncia%20anonima`}
@@ -417,6 +465,21 @@ function Contacto() {
               Te respondemos por correo electrónico.
             </p>
           </div>
+
+          {/* V2.2: aviso cuando el usuario esta autenticado y sus datos
+              fueron prellenados automaticamente. Solo debe escribir
+              el asunto y el mensaje. */}
+          {prefill && isAuthenticated && (
+            <div className="form-prefill" role="status">
+              <FaUserCheck className="form-prefill__icono" aria-hidden="true" />
+              <div>
+                <strong>Hola, {user?.nombres || "comunero"}.</strong>{" "}
+                Tus datos de contacto se rellenaron automaticamente desde tu
+                cuenta. Solo escribe el <strong>asunto</strong> y el{" "}
+                <strong>mensaje</strong>.
+              </div>
+            </div>
+          )}
 
           {feedback.msg && (
             <div
@@ -452,12 +515,13 @@ function Contacto() {
                   id="nombre"
                   type="text"
                   name="nombre"
-                  className={`form-input ${errores.nombre ? "form-input--error" : ""}`}
+                  className={`form-input ${errores.nombre ? "form-input--error" : ""} ${prefill ? "form-input--readonly" : ""}`}
                   placeholder="Ej. María Torres Vega"
                   value={formulario.nombre}
                   onChange={manejarCambio}
                   autoComplete="name"
-                  autoFocus
+                  autoFocus={!prefill}
+                  readOnly={prefill}
                   minLength={3}
                   maxLength={200}
                   aria-invalid={!!errores.nombre}
@@ -478,11 +542,12 @@ function Contacto() {
                   id="telefono"
                   type="tel"
                   name="telefono"
-                  className={`form-input ${errores.telefono ? "form-input--error" : ""}`}
+                  className={`form-input ${errores.telefono ? "form-input--error" : ""} ${prefill ? "form-input--readonly" : ""}`}
                   placeholder="Ej. 987654321"
                   value={formulario.telefono}
                   onChange={manejarCambio}
                   autoComplete="tel"
+                  readOnly={prefill}
                   maxLength={15}
                   inputMode="tel"
                   aria-invalid={!!errores.telefono}
@@ -505,11 +570,12 @@ function Contacto() {
                   id="email"
                   type="email"
                   name="email"
-                  className={`form-input ${errores.email ? "form-input--error" : ""} ${emailEstado.estado === "valido" ? "form-input--valido" : ""}`}
+                  className={`form-input ${errores.email ? "form-input--error" : ""} ${emailEstado.estado === "valido" ? "form-input--valido" : ""} ${prefill ? "form-input--readonly" : ""}`}
                   placeholder="Ej. nombre@correo.com"
                   value={formulario.email}
                   onChange={manejarCambio}
                   autoComplete="email"
+                  readOnly={prefill}
                   maxLength={254}
                   aria-invalid={!!errores.email || emailEstado.estado === "invalido"}
                   aria-describedby={

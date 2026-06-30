@@ -1,13 +1,14 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   FaCommentDots,
   FaExclamationCircle,
   FaLightbulb,
   FaEnvelope, FaSpinner, FaCheckCircle, FaTimes, FaExclamationTriangle,
-  FaBalanceScale, FaPrint, FaRedo,
+  FaBalanceScale, FaPrint, FaRedo, FaUserCheck,
 } from "react-icons/fa";
 import api from "../../api";
 import useEmailDestino from "../../hooks/useEmailDestino";
+import { useAuth } from "../../context/AuthContext";
 
 import "./LibroReclamaciones.css";
 
@@ -15,6 +16,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function LibroReclamaciones() {
   const { email_contacto: emailDestino, fallback: emailFallback } = useEmailDestino();
+  const { isAuthenticated, user } = useAuth();
   const [formulario, setFormulario] = useState({
     nombre: "",
     email: "",
@@ -30,19 +32,56 @@ function LibroReclamaciones() {
   const [reclamoEnviado, setReclamoEnviado] = useState(null);
   const [validacionEmail, setValidacionEmail] = useState({ estado: 'idle', sugerencia: null });
   const debounceEmailRef = useRef(null);
+  // V2.2: si el usuario esta autenticado, sus datos se prellenan
+  // y la validacion live de ZeroBounce se omite (el email ya fue
+  // verificado en el registro).
+  const [prefill, setPrefill] = useState(false);
 
-  const emailBloqueado = validacionEmail.estado === 'invalido'
+  // V2.2: autocompletar nombre / email / telefono desde la sesion.
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setPrefill(false);
+      return;
+    }
+    const nombreCompleto = [user.nombres, user.apellidos]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    setFormulario((prev) => ({
+      ...prev,
+      nombre: nombreCompleto || prev.nombre,
+      email: user.email || prev.email,
+      telefono: user.telefono || prev.telefono,
+    }));
+    setPrefill(true);
+    if (user.email) {
+      setValidacionEmail({ estado: 'valido', sugerencia: null });
+    }
+  }, [isAuthenticated, user]);
+
+  const emailBloqueado = !prefill
+    && validacionEmail.estado === 'invalido'
     && validacionEmail.motivo !== 'catch-all'
     && !validacionEmail.mensaje?.toLowerCase().includes('sospechoso');
 
   const cambiarValor = (e) => {
     const { name, value } = e.target;
+    // V2.2: si los datos vienen prellenados del usuario autenticado,
+    // los inputs de identidad (nombre, email, telefono) quedan readonly.
+    if (prefill && (name === "nombre" || name === "email" || name === "telefono")) {
+      return;
+    }
     setFormulario({ ...formulario, [name]: value });
     if (name === 'email') onEmailChangeValidacion(value);
   };
 
   const onEmailChangeValidacion = (val) => {
     if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+    // V2.2: omitir la validacion live de ZeroBounce para usuarios
+    // autenticados: el email ya fue verificado en el registro.
+    if (prefill && isAuthenticated) {
+      return;
+    }
     if (!val || !EMAIL_REGEX.test(val.trim())) {
       setValidacionEmail({ estado: 'idle', sugerencia: null });
       return;
@@ -143,6 +182,25 @@ function LibroReclamaciones() {
       <section className="formulario-section">
         <div className="formulario-container">
           <h2>Registrar solicitud</h2>
+          <p>
+            Completa el formulario con los detalles de tu reclamo, queja o sugerencia.
+            Los campos marcados con <span style={{ color: "var(--libro-dorado)", fontWeight: 700 }}>*</span> son obligatorios.
+          </p>
+
+          {/* V2.2: aviso cuando el usuario esta autenticado y sus datos
+              fueron prellenados automaticamente. Solo debe completar
+              tipo y descripcion. */}
+          {prefill && isAuthenticated && (
+            <div className="libro-prefill" role="status">
+              <FaUserCheck className="libro-prefill__icono" aria-hidden="true" />
+              <div>
+                <strong>Hola, {user?.nombres || "comunero"}.</strong>{" "}
+                Tus datos de contacto se rellenaron automaticamente desde tu
+                cuenta. Solo completa el <strong>tipo</strong> y la{" "}
+                <strong>descripcion</strong> de tu solicitud.
+              </div>
+            </div>
+          )}
 
           <form className="libro-formulario" onSubmit={enviarSolicitud}>
             <div className="grupo-form">
@@ -152,6 +210,8 @@ function LibroReclamaciones() {
                 placeholder="Nombres y apellidos completos"
                 value={formulario.nombre}
                 onChange={cambiarValor}
+                readOnly={prefill}
+                className={prefill ? "libro-input--readonly" : ""}
                 minLength={3}
                 required
               />
@@ -168,6 +228,8 @@ function LibroReclamaciones() {
                   placeholder="Correo electrónico"
                   value={formulario.email}
                   onChange={cambiarValor}
+                  readOnly={prefill}
+                  className={prefill ? "libro-input--readonly" : ""}
                   required
                 />
                 <span className="libro-input__status" aria-live="polite">
@@ -181,7 +243,7 @@ function LibroReclamaciones() {
                   )}
                 </span>
               </div>
-              {validacionEmail.sugerencia && (
+              {validacionEmail.sugerencia && !prefill && (
                 <small className="libro-email-sugerencia">
                   ¿Quizás quisiste decir:{' '}
                   <button
@@ -203,6 +265,8 @@ function LibroReclamaciones() {
                 placeholder="Teléfono (opcional)"
                 value={formulario.telefono}
                 onChange={cambiarValor}
+                readOnly={prefill}
+                className={prefill ? "libro-input--readonly" : ""}
               />
             </div>
 

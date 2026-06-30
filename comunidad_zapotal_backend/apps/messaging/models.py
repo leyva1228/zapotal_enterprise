@@ -50,6 +50,10 @@ class Notificacion(models.Model):
         NUEVO_RECLAMO = 'nuevo_reclamo', 'Nuevo reclamo'
         RECLAMO_ESTADO_CAMBIADO = 'reclamo_estado_cambiado', 'Reclamo - estado cambiado'
         MENSAJE = 'mensaje', 'Mensaje interno'
+        # Loop 3.5: notificaciones de donaciones
+        DONACION_RECIBIDA = 'donacion_recibida', 'Donacion recibida'
+        DONACION_APROBADA = 'donacion_aprobada', 'Donacion aprobada'
+        DONACION_RECHAZADA = 'donacion_rechazada', 'Donacion rechazada'
 
     class ReferenciaTipo(models.TextChoices):
         NOTICIA = 'NOTICIA', 'Noticia'
@@ -59,6 +63,7 @@ class Notificacion(models.Model):
         RECLAMO = 'RECLAMO', 'Reclamo'
         CONTACTO = 'CONTACTO', 'Contacto'
         COMENTARIO = 'COMENTARIO', 'Comentario'
+        DONACION = 'DONACION', 'Donacion'
 
     titulo = models.CharField('Titulo', max_length=200)
     mensaje = models.TextField('Mensaje')

@@ -254,7 +254,7 @@ export default function AutoridadDetalle({ autoridad, onClose }) {
                   <div className="ad-info">
                     <span className="ad-info-label">Estado</span>
                     <span className="ad-info-value">
-                      {a.estado_inscripcion === 'INSCRITO' ? <FaCheckCircle style={{ color: '#047857' }} /> : null}{' '}
+                      {a.estado_inscripcion === 'INSCRITO' ? <FaCheckCircle style={{ color: 'var(--nb-verde, #1a3209)' }} /> : null}{' '}
                       {a.estado_inscripcion_display}
                     </span>
                   </div>

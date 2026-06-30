@@ -212,28 +212,31 @@ export default function Registro() {
         className="relative md:w-1/2 flex items-center justify-center py-16 md:py-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/img/login/Union-fondo login.jpg')" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-950/80 via-primary-900/70 to-primary-800/60" />
+        <div className="absolute inset-0 bg-black/30" />
         <div className="relative z-10 text-center px-6 max-w-md">
-          <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
-            <img src="/img/Logo-comunidad/Logo-principal.png" alt="Escudo" className="h-20 w-20" />
+            <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
+              <img src="/img/Logo-comunidad/Logo-principal.png" alt="Escudo" className="h-20 w-20" />
+            </div>
+            <h1
+              className="font-display text-3xl md:text-4xl font-bold text-white leading-tight"
+              style={{ textShadow: "0 0 8px rgba(184, 150, 62, 0.85), 0 1px 3px rgba(0, 0, 0, 0.15)" }}
+            >
+                Comunidad Campesina<br />Niño Dios de Zapotal
+            </h1>
+            {/* Adorno con el oro del navbar (mismo que Login) */}
+            <div className="my-5 flex items-center justify-center gap-3 text-white/80">
+              <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
+              <FaLeaf style={{ color: "var(--nb-dorado)" }} />
+              <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
+            </div>
+            <p className="text-white/85 text-base leading-relaxed">
+              Unite a nuestra plataforma digital institucional.
+            </p>
+            <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm border border-white/20">
+              <FaShieldAlt className="text-primary-300" />
+              <span>Registro seguro y verificado</span>
+            </div>
           </div>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-white leading-tight">
-              Comunidad Campesina<br />Niño Dios de Zapotal
-          </h1>
-          {/* Adorno con el oro del navbar (mismo que Login) */}
-          <div className="my-5 flex items-center justify-center gap-3 text-white/80">
-            <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
-            <FaLeaf style={{ color: "var(--nb-dorado)" }} />
-            <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
-          </div>
-          <p className="text-white/85 text-base leading-relaxed">
-            Unite a nuestra plataforma digital institucional.
-          </p>
-          <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm border border-white/20">
-            <FaShieldAlt className="text-primary-300" />
-            <span>Registro seguro y verificado</span>
-          </div>
-        </div>
       </aside>
 
       {/* Form — mismo estilo limpio que Login: SIN card con sombra,
@@ -249,8 +252,18 @@ export default function Registro() {
                 <FaLeaf />
                 <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
               </div>
-              <p className="text-sm text-primary-700 uppercase tracking-wider font-semibold">Crear cuenta</p>
-              <h2 className="font-display text-3xl font-bold text-primary-800 mt-1">Registrate</h2>
+              <p
+                className="text-sm uppercase tracking-wider font-semibold"
+                style={{ color: "var(--nb-dorado, #b8963e)" }}
+              >
+                Crear cuenta
+              </p>
+              <h2
+                className="font-display text-3xl font-bold mt-1"
+                style={{ color: "var(--nb-verde, #1a3209)" }}
+              >
+                Registrate
+              </h2>
               <hr className="my-3 border-t" style={{ borderColor: "var(--nb-dorado-light)" }} />
               <p className="text-mute text-sm">
                 Completa el formulario. Te enviaremos un codigo de verificacion a tu correo.
@@ -420,11 +433,14 @@ export default function Registro() {
             <button
               type="submit"
               disabled={loading}
-              className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md font-semibold text-sm transition-colors ${
+              className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md font-semibold text-sm border-2 transition-all duration-300 shadow-md ${
                 loading
-                  ? 'bg-primary-300 text-white cursor-not-allowed'
-                  : 'bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900'
+                  ? 'cursor-not-allowed opacity-60 border-[var(--nb-dorado)] bg-[var(--nb-verde)] text-white'
+                  : 'border-[var(--nb-dorado)] bg-gradient-to-br from-[var(--nb-verde)] to-[var(--nb-verde-claro)] text-white hover:from-[var(--nb-dorado)] hover:to-[var(--nb-dorado-light)] hover:text-[var(--nb-verde)] hover:border-[var(--nb-verde)] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--nb-dorado-light)] focus-visible:ring-offset-2'
               }`}
+              style={!loading ? {
+                boxShadow: '0 10px 24px rgba(26, 50, 9, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
+              } : undefined}
             >
               {loading ? <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : (
                 <>
@@ -437,7 +453,11 @@ export default function Registro() {
 
             <p className="text-center mt-5 text-sm text-mute">
               ¿Ya tienes una cuenta?{' '}
-              <Link to="/login" className="text-primary-700 hover:text-primary-900 font-semibold inline-flex items-center gap-1">
+              <Link
+                to="/login"
+                className="font-semibold inline-flex items-center gap-1 transition-colors"
+                style={{ color: "var(--nb-verde, #1a3209)" }}
+              >
                 Inicia sesion
               </Link>
             </p>
@@ -456,8 +476,18 @@ export default function Registro() {
                 <FaLeaf />
                 <span className="h-px w-12" style={{ background: "var(--nb-dorado-light)" }} />
               </div>
-              <p className="text-sm text-primary-700 uppercase tracking-wider font-semibold">Verificacion</p>
-              <h2 className="font-display text-3xl font-bold text-primary-800 mt-1">Confirma tu correo</h2>
+              <p
+                className="text-sm uppercase tracking-wider font-semibold"
+                style={{ color: "var(--nb-dorado, #b8963e)" }}
+              >
+                Verificacion
+              </p>
+              <h2
+                className="font-display text-3xl font-bold mt-1"
+                style={{ color: "var(--nb-verde, #1a3209)" }}
+              >
+                Confirma tu correo
+              </h2>
               <hr className="my-3 border-t" style={{ borderColor: "var(--nb-dorado-light)" }} />
               <p className="text-mute text-sm">
                 Hemos enviado un codigo de 6 digitos a <strong>{form.email}</strong>.
@@ -494,11 +524,14 @@ export default function Registro() {
             <button
               type="submit"
               disabled={loading || otp.length !== 6}
-              className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md font-semibold text-sm transition-colors ${
+              className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md font-semibold text-sm border-2 transition-all duration-300 shadow-md ${
                 loading || otp.length !== 6
-                  ? 'bg-primary-300 text-white cursor-not-allowed'
-                  : 'bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900'
+                  ? 'cursor-not-allowed opacity-60 border-[var(--nb-dorado)] bg-[var(--nb-verde)] text-white'
+                  : 'border-[var(--nb-dorado)] bg-gradient-to-br from-[var(--nb-verde)] to-[var(--nb-verde-claro)] text-white hover:from-[var(--nb-dorado)] hover:to-[var(--nb-dorado-light)] hover:text-[var(--nb-verde)] hover:border-[var(--nb-verde)] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--nb-dorado-light)] focus-visible:ring-offset-2'
               }`}
+              style={!(loading || otp.length !== 6) ? {
+                boxShadow: '0 10px 24px rgba(26, 50, 9, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
+              } : undefined}
             >
               {loading ? <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : (
                 <>
@@ -515,7 +548,11 @@ export default function Registro() {
 
             <p className="text-center mt-5 text-sm text-mute">
               ¿Ya tienes una cuenta?{' '}
-              <Link to="/login" className="text-primary-700 hover:text-primary-900 font-semibold inline-flex items-center gap-1">
+              <Link
+                to="/login"
+                className="font-semibold inline-flex items-center gap-1 transition-colors"
+                style={{ color: "var(--nb-verde, #1a3209)" }}
+              >
                 Inicia sesion
               </Link>
             </p>
