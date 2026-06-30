@@ -1066,7 +1066,7 @@ export default function Perfil() {
             {tab === 'seguridad' && (
               <div>
                 <h2 className="perfil-section-title">Seguridad de la cuenta</h2>
-                <form onSubmit={cambiarPassword} className="perfil-form">
+                <form onSubmit={cambiarPassword} className="perfil-form perfil-form--wide">
                   <div className="perfil-pwd-grid">
                     <div className="perfil-pwd-grid__col">
                       <div className="admin-form-group">

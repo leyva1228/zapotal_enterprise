@@ -727,6 +727,9 @@
 @media (max-width: 600px) {
   .perfil-form-row { grid-template-columns: 1fr; }
 }
+.perfil-form--wide {
+  max-width: 100%;
+}
 .perfil-pwd-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
