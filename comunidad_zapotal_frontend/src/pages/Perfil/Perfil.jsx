@@ -1007,9 +1007,6 @@ export default function Perfil() {
                   <div className="donaciones-empty">
                     <FaHandHoldingHeart className="donaciones-empty-icon" />
                     <p>Aun no has realizado ninguna donacion.</p>
-                    <Link to="/donaciones" className="donaciones-btn-donar">
-                      Ser el primero en donar
-                    </Link>
                   </div>
                 )}
 
