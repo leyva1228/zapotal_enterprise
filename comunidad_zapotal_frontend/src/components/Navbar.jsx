@@ -279,6 +279,7 @@ function Navbar() {
               <div className="dropdown-menu">
                 <Link to="/nosotros/historia" onClick={cerrarMenu}>Nuestra historia</Link>
                 <Link to="/nosotros/conocenos" onClick={cerrarMenu}>Conocenos</Link>
+                <Link to="/nosotros/galeria" onClick={cerrarMenu}>Galeria</Link>
               </div>
             </div>
           </nav>
@@ -392,6 +393,13 @@ function Navbar() {
                 onClick={cerrarMenu}
               >
                 Conocenos
+              </Link>
+              <Link
+                to="/nosotros/galeria"
+                className="drawer-sub-link"
+                onClick={cerrarMenu}
+              >
+                Galeria
               </Link>
             </div>
           </div>

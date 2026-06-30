@@ -24,6 +24,7 @@ import DetalleEvento from './pages/Eventos/DetalleEvento';
 import NuestraHistoria from './pages/Nosotros/NuestraHistoria';
 import Conocenos from './pages/Nosotros/Conocenos';
 import MarcoLegalPage from './pages/Nosotros/MarcoLegalPage';
+import Galeria from './pages/Nosotros/Galeria';
 import Autoridades from './components/Autoridades/Autoridades';
 import AutoridadesPage from './pages/Autoridades/AutoridadesPage';
 import Contacto from './components/Contacto/Contacto';
@@ -181,6 +182,7 @@ function Layout() {
         <Route path="/nosotros/historia" element={<NuestraHistoria />} />
         <Route path="/nosotros/conocenos" element={<Conocenos />} />
         <Route path="/nosotros/marco-legal" element={<MarcoLegalPage />} />
+        <Route path="/nosotros/galeria" element={<Galeria />} />
         <Route path="/terminos" element={<TerminosPage />} />
         <Route path="/privacidad" element={<PrivacidadPage />} />
         <Route path="/cookies" element={<CookiesPage />} />
