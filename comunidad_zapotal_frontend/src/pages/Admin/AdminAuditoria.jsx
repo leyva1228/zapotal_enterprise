@@ -120,18 +120,18 @@ export default function AdminAuditoria() {
     }
   };
 
-  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page]);
+  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filters.page]);
   useEffect(() => { cargarChart(); }, [cargarChart]);
 
   const aplicarFiltros = (e) => {
     e?.preventDefault?.();
-    setPage(1);
+    setFilters({ page: 1 });
     cargar();
   };
 
   const limpiarFiltros = () => {
     setFiltros({ accion: "", usuario: "", modelo_afectado: "", desde: "", hasta: "" });
-    setPage(1);
+    setFilters({ page: 1 });
     setTimeout(cargar, 0);
   };
 
@@ -273,8 +273,8 @@ export default function AdminAuditoria() {
             <div className="flex justify-center">
               <button
                 className="admin-btn admin-btn-sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
+                disabled={filters.page <= 1}
+                onClick={() => setFilters({ page: filters.page - 1 })}
               >
                 Anterior
               </button>
@@ -283,7 +283,7 @@ export default function AdminAuditoria() {
                 </span>
               <button
                 className="admin-btn admin-btn-sm"
-                disabled={page >= totalPages}
+                disabled={filters.page >= totalPages}
                   onClick={() => setFilters({ page: filters.page + 1 })}
               >
                 Siguiente

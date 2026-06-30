@@ -285,7 +285,7 @@ export default function AdminDonaciones() {
         <div className="adn-table-meta">
           <span>{count} donacion{count === 1 ? "" : "es"} en total</span>
           {totalPaginas > 1 && (
-            <span>Pagina {page} de {totalPaginas}</span>
+            <span>Pagina {filters.page} de {totalPaginas}</span>
           )}
         </div>
         {loading ? (
