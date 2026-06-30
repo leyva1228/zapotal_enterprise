@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  FaChevronDown, FaSignOutAlt, FaUser, FaCog, FaTimes,
+  FaChevronDown, FaSignOutAlt, FaUser, FaTimes,
   FaSearch, FaShieldAlt,
   FaHome, FaNewspaper, FaCalendarAlt, FaUsers,
   FaPhoneAlt, FaHandHoldingHeart,
@@ -207,13 +207,6 @@ function Navbar() {
                       >
                         <FaUser /> Ver perfil
                       </Link>
-                      <Link
-                        to="/perfil"
-                        className="profile-option"
-                        onClick={() => setPerfilAbierto(false)}
-                      >
-                        <FaCog /> Configuracion
-                      </Link>
                       {isAdmin && (
                         <Link
                           to="/admin"
@@ -413,10 +406,6 @@ function Navbar() {
               <Link to="/perfil" className="drawer-link" onClick={cerrarMenu}>
                 <span className="drawer-icon"><FaUser /></span>
                 Ver perfil
-              </Link>
-              <Link to="/perfil" className="drawer-link" onClick={cerrarMenu}>
-                <span className="drawer-icon"><FaCog /></span>
-                Configuracion
               </Link>
               {isAdmin && (
                 <Link to="/admin" className="drawer-link" onClick={cerrarMenu}>
