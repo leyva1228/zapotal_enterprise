@@ -18,10 +18,10 @@ import "./Perfil.css";
 
 const TABS = [
   { id: "info", label: "Informacion Personal", icon: <FaUser /> },
-  { id: "seguridad", label: "Seguridad", icon: <FaShieldAlt /> },
   { id: "notificaciones", label: "Notificaciones", icon: <FaBell /> },
   { id: "favoritos", label: "Favoritos", icon: <FaStar /> },
   { id: "donaciones", label: "Mis Donaciones", icon: <FaHandHoldingHeart /> },
+  { id: "seguridad", label: "Seguridad", icon: <FaShieldAlt /> },
   { id: "baja", label: "Baja de Cuenta", icon: <FaTrashAlt /> },
 ];
 
@@ -850,6 +850,222 @@ export default function Perfil() {
               </div>
             )}
 
+            {tab === 'notificaciones' && (
+              <div>
+                <h2 className="perfil-section-title">Notificaciones</h2>
+                <div className="perfil-notif-filters">
+                  <button
+                    className={`perfil-pill ${notifFiltro === '' ? 'perfil-pill--active' : ''}`}
+                    onClick={() => { setNotifFiltro(''); setTimeout(cargarNotificaciones, 0); }}
+                  >Todas</button>
+                  <button
+                    className={`perfil-pill ${notifFiltro === 'no_leidas' ? 'perfil-pill--active' : ''}`}
+                    onClick={() => { setNotifFiltro('no_leidas'); setTimeout(cargarNotificaciones, 0); }}
+                  >No leidas</button>
+                  <button
+                    className={`perfil-pill ${notifFiltro === 'leidas' ? 'perfil-pill--active' : ''}`}
+                    onClick={() => { setNotifFiltro('leidas'); setTimeout(cargarNotificaciones, 0); }}
+                  >Leidas</button>
+                  <div className="flex-1" />
+                  <button className="perfil-link" onClick={marcarTodasLeidas}>
+                    Marcar todas como leidas
+                  </button>
+                </div>
+                {notificaciones.length === 0 ? (
+                  <p className="perfil-help">No tienes notificaciones.</p>
+                ) : (
+                  <ul className="perfil-notif-list">
+                    {notificaciones.map((n) => (
+                      <li
+                        key={n.id}
+                        className={`perfil-notif-item ${n.leido ? 'perfil-notif-item--leido' : ''}`}
+                        onClick={() => verNotificacion(n)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter') verNotificacion(n); }}
+                      >
+                        <div className="perfil-notif-item__icon"><FaBell /></div>
+                        <div className="perfil-notif-item__body">
+                          <div className="perfil-notif-item__title">{n.titulo}</div>
+                          <div className="perfil-notif-item__msg">{n.mensaje}</div>
+                          <div className="perfil-notif-item__time">
+                            {timeAgo(n.fecha)}
+                            {n.tipo_display && n.tipo_display !== 'Informacion' && <span className="perfil-notif-tipo"> &middot; {n.tipo_display}</span>}
+                          </div>
+                        </div>
+                        <div className="perfil-notif-item__actions">
+                          {!n.leido && (
+                            <button className="perfil-link" onClick={(e) => { e.stopPropagation(); marcarNotifLeida(n.id); }}>
+                              <FaCheck /> Marcar leida
+                            </button>
+                          )}
+                          <button className="perfil-link perfil-link--danger" onClick={(e) => { e.stopPropagation(); eliminarNotif(n.id); }}>
+                            Eliminar
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* Modal de detalle de notificacion */}
+            {notifDetalle && (
+              <NotifDetalleModal
+                notificacion={notifDetalle}
+                onClose={cerrarDetalleNotif}
+                onIrDestino={irADestinoNotif}
+              />
+            )}
+
+            {tab === 'favoritos' && (
+              <div>
+                <h2 className="perfil-section-title">Favoritos</h2>
+                <div className="perfil-fav-tabs">
+                  <button
+                    className={`perfil-pill ${subFav === 'NOTICIA' ? 'perfil-pill--active' : ''}`}
+                    onClick={() => setSubFav('NOTICIA')}
+                  >
+                    Noticias ({favoritosNoticias.length})
+                  </button>
+                  <button
+                    className={`perfil-pill ${subFav === 'EVENTO' ? 'perfil-pill--active' : ''}`}
+                    onClick={() => setSubFav('EVENTO')}
+                  >
+                    Eventos ({favoritosEventos.length})
+                  </button>
+                </div>
+                {subFav === 'NOTICIA' ? (
+                  favoritosNoticias.length === 0 ? (
+                    <p className="perfil-help">No tienes noticias favoritas.</p>
+                  ) : (
+                    <ul className="perfil-fav-list">
+                      {favoritosNoticias.map((fav) => (
+                        <li key={fav.id} className="perfil-fav-item">
+                          <Link to={`/noticias/${fav.noticia}`} className="perfil-fav-item__title">
+                            {fav.noticia_titulo || 'Noticia'}
+                          </Link>
+                          <button
+                            className="perfil-link perfil-link--danger"
+                            onClick={() => quitarFavorito(fav)}
+                          >
+                            <FaTrashAlt /> Quitar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                ) : (
+                  favoritosEventos.length === 0 ? (
+                    <p className="perfil-help">No tienes eventos favoritos.</p>
+                  ) : (
+                    <ul className="perfil-fav-list">
+                      {favoritosEventos.map((fav) => (
+                        <li key={fav.id} className="perfil-fav-item">
+                          <Link to={`/eventos/${fav.evento}`} className="perfil-fav-item__title">
+                            {fav.evento_titulo || 'Evento'}
+                          </Link>
+                          <button
+                            className="perfil-link perfil-link--danger"
+                            onClick={() => quitarFavorito(fav)}
+                          >
+                            <FaTrashAlt /> Quitar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                )}
+              </div>
+            )}
+
+            {tab === 'donaciones' && (
+              <div>
+                <h2 className="perfil-section-title">Mis Donaciones</h2>
+                <p className="perfil-help">
+                  Aqui puedes ver el historial de todas las donaciones que has realizado a la comunidad Zapotal.
+                  Tu apoyo hace posible que sigamos creciendo juntos.
+                </p>
+
+                <div className="donaciones-actions">
+                  <Link to="/donaciones" className="donaciones-btn-donar">
+                    <FaHandHoldingHeart /> Hacer una nueva donacion
+                    <FaExternalLinkAlt className="donaciones-btn-icon-out" />
+                  </Link>
+                </div>
+
+                {donacionesLoading && (
+                  <p className="perfil-help">Cargando tus donaciones...</p>
+                )}
+
+                {donacionesError && (
+                  <p className="perfil-error">{donacionesError}</p>
+                )}
+
+                {!donacionesLoading && !donacionesError && donaciones.length === 0 && (
+                  <div className="donaciones-empty">
+                    <FaHandHoldingHeart className="donaciones-empty-icon" />
+                    <p>Aun no has realizado ninguna donacion.</p>
+                    <Link to="/donaciones" className="donaciones-btn-donar">
+                      Ser el primero en donar
+                    </Link>
+                  </div>
+                )}
+
+                {!donacionesLoading && donaciones.length > 0 && (
+                  <div className="donaciones-list">
+                    {donaciones.map((d) => {
+                      const estado = ESTADO_DONACION[d.estado] || ESTADO_DONACION.PENDIENTE;
+                      const estiloEstado = ESTILO_ESTADO[estado.color] || ESTILO_ESTADO.gray;
+                      const destinatario = DESTINATARIO_LABELS[d.destinatario] || d.destinatario;
+                      const fecha = d.fecha_creacion
+                        ? new Date(d.fecha_creacion).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+                        : '';
+                      return (
+                        <div key={d.id} className="donaciones-card">
+                          <div className="donaciones-card-head">
+                            <div>
+                              <p className="donaciones-card-monto">
+                                S/ {Number(d.monto).toFixed(2)} <span className="donaciones-card-moneda">{d.moneda}</span>
+                              </p>
+                              <p className="donaciones-card-dest">{destinatario}</p>
+                            </div>
+                            <span className={`donaciones-estado-badge ${estiloEstado}`}>
+                              {estado.icon} {estado.label}
+                            </span>
+                          </div>
+                          {d.mensaje && (
+                            <p className="donaciones-card-msg">"{d.mensaje}"</p>
+                          )}
+                          <div className="donaciones-card-foot">
+                            <span className="donaciones-card-fecha">{fecha}</span>
+                            {d.mp_payment_id && (
+                              <span className="donaciones-card-ref">
+                                Ref: {String(d.mp_payment_id).slice(-8)}
+                              </span>
+                            )}
+                          </div>
+                          {d.estado === 'APROBADO' && (
+                            <div className="donaciones-card-actions">
+                              <button
+                                type="button"
+                                className="donaciones-btn-boleta"
+                                onClick={() => descargarBoleta(d.id)}
+                                aria-label="Descargar boleta en PDF"
+                              >
+                                <FaFilePdf /> Descargar boleta (PDF)
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {tab === 'seguridad' && (
               <div>
                 <h2 className="perfil-section-title">Seguridad de la cuenta</h2>
@@ -1147,222 +1363,6 @@ export default function Perfil() {
                     )}
                   </div>
                 </div>
-              </div>
-            )}
-
-            {tab === 'notificaciones' && (
-              <div>
-                <h2 className="perfil-section-title">Notificaciones</h2>
-                <div className="perfil-notif-filters">
-                  <button
-                    className={`perfil-pill ${notifFiltro === '' ? 'perfil-pill--active' : ''}`}
-                    onClick={() => { setNotifFiltro(''); setTimeout(cargarNotificaciones, 0); }}
-                  >Todas</button>
-                  <button
-                    className={`perfil-pill ${notifFiltro === 'no_leidas' ? 'perfil-pill--active' : ''}`}
-                    onClick={() => { setNotifFiltro('no_leidas'); setTimeout(cargarNotificaciones, 0); }}
-                  >No leidas</button>
-                  <button
-                    className={`perfil-pill ${notifFiltro === 'leidas' ? 'perfil-pill--active' : ''}`}
-                    onClick={() => { setNotifFiltro('leidas'); setTimeout(cargarNotificaciones, 0); }}
-                  >Leidas</button>
-                  <div className="flex-1" />
-                  <button className="perfil-link" onClick={marcarTodasLeidas}>
-                    Marcar todas como leidas
-                  </button>
-                </div>
-                {notificaciones.length === 0 ? (
-                  <p className="perfil-help">No tienes notificaciones.</p>
-                ) : (
-                  <ul className="perfil-notif-list">
-                    {notificaciones.map((n) => (
-                      <li
-                        key={n.id}
-                        className={`perfil-notif-item ${n.leido ? 'perfil-notif-item--leido' : ''}`}
-                        onClick={() => verNotificacion(n)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === 'Enter') verNotificacion(n); }}
-                      >
-                        <div className="perfil-notif-item__icon"><FaBell /></div>
-                        <div className="perfil-notif-item__body">
-                          <div className="perfil-notif-item__title">{n.titulo}</div>
-                          <div className="perfil-notif-item__msg">{n.mensaje}</div>
-                          <div className="perfil-notif-item__time">
-                            {timeAgo(n.fecha)}
-                            {n.tipo_display && n.tipo_display !== 'Informacion' && <span className="perfil-notif-tipo"> &middot; {n.tipo_display}</span>}
-                          </div>
-                        </div>
-                        <div className="perfil-notif-item__actions">
-                          {!n.leido && (
-                            <button className="perfil-link" onClick={(e) => { e.stopPropagation(); marcarNotifLeida(n.id); }}>
-                              <FaCheck /> Marcar leida
-                            </button>
-                          )}
-                          <button className="perfil-link perfil-link--danger" onClick={(e) => { e.stopPropagation(); eliminarNotif(n.id); }}>
-                            Eliminar
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-
-            {/* Modal de detalle de notificacion */}
-            {notifDetalle && (
-              <NotifDetalleModal
-                notificacion={notifDetalle}
-                onClose={cerrarDetalleNotif}
-                onIrDestino={irADestinoNotif}
-              />
-            )}
-
-            {tab === 'favoritos' && (
-              <div>
-                <h2 className="perfil-section-title">Favoritos</h2>
-                <div className="perfil-fav-tabs">
-                  <button
-                    className={`perfil-pill ${subFav === 'NOTICIA' ? 'perfil-pill--active' : ''}`}
-                    onClick={() => setSubFav('NOTICIA')}
-                  >
-                    Noticias ({favoritosNoticias.length})
-                  </button>
-                  <button
-                    className={`perfil-pill ${subFav === 'EVENTO' ? 'perfil-pill--active' : ''}`}
-                    onClick={() => setSubFav('EVENTO')}
-                  >
-                    Eventos ({favoritosEventos.length})
-                  </button>
-                </div>
-                {subFav === 'NOTICIA' ? (
-                  favoritosNoticias.length === 0 ? (
-                    <p className="perfil-help">No tienes noticias favoritas.</p>
-                  ) : (
-                    <ul className="perfil-fav-list">
-                      {favoritosNoticias.map((fav) => (
-                        <li key={fav.id} className="perfil-fav-item">
-                          <Link to={`/noticias/${fav.noticia}`} className="perfil-fav-item__title">
-                            {fav.noticia_titulo || 'Noticia'}
-                          </Link>
-                          <button
-                            className="perfil-link perfil-link--danger"
-                            onClick={() => quitarFavorito(fav)}
-                          >
-                            <FaTrashAlt /> Quitar
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )
-                ) : (
-                  favoritosEventos.length === 0 ? (
-                    <p className="perfil-help">No tienes eventos favoritos.</p>
-                  ) : (
-                    <ul className="perfil-fav-list">
-                      {favoritosEventos.map((fav) => (
-                        <li key={fav.id} className="perfil-fav-item">
-                          <Link to={`/eventos/${fav.evento}`} className="perfil-fav-item__title">
-                            {fav.evento_titulo || 'Evento'}
-                          </Link>
-                          <button
-                            className="perfil-link perfil-link--danger"
-                            onClick={() => quitarFavorito(fav)}
-                          >
-                            <FaTrashAlt /> Quitar
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )
-                )}
-              </div>
-            )}
-
-            {tab === 'donaciones' && (
-              <div>
-                <h2 className="perfil-section-title">Mis Donaciones</h2>
-                <p className="perfil-help">
-                  Aqui puedes ver el historial de todas las donaciones que has realizado a la comunidad Zapotal.
-                  Tu apoyo hace posible que sigamos creciendo juntos.
-                </p>
-
-                <div className="donaciones-actions">
-                  <Link to="/donaciones" className="donaciones-btn-donar">
-                    <FaHandHoldingHeart /> Hacer una nueva donacion
-                    <FaExternalLinkAlt className="donaciones-btn-icon-out" />
-                  </Link>
-                </div>
-
-                {donacionesLoading && (
-                  <p className="perfil-help">Cargando tus donaciones...</p>
-                )}
-
-                {donacionesError && (
-                  <p className="perfil-error">{donacionesError}</p>
-                )}
-
-                {!donacionesLoading && !donacionesError && donaciones.length === 0 && (
-                  <div className="donaciones-empty">
-                    <FaHandHoldingHeart className="donaciones-empty-icon" />
-                    <p>Aun no has realizado ninguna donacion.</p>
-                    <Link to="/donaciones" className="donaciones-btn-donar">
-                      Ser el primero en donar
-                    </Link>
-                  </div>
-                )}
-
-                {!donacionesLoading && donaciones.length > 0 && (
-                  <div className="donaciones-list">
-                    {donaciones.map((d) => {
-                      const estado = ESTADO_DONACION[d.estado] || ESTADO_DONACION.PENDIENTE;
-                      const estiloEstado = ESTILO_ESTADO[estado.color] || ESTILO_ESTADO.gray;
-                      const destinatario = DESTINATARIO_LABELS[d.destinatario] || d.destinatario;
-                      const fecha = d.fecha_creacion
-                        ? new Date(d.fecha_creacion).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
-                        : '';
-                      return (
-                        <div key={d.id} className="donaciones-card">
-                          <div className="donaciones-card-head">
-                            <div>
-                              <p className="donaciones-card-monto">
-                                S/ {Number(d.monto).toFixed(2)} <span className="donaciones-card-moneda">{d.moneda}</span>
-                              </p>
-                              <p className="donaciones-card-dest">{destinatario}</p>
-                            </div>
-                            <span className={`donaciones-estado-badge ${estiloEstado}`}>
-                              {estado.icon} {estado.label}
-                            </span>
-                          </div>
-                          {d.mensaje && (
-                            <p className="donaciones-card-msg">"{d.mensaje}"</p>
-                          )}
-                          <div className="donaciones-card-foot">
-                            <span className="donaciones-card-fecha">{fecha}</span>
-                            {d.mp_payment_id && (
-                              <span className="donaciones-card-ref">
-                                Ref: {String(d.mp_payment_id).slice(-8)}
-                              </span>
-                            )}
-                          </div>
-                          {d.estado === 'APROBADO' && (
-                            <div className="donaciones-card-actions">
-                              <button
-                                type="button"
-                                className="donaciones-btn-boleta"
-                                onClick={() => descargarBoleta(d.id)}
-                                aria-label="Descargar boleta en PDF"
-                              >
-                                <FaFilePdf /> Descargar boleta (PDF)
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             )}
 
