@@ -43,7 +43,7 @@ export default function AdminBajas() {
     setLoading(true);
     setError(""); setOk("");
     try {
-      const params = { page: filters.page };
+      const params = { page: filters.page, page_size: 15 };
       if (filters.estado) params.estado = filters.estado;
       const { data } = await api.get("/solicitudes-baja/", { params, signal: controller.signal });
       setItems(extractList(data));
@@ -168,7 +168,7 @@ export default function AdminBajas() {
               </table>
               <Pagination
                 page={filters.page}
-                totalPages={Math.max(1, Math.ceil(totalItems / 20))}
+                totalPages={Math.max(1, Math.ceil(totalItems / 15))}
                 totalItems={totalItems}
                 onPageChange={(p) => setFilters({ page: p })}
               />

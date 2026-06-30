@@ -26,7 +26,6 @@
 
 /* ── Base ── */
 .perfil-page {
-  min-height: 100vh;
   background: var(--gris-fondo);
   font-family: 'Inter', Arial, sans-serif;
   color: var(--texto-oscuro);
@@ -1297,45 +1296,148 @@
   }
 }
 
-/* Card de Preferencias de cookies (tab Seguridad) - hardening 2026-06-29 */
+/* Card de Preferencias de cookies (tab Seguridad) - hardened 2026-06-29 */
+.perfil-cookies-card {
+  display: block;
+}
 .perfil-cookies-card .perfil-section-title h2 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 18px;
 }
-.perfil-cookies-summary {
+
+/* Status badge */
+.cookies-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 4px 0 14px;
+}
+.cookies-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cookies-status__body {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cookies-status__text {
+  white-space: nowrap;
+}
+.cookies-status__date {
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.75;
+}
+.cookies-status--accepted {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+.cookies-status--accepted .cookies-status__dot { background: #2e7d32; }
+.cookies-status--partial {
+  background: #fff8e1;
+  color: #b76e00;
+}
+.cookies-status--partial .cookies-status__dot { background: #f9a825; }
+.cookies-status--rejected {
+  background: #fbe9e7;
+  color: #b71c1c;
+}
+.cookies-status--rejected .cookies-status__dot { background: #c62828; }
+.cookies-status--none {
+  background: #f5f5f5;
+  color: #616161;
+}
+.cookies-status--none .cookies-status__dot { background: #9e9e9e; }
+
+/* Category breakdown */
+.cookies-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   background: #f9fafb;
   border: 1px solid #e0e6e2;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin: 8px 0 14px;
-  font-size: 14px;
-  color: #1a2620;
-  line-height: 1.5;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
 }
-.perfil-cookies-date {
-  color: #6b7c72;
-  font-size: 12px;
-}
-.perfil-cookies-actions {
+.cookies-breakdown__item {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff;
 }
-.perfil-cookies-actions .perfil-btn-primary,
-.perfil-cookies-actions .perfil-btn-secondary {
+.cookies-breakdown__item--always {
+  background: #f1f8e9;
+}
+.cookies-breakdown__icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.cookies-breakdown__icon--on { color: #2e7d32; }
+.cookies-breakdown__icon--off { color: #c62828; }
+.cookies-breakdown__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cookies-breakdown__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2620;
+}
+.cookies-breakdown__desc {
+  font-size: 11px;
+  color: #6b7c72;
+}
+.cookies-status__tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.cookies-status__tag--active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.cookies-status__tag--inactive {
+  background: #fbe9e7;
+  color: #c62828;
+}
+
+/* Actions row */
+.cookies-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cookies-actions .perfil-btn-primary,
+.cookies-actions .perfil-btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 @media (max-width: 600px) {
-  .perfil-cookies-actions {
+  .cookies-actions {
     flex-direction: column;
     align-items: stretch;
   }
-  .perfil-cookies-actions .perfil-btn-primary,
-  .perfil-cookies-actions .perfil-btn-secondary {
+  .cookies-actions .perfil-btn-primary,
+  .cookies-actions .perfil-btn-secondary {
     width: 100%;
     justify-content: center;
   }

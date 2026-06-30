@@ -32,7 +32,7 @@ export default function AdminComentarios() {
     setLoading(true);
     setError(""); setOk("");
     try {
-      const params = { page: filters.page };
+      const params = { page: filters.page, page_size: 15 };
       if (filters.estado) params.estado = filters.estado;
       if (debouncedSearch) params.search = debouncedSearch;
       const r = await api.get("/comentarios/", { params, signal: controller.signal });
@@ -81,7 +81,7 @@ export default function AdminComentarios() {
     { key: "estado", value: "ELIMINADO", label: "Eliminados" },
   ];
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / 20));
+  const totalPages = Math.max(1, Math.ceil(totalItems / 15));
 
   return (
     <div>

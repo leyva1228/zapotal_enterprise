@@ -7,8 +7,8 @@ import Pagination from "../../components/Admin/Pagination";
 import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
-import SubirMultimedia from "../../components/SubirMultimedia";
-import "../../components/SubirMultimedia.css";
+import SubirMultimedia from "../../components/media/SubirMultimedia/SubirMultimedia";
+import "../../components/media/SubirMultimedia/SubirMultimedia.css";
 
 const EMPTY = {
   titulo: "", contenido: "", resumen: "",
@@ -45,7 +45,7 @@ export default function AdminNoticias() {
     setLoading(true);
     setError(""); setOk("");
     try {
-      const params = { page: filters.page };
+      const params = { page: filters.page, page_size: 15 };
       if (filters.estadoNoticia) params.estado = filters.estadoNoticia;
       if (debouncedSearch) params.search = debouncedSearch;
       const [n, c] = await Promise.all([
@@ -214,7 +214,7 @@ export default function AdminNoticias() {
               </table>
               <Pagination
                 page={filters.page}
-                totalPages={Math.max(1, Math.ceil(totalItems / 20))}
+                totalPages={Math.max(1, Math.ceil(totalItems / 15))}
                 totalItems={totalItems}
                 onPageChange={(p) => setFilters({ page: p })}
               />

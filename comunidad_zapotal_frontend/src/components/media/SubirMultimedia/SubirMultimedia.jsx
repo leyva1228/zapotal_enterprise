@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { FaTrash, FaImage, FaVideo, FaCloudUploadAlt, FaCheck } from "react-icons/fa";
-import api from "../api";
+import api from "../../../api";
 
 /**
  * Componente reutilizable para subir multiples archivos multimedia

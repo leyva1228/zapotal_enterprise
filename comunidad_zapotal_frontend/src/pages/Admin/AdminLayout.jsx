@@ -16,14 +16,15 @@ import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from
 import {
   FaTachometerAlt, FaUsers, FaNewspaper, FaCalendarAlt, FaCommentDots,
   FaEnvelope, FaLandmark, FaHandHoldingHeart, FaListAlt, FaCog, FaUserCircle,
-  FaSignOutAlt, FaHome, FaSync, FaBell, FaImages,
+  FaSignOutAlt, FaHome, FaSync, FaBell,
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import './AdminLayout.css';
 
 // Items del sidebar en el orden pedido por el usuario.
-// Incluye Galeria y Perfil como items independientes.
+// Galeria se administra desde Institucional (tab Galeria).
+// Perfil como item independiente al final.
 const MENU_ITEMS = [
   { to: '/admin',                label: 'Dashboard',     icon: <FaTachometerAlt /> },
   { to: '/admin/usuarios',       label: 'Usuarios',      icon: <FaUsers /> },
@@ -33,7 +34,6 @@ const MENU_ITEMS = [
   { to: '/admin/comentarios',    label: 'Comentarios',   icon: <FaCommentDots /> },
   { to: '/admin/autoridades',    label: 'Autoridades',   icon: <FaLandmark /> },
   { to: '/admin/donaciones',     label: 'Donaciones',    icon: <FaHandHoldingHeart /> },
-  { to: '/admin/galeria',        label: 'Galeria',       icon: <FaImages /> },
   { to: '/admin/institucional',  label: 'Contenido',     icon: <FaListAlt /> },
   { to: '/admin/auditoria',      label: 'Sistema',       icon: <FaCog /> },
   { to: '/admin/perfil',         label: 'Perfil',        icon: <FaUserCircle /> },

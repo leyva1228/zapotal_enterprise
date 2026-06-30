@@ -3,10 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   FaShieldAlt, FaArrowLeft, FaKey, FaTimes,
 } from 'react-icons/fa';
-import api from '../api';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from './ToastCenter';
-import OTPInput from './OTPInput';
+import api from '../../../api';
+import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../common/ToastCenter/ToastCenter';
+import OTPInput from '../OTPInput/OTPInput';
 import './TwoFactorVerify.css';
 
 export default function TwoFactorVerify() {

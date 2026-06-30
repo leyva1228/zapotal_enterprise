@@ -6,7 +6,7 @@ import {
   FaEnvelope, FaLock, FaShieldAlt, FaLeaf, FaUserPlus,
   FaEye, FaEyeSlash, FaArrowRight, FaExclamationTriangle,
 } from 'react-icons/fa';
-import Turnstile from '../../components/Turnstile';
+import Turnstile from '../../components/auth/Turnstile/Turnstile';
 
 const MAX_INTENTOS = 10;
 const BLOQUEO_MS = 5 * 60 * 1000;

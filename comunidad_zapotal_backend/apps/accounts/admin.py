@@ -15,7 +15,7 @@ class UsuarioAdmin(DjangoUserAdmin):
     """
     Admin para el modelo Usuario custom.
     """
-    list_display = ['email', 'tipo_usuario', 'estado', 'is_active', 'is_staff', 'fecha_registro']
+    list_display = ['email', 'tipo_usuario', 'estado', 'bloqueado_hasta', 'is_active', 'is_staff', 'fecha_registro']
     list_filter = ['tipo_usuario', 'estado', 'is_active', 'is_staff', 'is_superuser']
     search_fields = ['email', 'comunero__nombres', 'comunero__apellidos', 'comunero__dni']
     ordering = ['-fecha_registro']
@@ -42,11 +42,11 @@ class UsuarioAdmin(DjangoUserAdmin):
             ),
         }),
     )
-    readonly_fields = ['fecha_registro', 'last_login']
+    readonly_fields = ['fecha_registro', 'last_login', 'bloqueado_hasta']
     raw_id_fields = ['comunero']
     list_per_page = 30
 
-    actions = ['activar_usuarios', 'desactivar_usuarios', 'exportar_csv']
+    actions = ['activar_usuarios', 'desactivar_usuarios', 'dar_baja_usuarios', 'exportar_csv']
 
     @admin.action(description='Activar usuarios seleccionados')
     def activar_usuarios(self, request, queryset):
@@ -57,6 +57,15 @@ class UsuarioAdmin(DjangoUserAdmin):
     def desactivar_usuarios(self, request, queryset):
         updated = queryset.update(estado='INACTIVO', is_active=False)
         self.message_user(request, f'{updated} usuario(s) desactivado(s).')
+
+    @admin.action(description='Dar de baja usuarios seleccionados (DE_BAJA)')
+    def dar_baja_usuarios(self, request, queryset):
+        updated = queryset.update(
+            estado='DE_BAJA',
+            is_active=False,
+            bloqueado_hasta=None,
+        )
+        self.message_user(request, f'{updated} usuario(s) marcado(s) como DE BAJA.')
 
     @admin.action(description='Exportar a CSV')
     def exportar_csv(self, request, queryset):

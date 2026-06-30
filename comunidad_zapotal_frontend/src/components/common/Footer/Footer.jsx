@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FaCookieBite } from "react-icons/fa";
-import useBannerCookies from "../hooks/useBannerCookies";
+import useBannerCookies from "../../../hooks/useBannerCookies";
 import "./Footer.css";
 
 function Footer() {

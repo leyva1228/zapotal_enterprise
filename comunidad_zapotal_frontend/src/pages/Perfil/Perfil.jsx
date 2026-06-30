@@ -7,11 +7,11 @@ import {
   FaHandHoldingHeart, FaExternalLinkAlt, FaHourglassHalf, FaTimesCircle,
   FaCloudUploadAlt, FaDownload, FaFilePdf,
   FaNewspaper, FaMapMarkerAlt, FaDonate, FaLink, FaArrowRight, FaBullhorn,
-  FaCookieBite,
+  FaCookieBite, FaUndo, FaCookie,
 } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import { useAuth } from "../../context/AuthContext";
-import BotonFavorito from "../../components/BotonFavorito";
+import BotonFavorito from "../../components/common/BotonFavorito/BotonFavorito";
 import CameraCapture from "../../components/Perfil/CameraCapture";
 import useBannerCookies from "../../hooks/useBannerCookies";
 import "./Perfil.css";
@@ -221,6 +221,8 @@ export default function Perfil() {
   const [bajaForm, setBajaForm] = useState({ motivo: '', confirma: false });
   const [bajaEnviada, setBajaEnviada] = useState(false);
   const [bajaEstado, setBajaEstado] = useState(null); // null | PENDIENTE | APROBADA | RECHAZADA | CANCELADA
+  const [showBajaConfirmModal, setShowBajaConfirmModal] = useState(false);
+  const [bajaConfirmEmail, setBajaConfirmEmail] = useState('');
 
   // Donaciones
   const [donaciones, setDonaciones] = useState([]);
@@ -387,17 +389,20 @@ export default function Perfil() {
 
   const cargarEstadoBaja = async () => {
     try {
-      const { data } = await api.get('/solicitudes-baja/?estado=PENDIENTE');
+      const { data } = await api.get('/mi-cuenta/estado-baja/');
       const list = Array.isArray(data) ? data : (data?.results || []);
-      if (list.length > 0) {
-        setBajaEstado('PENDIENTE');
-        setBajaEnviada(true);
+      if (list.length === 0) {
+        setBajaEstado(null);
+        setBajaEnviada(false);
       } else {
-        const { data: r } = await api.get('/solicitudes-baja/');
-        const all = Array.isArray(r) ? r : (r?.results || []);
-        if (all.length > 0) setBajaEstado(all[0].estado);
-        else setBajaEstado(null);
-        setBajaEnviada(all.length > 0);
+        const activa = list.find(s => s.estado === 'PENDIENTE' || s.estado === 'EN_REVISION');
+        if (activa) {
+          setBajaEstado(activa.estado);
+          setBajaEnviada(true);
+        } else {
+          setBajaEstado(null);
+          setBajaEnviada(false);
+        }
       }
     } catch (e) { setBajaEstado(null); }
   };
@@ -653,7 +658,7 @@ export default function Perfil() {
   };
 
   // Baja
-  const enviarBaja = async (e) => {
+  const enviarBaja = (e) => {
     e.preventDefault();
     if (bajaForm.motivo.trim().length < 20) {
       mostrarMensaje('El motivo debe tener al menos 20 caracteres.', 'error');
@@ -663,16 +668,32 @@ export default function Perfil() {
       mostrarMensaje('Debes confirmar que entiendes la baja.', 'error');
       return;
     }
+    setBajaConfirmEmail('');
+    setShowBajaConfirmModal(true);
+  };
+
+  const confirmarBaja = async () => {
+    if (bajaConfirmEmail.trim().toLowerCase() !== (usuario?.email || '').toLowerCase()) {
+      mostrarMensaje('El correo no coincide. Escribe tu correo electronico exacto.', 'error');
+      return;
+    }
+    setShowBajaConfirmModal(false);
     setLoading(true);
     try {
       await api.post('/mi-cuenta/solicitar-baja/', { motivo: bajaForm.motivo });
       setBajaEnviada(true);
       setBajaEstado('PENDIENTE');
+      setBajaForm({ motivo: '', confirma: false });
       mostrarMensaje('Tu solicitud ha sido enviada y esta en revision.');
     } catch (e) {
       const d = e.response?.data;
       mostrarMensaje(typeof d === 'string' ? d : (d?.detail || 'No se pudo enviar la solicitud.'), 'error');
     } finally { setLoading(false); }
+  };
+
+  const cerrarModalBaja = () => {
+    setShowBajaConfirmModal(false);
+    setBajaConfirmEmail('');
   };
 
   const cancelarBaja = async () => {
@@ -1324,30 +1345,80 @@ export default function Perfil() {
 
                 <div className="perfil-security-card perfil-cookies-card">
                   <div className="perfil-section-title">
-                    <h2><FaCookieBite /> Preferencias de cookies</h2>
+                    <h2><FaCookie /> Preferencias de cookies</h2>
                     <span />
                   </div>
                   <p className="perfil-help">
-                    Aqui puedes revisar y cambiar tu decision sobre cookies no esenciales
-                    (preferencias y analiticas). Las cookies necesarias siempre estan activas
-                    para que la plataforma funcione (autenticacion, sesion, seguridad).
+                    Aqui puedes revisar y cambiar tu decision sobre cookies no
+                    esenciales. Las cookies <strong>necesarias</strong> siempre
+                    estan activas para que la plataforma funcione
+                    (autenticacion, sesion, seguridad).
                   </p>
-                  <div className="perfil-cookies-summary">
-                    <strong>Tu decision actual:</strong>{' '}
-                    {cookiesUI.hasDecision
-                      ? cookiesUI.prefs?.analiticas
-                        ? 'Aceptaste todas las cookies.'
-                        : cookiesUI.prefs?.preferencias
-                          ? 'Aceptaste solo las cookies de preferencias.'
-                          : 'Rechazaste las cookies no esenciales.'
-                      : 'Aun no has tomado una decision.'}
-                    {cookiesUI.fecha && (
-                      <span className="perfil-cookies-date">
-                        {' '}({new Date(cookiesUI.fecha).toLocaleString('es-PE')})
+
+                  {(() => {
+                    const status = !cookiesUI.hasDecision ? 'none'
+                      : cookiesUI.prefs?.analiticas ? 'accepted'
+                      : cookiesUI.prefs?.preferencias ? 'partial'
+                      : 'rejected';
+                    return (
+                      <div className={`cookies-status cookies-status--${status}`}>
+                        <span className="cookies-status__dot" />
+                        <div className="cookies-status__body">
+                          <span className="cookies-status__text">
+                            {!cookiesUI.hasDecision
+                              ? 'Aun no has tomado una decision'
+                              : cookiesUI.prefs?.analiticas
+                                ? 'Aceptaste todas las cookies'
+                                : cookiesUI.prefs?.preferencias
+                                  ? 'Aceptaste solo cookies de preferencias'
+                                  : 'Rechazaste cookies no esenciales'}
+                          </span>
+                          {cookiesUI.fecha && (
+                            <span className="cookies-status__date">
+                              {new Date(cookiesUI.fecha).toLocaleString('es-PE')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="cookies-breakdown">
+                    <div className="cookies-breakdown__item cookies-breakdown__item--always">
+                      <FaCheckCircle className="cookies-breakdown__icon cookies-breakdown__icon--on" />
+                      <div className="cookies-breakdown__info">
+                        <span className="cookies-breakdown__label">Necesarias</span>
+                        <span className="cookies-breakdown__desc">Sesion, autenticacion, seguridad</span>
+                      </div>
+                      <span className="cookies-status__tag cookies-status__tag--active">Siempre activas</span>
+                    </div>
+                    <div className="cookies-breakdown__item">
+                      {cookiesUI.prefs?.preferencias
+                        ? <FaCheckCircle className="cookies-breakdown__icon cookies-breakdown__icon--on" />
+                        : <FaTimesCircle className="cookies-breakdown__icon cookies-breakdown__icon--off" />}
+                      <div className="cookies-breakdown__info">
+                        <span className="cookies-breakdown__label">Preferencias</span>
+                        <span className="cookies-breakdown__desc">Idioma, tema, configuracion</span>
+                      </div>
+                      <span className={`cookies-status__tag ${cookiesUI.prefs?.preferencias ? 'cookies-status__tag--active' : 'cookies-status__tag--inactive'}`}>
+                        {cookiesUI.prefs?.preferencias ? 'Activado' : 'Desactivado'}
                       </span>
-                    )}
+                    </div>
+                    <div className="cookies-breakdown__item">
+                      {cookiesUI.prefs?.analiticas
+                        ? <FaCheckCircle className="cookies-breakdown__icon cookies-breakdown__icon--on" />
+                        : <FaTimesCircle className="cookies-breakdown__icon cookies-breakdown__icon--off" />}
+                      <div className="cookies-breakdown__info">
+                        <span className="cookies-breakdown__label">Analiticas</span>
+                        <span className="cookies-breakdown__desc">Trafico y uso del sitio (anonimo)</span>
+                      </div>
+                      <span className={`cookies-status__tag ${cookiesUI.prefs?.analiticas ? 'cookies-status__tag--active' : 'cookies-status__tag--inactive'}`}>
+                        {cookiesUI.prefs?.analiticas ? 'Activado' : 'Desactivado'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="perfil-cookies-actions">
+
+                  <div className="cookies-actions">
                     <button
                       type="button"
                       className="perfil-btn-primary"
@@ -1361,7 +1432,7 @@ export default function Perfil() {
                         className="perfil-btn-secondary"
                         onClick={() => cookiesUI.reset()}
                       >
-                        Restablecer y volver a preguntar
+                        <FaUndo /> Restablecer y volver a preguntar
                       </button>
                     )}
                   </div>
@@ -1453,6 +1524,75 @@ export default function Perfil() {
             )}
           </section>
       </main>
+
+      {/* Modal de confirmacion de baja de cuenta */}
+      {showBajaConfirmModal && (
+        <div
+          className="fixed inset-0 z-[5000] bg-black/55 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={cerrarModalBaja}
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="titulo-modal-baja"
+        >
+          <div
+            className="w-full sm:max-w-md bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+              <h2 id="titulo-modal-baja" className="text-lg sm:text-xl font-bold text-red-700">
+                Confirmar baja de cuenta
+              </h2>
+              <button
+                type="button"
+                onClick={cerrarModalBaja}
+                aria-label="Cerrar"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
+                <p className="font-semibold mb-1">Esta accion es permanente.</p>
+                <p>Tu cuenta sera desactivada y no podras iniciar sesion. Tus datos (comentarios, reacciones, noticias) seguiran siendo visibles en la plataforma.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5" htmlFor="baja-confirm-email">
+                  Escribe tu correo electronico para confirmar:
+                </label>
+                <p className="text-xs text-gray-500 mb-2">Referencia: <span className="font-mono text-gray-700">{usuario?.email || '---'}</span></p>
+                <input
+                  id="baja-confirm-email"
+                  type="email"
+                  autoComplete="off"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400"
+                  placeholder={usuario?.email || 'tu@correo.com'}
+                  value={bajaConfirmEmail}
+                  onChange={(e) => setBajaConfirmEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmarBaja(); } }}
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={cerrarModalBaja}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmarBaja}
+                  disabled={bajaConfirmEmail.trim().toLowerCase() !== (usuario?.email || '').toLowerCase()}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-semibold text-sm hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  Confirmar baja
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modalFoto && (
         <div

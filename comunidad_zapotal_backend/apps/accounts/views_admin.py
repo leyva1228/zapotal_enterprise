@@ -179,16 +179,44 @@ def reject_user(request, user_id):
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def block_user(request, user_id):
-    """POST /api/v1/usuarios/{id}/bloquear/"""
+    """
+    POST /api/v1/usuarios/{id}/bloquear/
+    Body opcional: {motivo, dias_bloqueo}
+    - Si se pasa `dias_bloqueo` (int > 0), el bloqueo es temporal y se
+      auto-desbloqueará al cumplir el plazo (controlado en login).
+    """
     try:
         usuario = Usuario.objects.get(id=user_id)
     except Usuario.DoesNotExist:
         return Response({'detail': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
+    if usuario.estado == Usuario.EstadoUsuario.DE_BAJA:
+        return Response(
+            {'detail': 'No se puede bloquear una cuenta que ya fue dada de baja.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     motivo = (request.data.get('motivo') or '').strip()
+    dias_bloqueo = request.data.get('dias_bloqueo')
+    if dias_bloqueo is not None:
+        try:
+            dias = int(dias_bloqueo)
+        except (ValueError, TypeError):
+            return Response({'detail': 'dias_bloqueo debe ser un numero entero.'}, status=status.HTTP_400_BAD_REQUEST)
+        if dias <= 0:
+            return Response({'detail': 'dias_bloqueo debe ser mayor a 0.'}, status=status.HTTP_400_BAD_REQUEST)
+        if usuario.bloqueado_hasta and usuario.bloqueado_hasta > timezone.now():
+            current_delta = usuario.bloqueado_hasta - timezone.now()
+            usuario.bloqueado_hasta = timezone.now() + current_delta + timezone.timedelta(days=dias)
+        else:
+            usuario.bloqueado_hasta = timezone.now() + timezone.timedelta(days=dias)
+
     usuario.estado = Usuario.EstadoUsuario.BLOQUEADO
     usuario.is_active = False
-    usuario.save(update_fields=['estado', 'is_active'])
+    update_flds = ['estado', 'is_active']
+    if dias_bloqueo is not None:
+        update_flds.append('bloqueado_hasta')
+    usuario.save(update_fields=update_flds)
 
     # Revocar todos los tokens
     OutstandingToken.objects.filter(user=usuario).delete()
@@ -225,12 +253,20 @@ def unblock_user(request, user_id):
     except Usuario.DoesNotExist:
         return Response({'detail': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
+    if usuario.estado == Usuario.EstadoUsuario.DE_BAJA:
+        return Response(
+            {'detail': 'No se puede desbloquear una cuenta que fue dada de baja permanentemente.',
+             'code': 'USER_DE_BAJA'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     usuario.estado = Usuario.EstadoUsuario.ACTIVO
     usuario.is_active = True
     usuario.failed_login_attempts = 0
     usuario.locked_until = None
+    usuario.bloqueado_hasta = None
     usuario.save(update_fields=[
-        'estado', 'is_active', 'failed_login_attempts', 'locked_until',
+        'estado', 'is_active', 'failed_login_attempts', 'locked_until', 'bloqueado_hasta',
     ])
 
     from apps.messaging.models import Notificacion
@@ -251,5 +287,58 @@ def unblock_user(request, user_id):
         objeto_id=str(usuario.id),
         descripcion=f'Usuario {usuario.email} desbloqueado',
         request=request,
+    )
+    return Response({'status': 'ok', 'estado': usuario.estado})
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def dar_baja_usuario(request, user_id):
+    """POST /api/v1/usuarios/{id}/dar-baja/
+
+    Da de baja permanentemente a un usuario activo. No requiere
+    SolicitudBaja -- es accion directa del admin.
+    """
+    try:
+        usuario = Usuario.objects.get(id=user_id)
+    except Usuario.DoesNotExist:
+        return Response({'detail': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if usuario.estado == Usuario.EstadoUsuario.DE_BAJA:
+        return Response(
+            {'detail': 'El usuario ya esta dado de baja.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    notas = (request.data.get('motivo') or '').strip()
+
+    usuario.estado = Usuario.EstadoUsuario.DE_BAJA
+    usuario.is_active = False
+    usuario.bloqueado_hasta = None
+    usuario.save(update_fields=['estado', 'is_active', 'bloqueado_hasta'])
+
+    OutstandingToken.objects.filter(user=usuario).delete()
+
+    EmailService.enviar_baja_aprobada(usuario, notas)
+
+    from apps.messaging.models import Notificacion
+    Notificacion.objects.create(
+        destinatario=usuario,
+        titulo='Cuenta dada de baja',
+        mensaje=f'Tu cuenta ha sido dada de baja por un administrador.{(" Motivo: " + notas) if notas else ""}',
+        tipo=Notificacion.Tipo.SOLICITUD_BAJA_APROBADA,
+        url_destino='/cuenta/bloqueada',
+        referencia_tipo=Notificacion.ReferenciaTipo.USUARIO,
+        referencia_id=usuario.id,
+    )
+
+    log_audit_event(
+        usuario=request.user,
+        accion='DAR_BAJA',
+        modelo_afectado='Usuario',
+        objeto_id=str(usuario.id),
+        descripcion=f'Usuario {usuario.email} dado de baja por admin',
+        request=request,
+        metadata={'motivo': notas},
     )
     return Response({'status': 'ok', 'estado': usuario.estado})

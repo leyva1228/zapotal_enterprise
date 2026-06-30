@@ -6,8 +6,8 @@ import {
   FaHome, FaNewspaper, FaCalendarAlt, FaUsers,
   FaPhoneAlt, FaHandHoldingHeart,
 } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import NotificationBell from './NotificationBell';
+import { useAuth } from '../../../context/AuthContext';
+import NotificationBell from '../NotificationBell/NotificationBell';
 import './Navbar.css';
 
 // ── Links publicos con icono (estilo del companero) ──

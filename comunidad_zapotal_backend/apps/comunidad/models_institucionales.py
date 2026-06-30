@@ -343,6 +343,12 @@ class GaleriaImagen(models.Model):
         verbose_name = 'Imagen de Galeria'
         verbose_name_plural = 'Imagenes de Galeria'
 
+    def save(self, *args, **kwargs):
+        if not self.orden or self.orden == 0:
+            max_orden = GaleriaImagen.objects.aggregate(models.Max('orden'))['orden__max'] or 0
+            self.orden = max_orden + 1
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'{self.titulo} ({self.get_categoria_display()})'
 

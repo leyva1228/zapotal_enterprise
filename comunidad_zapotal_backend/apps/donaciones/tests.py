@@ -494,3 +494,34 @@ class AdminDonacionesAPITest(TestCase):
         client.force_authenticate(user=admin)
         r = client.get('/api/v1/donaciones/admin/lista/?search=9876543')
         self.assertEqual(r.json()['count'], 1)
+
+    def test_reenviar_boleta_solo_donacion_aprobada(self):
+        from rest_framework.test import APIClient
+        from unittest.mock import patch
+
+        admin = UsuarioFactory(is_staff=True, is_superuser=True)
+        d = Donacion.objects.create(
+            monto=Decimal('10.00'), email_donante='a@x.com',
+            estado='PENDIENTE', mp_payment_id=None,
+        )
+        client = APIClient()
+        client.force_authenticate(user=admin)
+        response = client.post(f'/api/v1/donaciones/admin/{d.id}/reenviar-boleta/')
+        self.assertEqual(response.status_code, 400)
+
+    def test_reenviar_boleta_ok(self):
+        from rest_framework.test import APIClient
+        from unittest.mock import patch
+        from apps.donaciones.views import _enviar_email_confirmacion
+
+        admin = UsuarioFactory(is_staff=True, is_superuser=True)
+        d = Donacion.objects.create(
+            monto=Decimal('10.00'), email_donante='a@x.com',
+            estado='APROBADO', mp_payment_id=12345,
+        )
+        client = APIClient()
+        client.force_authenticate(user=admin)
+        with patch('apps.donaciones.views._enviar_email_confirmacion') as mock:
+            response = client.post(f'/api/v1/donaciones/admin/{d.id}/reenviar-boleta/')
+        self.assertEqual(response.status_code, 200)
+        mock.assert_called_once()

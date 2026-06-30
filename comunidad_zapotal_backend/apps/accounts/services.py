@@ -168,6 +168,45 @@ class ComuneroService:
 # EMAIL SERVICE (Resend / SMTP)
 # =====================================================================
 
+def _html_wrapper(header, paragraphs, extra_html='', warning=''):
+    body_rows = ''
+    for p in paragraphs:
+        body_rows += (
+            f'<p style="color:#555;margin:0 0 16px;font-size:15px;line-height:1.5">{p}</p>'
+        )
+    warning_row = (
+        f'<p style="color:#b91c1c;margin:16px 0 0;font-size:14px;line-height:1.5">'
+        f'⚠ {warning}</p>'
+    ) if warning else ''
+    return (
+        f'<!DOCTYPE html>'
+        f'<html><head><meta charset="utf-8"></head>'
+        f'<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Inter,Arial,Helvetica,sans-serif">'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:24px 0">'
+        f'<tr><td align="center">'
+        f'<table role="presentation" width="520" cellpadding="0" cellspacing="0" '
+        f'style="max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">'
+        f'<tr><td style="background:linear-gradient(135deg,#0a3d1f 0%,#1a7a42 100%);padding:24px;text-align:center">'
+        f'<h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:600;letter-spacing:0.5px">'
+        f'Comunidad Campesina Niño Dios de Zapotal</h1>'
+        f'<p style="color:#b8d4c4;margin:4px 0 0;font-size:13px">Plataforma Institucional</p>'
+        f'</td></tr>'
+        f'<tr><td style="padding:32px 32px 16px">'
+        f'<h2 style="color:#0a3d1f;margin:0 0 16px;font-size:18px">{header}</h2>'
+        f'{body_rows}'
+        f'{extra_html}'
+        f'{warning_row}'
+        f'</td></tr>'
+        f'<tr><td style="background:#f9fafb;padding:20px 32px;border-top:1px solid #e5e7eb">'
+        f'<p style="color:#999;margin:0;font-size:12px;line-height:1.5">'
+        f'Comunidad Campesina Niño Dios de Zapotal<br>'
+        f'<a href="https://comunidadzapotal.com" style="color:#1a7a42;text-decoration:none">'
+        f'www.comunidadzapotal.com</a>'
+        f'</p></td></tr>'
+        f'</table></td></tr></table></body></html>'
+    )
+
+
 class EmailService:
     """Servicio de email transaccional."""
 
@@ -365,6 +404,99 @@ class EmailService:
             'Comunidad Campesina Niño Dios de Zapotal'
         )
         return EmailService.enviar_notificacion(destinatario, subject, body)
+
+    @staticmethod
+    def enviar_solicitud_baja(usuario):
+        subject = 'Solicitud de baja recibida - Comunidad Zapotal'
+        body = (
+            f'Hola {usuario.nombre_completo},\n\n'
+            'Hemos recibido tu solicitud de baja de la plataforma.\n'
+            'Un administrador revisara tu solicitud y te notificaremos '
+            'cuando sea procesada.\n\n'
+            'Si no realizaste esta solicitud, contactanos de inmediato.\n\n'
+            'Comunidad Campesina Niño Dios de Zapotal'
+        )
+        html = _html_wrapper(
+            header='Solicitud de baja recibida',
+            paragraphs=[
+                f'Hola <strong>{usuario.nombre_completo}</strong>,',
+                'Hemos recibido tu solicitud de baja de la plataforma. '
+                'Un administrador revisara tu solicitud y te notificaremos '
+                'cuando sea procesada.',
+            ],
+            warning='Si no realizaste esta solicitud, contactanos de inmediato.',
+        )
+        return EmailService.enviar_notificacion(usuario.email, subject, body, html=html)
+
+    @staticmethod
+    def enviar_baja_aprobada(usuario, motivo=''):
+        subject = 'Cuenta dada de baja - Comunidad Zapotal'
+        body = (
+            f'Hola {usuario.nombre_completo},\n\n'
+            'Tu cuenta en la Comunidad Campesina Niño Dios de Zapotal '
+            'ha sido dada de baja.\n'
+            f'{"Motivo: " + motivo if motivo else ""}\n\n'
+            'Si consideras que se trata de un error, contactanos.\n\n'
+            'Comunidad Campesina Niño Dios de Zapotal'
+        )
+        motivo_html = f'<p style="color:#555;margin:0 0 16px;font-size:15px"><strong>Motivo:</strong> {motivo}</p>' if motivo else ''
+        html = _html_wrapper(
+            header='Cuenta dada de baja',
+            paragraphs=[
+                f'Hola <strong>{usuario.nombre_completo}</strong>,',
+                'Tu cuenta en la Comunidad Campesina Niño Dios de Zapotal '
+                'ha sido dada de baja.',
+            ],
+            extra_html=motivo_html,
+            warning='Si consideras que se trata de un error, contactanos.',
+        )
+        return EmailService.enviar_notificacion(usuario.email, subject, body, html=html)
+
+    @staticmethod
+    def enviar_cambio_password(usuario):
+        subject = 'Contrasena actualizada - Comunidad Zapotal'
+        body = (
+            f'Hola {usuario.nombre_completo},\n\n'
+            'Tu contrasena de acceso a la plataforma ha sido actualizada '
+            'exitosamente.\n\n'
+            'Si no realizaste este cambio, contactanos de inmediato.\n\n'
+            'Comunidad Campesina Niño Dios de Zapotal'
+        )
+        html = _html_wrapper(
+            header='Contrasena actualizada',
+            paragraphs=[
+                f'Hola <strong>{usuario.nombre_completo}</strong>,',
+                'Tu contrasena de acceso a la plataforma ha sido actualizada '
+                'exitosamente.',
+            ],
+            warning='Si no realizaste este cambio, contactanos de inmediato.',
+        )
+        return EmailService.enviar_notificacion(usuario.email, subject, body, html=html)
+
+    @staticmethod
+    def enviar_2fa_activado(usuario):
+        subject = 'Autenticacion en dos pasos activada - Comunidad Zapotal'
+        body = (
+            f'Hola {usuario.nombre_completo},\n\n'
+            'La autenticacion en dos pasos (2FA) ha sido activada en tu cuenta.\n'
+            'A partir de ahora, cada vez que inicies sesion se te pedira '
+            'un codigo adicional de tu aplicación authenticator.\n\n'
+            'Guarda tus codigos de respaldo en un lugar seguro.\n'
+            'Si no activaste 2FA, contactanos de inmediato.\n\n'
+            'Comunidad Campesina Niño Dios de Zapotal'
+        )
+        html = _html_wrapper(
+            header='2FA activado',
+            paragraphs=[
+                f'Hola <strong>{usuario.nombre_completo}</strong>,',
+                'La autenticacion en dos pasos (2FA) ha sido activada en tu cuenta.',
+                'A partir de ahora, cada vez que inicies sesion se te pedira '
+                'un codigo adicional de tu aplicacion authenticator.',
+                'Guarda tus codigos de respaldo en un lugar seguro.',
+            ],
+            warning='Si no activaste 2FA, contactanos de inmediato.',
+        )
+        return EmailService.enviar_notificacion(usuario.email, subject, body, html=html)
 
 
 # =====================================================================

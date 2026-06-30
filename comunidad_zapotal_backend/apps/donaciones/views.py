@@ -546,6 +546,33 @@ class AdminCancelarDonacionView(APIView):
         return Response({'status': 'ok', 'donation_id': donacion.id})
 
 
+class AdminReenviarBoletaView(APIView):
+    """POST /api/v1/admin/donaciones/<id>/reenviar-boleta/"""
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        donacion = get_object_or_404(Donacion, pk=pk)
+        if donacion.estado != 'APROBADO':
+            return Response(
+                {'detail': f'Solo se puede reenviar boleta de donaciones APROBADAS. Estado actual: {donacion.estado}.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        _enviar_email_confirmacion(donacion)
+        log_audit_event(
+            usuario=request.user,
+            accion='DONACION_BOL_REENV',
+            objeto_id=donacion.id,
+            modelo_afectado='Donacion',
+            descripcion=f'Admin {request.user.email} reenvió boleta de donación #{donacion.id}',
+            ip_address=get_client_ip(request),
+        )
+        return Response({
+            'status': 'ok',
+            'detail': f'Boleta reenviada correctamente a {donacion.email_donante}',
+            'donation_id': donacion.id,
+        })
+
+
 class ProcesarPagoSimuladoView(APIView):
     """
     POST /api/v1/donaciones/procesar-simulado/

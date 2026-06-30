@@ -7,8 +7,8 @@ import Pagination from "../../components/Admin/Pagination";
 import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
-import SubirMultimedia from "../../components/SubirMultimedia";
-import "../../components/SubirMultimedia.css";
+import SubirMultimedia from "../../components/media/SubirMultimedia/SubirMultimedia";
+import "../../components/media/SubirMultimedia/SubirMultimedia.css";
 
 const EMPTY = {
   titulo: "", descripcion: "", lugar: "",
@@ -51,7 +51,7 @@ export default function AdminEventos() {
     setLoading(true);
     setError(""); setOk("");
     try {
-      const params = { page: filters.page };
+      const params = { page: filters.page, page_size: 15 };
       if (filters.estadoEvento === "activos") {
         const hoy = new Date().toISOString().slice(0, 10);
         params.fecha__gte = hoy;
@@ -220,7 +220,7 @@ export default function AdminEventos() {
               </table>
               <Pagination
                 page={filters.page}
-                totalPages={Math.max(1, Math.ceil(totalItems / 20))}
+                totalPages={Math.max(1, Math.ceil(totalItems / 15))}
                 totalItems={totalItems}
                 onPageChange={(p) => setFilters({ page: p })}
               />

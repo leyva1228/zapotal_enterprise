@@ -5,7 +5,7 @@ import {
   FaEnvelope, FaArrowRight, FaShieldAlt, FaLeaf,
   FaSpinner, FaCheckCircle, FaTimes, FaExclamationTriangle,
 } from 'react-icons/fa';
-import Turnstile from '../../components/Turnstile';
+import Turnstile from '../../components/auth/Turnstile/Turnstile';
 import './RecuperarPassword.css';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { FaShieldAlt } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function RequireAdmin({ children }) {
   const { isAuthenticated, isAdmin, loading } = useAuth();

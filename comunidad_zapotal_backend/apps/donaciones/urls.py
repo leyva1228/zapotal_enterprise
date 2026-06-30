@@ -11,6 +11,7 @@ from .views import (
     AdminDonacionesListView,
     AdminReembolsarDonacionView,
     AdminCancelarDonacionView,
+    AdminReenviarBoletaView,
     DescargarBoletaPDFView,
 )
 
@@ -30,6 +31,7 @@ urlpatterns = [
     path('admin/lista/', AdminDonacionesListView.as_view(), name='admin_lista'),
     path('admin/<int:pk>/reembolsar/', AdminReembolsarDonacionView.as_view(), name='admin_reembolsar'),
     path('admin/<int:pk>/cancelar/', AdminCancelarDonacionView.as_view(), name='admin_cancelar'),
+    path('admin/<int:pk>/reenviar-boleta/', AdminReenviarBoletaView.as_view(), name='admin_reenviar_boleta'),
 
     # Detalle (ultimo porque captura todo lo no listado)
     path('<int:pk>/', DonacionDetailView.as_view(), name='detalle'),

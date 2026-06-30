@@ -105,6 +105,7 @@ class GaleriaImagenSerializer(serializers.ModelSerializer):
     imagen_url = serializers.SerializerMethodField()
     noticia_titulo = serializers.SerializerMethodField()
     evento_titulo = serializers.SerializerMethodField()
+    fecha = serializers.SerializerMethodField()
 
     class Meta:
         model = GaleriaImagen
@@ -115,6 +116,15 @@ class GaleriaImagenSerializer(serializers.ModelSerializer):
             'noticia', 'noticia_titulo',
             'evento', 'evento_titulo',
         ]
+
+    def get_fecha(self, obj):
+        if obj.fecha:
+            return obj.fecha
+        if obj.noticia_id:
+            return obj.noticia.fecha_publicacion.date()
+        if obj.evento_id:
+            return obj.evento.fecha.date()
+        return None
 
     def get_imagen_url(self, obj):
         # Priorizar URL externa (R2/CDN) si existe.

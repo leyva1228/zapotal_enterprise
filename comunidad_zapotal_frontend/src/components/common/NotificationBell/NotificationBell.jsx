@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
-import api from "../api";
-import { useAuth } from "../context/AuthContext";
-import { extractList } from "../api";
+import api from "../../../api";
+import { useAuth } from "../../../context/AuthContext";
+import { extractList } from "../../../api";
 import "./NotificationBell.css";
 
 const INTERVAL = 60_000; // 60s polling

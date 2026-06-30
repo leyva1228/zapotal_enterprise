@@ -3,15 +3,13 @@ import {
   FaHandHoldingHeart, FaSearch, FaEye, FaUndo, FaTimesCircle,
   FaCheckCircle, FaHourglassHalf, FaMoneyBillWave, FaUsers,
   FaCalendarAlt, FaIdCard, FaEnvelope, FaCreditCard, FaReceipt,
-  FaDownload, FaFilter,
+  FaDownload, FaFilter, FaPaperPlane,
 } from "react-icons/fa";
 import api, { extractList } from "../../api";
 import FiltersBar from "../../components/Admin/FiltersBar";
 import Pagination from "../../components/Admin/Pagination";
-import LiveChart from "../../components/Admin/LiveChart";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
-import { useTimeSeries } from "../../hooks/useTimeSeries";
 import "./AdminDonaciones.css";
 
 const ESTADOS = [
@@ -85,42 +83,10 @@ export default function AdminDonaciones() {
     page: { defaultValue: 1, parser: parseIntParam },
   });
   const debouncedSearch = useDebouncedValue(filters.search, 350);
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 15;
 
   const [detalle, setDetalle] = useState(null);
   const [confirmAccion, setConfirmAccion] = useState(null);
-  const [donacionesChart, setDonacionesChart] = useState([]);
-  const [chartLoading, setChartLoading] = useState(true);
-
-  const cargarChart = useCallback(async () => {
-    setChartLoading(true);
-    try {
-      const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { data } = await api.get("/donaciones/admin/lista/", {
-        params: { fecha_donacion__gte: hace24h, estado: "APROBADO", page_size: 500 }
-      });
-      const lista = extractList(data);
-      // Mapear a {timestamp, value} donde value = monto
-      setDonacionesChart(
-        lista.map((d) => ({
-          timestamp: d.fecha_donacion || d.fecha_creacion || d.created_at,
-          value: Number(d.monto) || 0,
-        }))
-      );
-    } catch {
-      setDonacionesChart([]);
-    } finally {
-      setChartLoading(false);
-    }
-  }, []);
-
-  const seriesChart = useTimeSeries(donacionesChart, {
-    dateKey: "timestamp",
-    valueKey: "value",
-    bucketMs: 60 * 60 * 1000, // 1h
-    windowSecs: 86400, // 24h
-  });
-
   const cargarStats = useCallback(async () => {
     try {
       const { data } = await api.get("/donaciones/estadisticas/");
@@ -152,7 +118,6 @@ export default function AdminDonaciones() {
 
   useEffect(() => { cargarStats(); }, [cargarStats]);
   useEffect(() => { cargar(); }, [cargar]);
-  useEffect(() => { cargarChart(); }, [cargarChart]);
 
   const ejecutarAccion = async () => {
     if (!confirmAccion) return;
@@ -171,6 +136,16 @@ export default function AdminDonaciones() {
       setError(e.response?.data?.detail || `No se pudo ${confirmAccion.accion} la donacion.`);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const reenviarBoleta = async (donacion) => {
+    setError(""); setOk("");
+    try {
+      const { data } = await api.post(`/donaciones/admin/${donacion.id}/reenviar-boleta/`, {});
+      setOk(data.detail || `Boleta reenviada para donacion #${donacion.id}.`);
+    } catch (e) {
+      setError(e.response?.data?.detail || "No se pudo reenviar la boleta.");
     }
   };
 
@@ -264,22 +239,7 @@ export default function AdminDonaciones() {
           </div>
         </section>
 
-        <section style={{ marginBottom: 24 }}>
-          <LiveChart
-            data={seriesChart}
-            windowSecs={86400}
-            windows={[
-              { label: "1h", secs: 3600 },
-              { label: "6h", secs: 21600 },
-              { label: "24h", secs: 86400 },
-            ]}
-            title="Monto recaudado (ultimas 24h)"
-            color="#16a34a"
-            valueFormatter={(v) => `S/ ${v.toFixed(2)}`}
-            badge={seriesChart.length > 0 ? seriesChart[seriesChart.length - 1].value : 0}
-            height={180}
-          />
-        </section>
+
 
       <section className="adn-table-card">
         <div className="adn-table-meta">
@@ -344,14 +304,24 @@ export default function AdminDonaciones() {
                           <FaEye />
                         </button>
                         {d.estado === "APROBADO" && (
-                          <button
-                            type="button"
-                            className="adn-btn adn-btn-warn"
-                            onClick={() => setConfirmAccion({ donacion: d, accion: "reembolsar" })}
-                            title="Reembolsar"
-                          >
-                            <FaUndo />
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className="adn-btn adn-btn-ghost"
+                              onClick={() => reenviarBoleta(d)}
+                              title="Reenviar boleta"
+                            >
+                              <FaPaperPlane />
+                            </button>
+                            <button
+                              type="button"
+                              className="adn-btn adn-btn-warn"
+                              onClick={() => setConfirmAccion({ donacion: d, accion: "reembolsar" })}
+                              title="Reembolsar"
+                            >
+                              <FaUndo />
+                            </button>
+                          </>
                         )}
                         {d.estado === "PENDIENTE" && (
                           <button
@@ -386,7 +356,7 @@ export default function AdminDonaciones() {
         </section>
 
       {detalle && (
-        <DonacionDetalleModal donacion={detalle} onClose={() => setDetalle(null)} />
+        <DonacionDetalleModal donacion={detalle} onClose={() => setDetalle(null)} onReenviarBoleta={reenviarBoleta} />
       )}
 
       {confirmAccion && (
@@ -402,7 +372,7 @@ export default function AdminDonaciones() {
   );
 }
 
-function DonacionDetalleModal({ donacion, onClose }) {
+function DonacionDetalleModal({ donacion, onClose, onReenviarBoleta }) {
   const meta = ESTADO_META[donacion.estado] || ESTADO_META.PENDIENTE;
   const metodo = donacion.mp_payment_method
     ? (METODO_LABELS[donacion.mp_payment_method] || donacion.mp_payment_method)
@@ -511,7 +481,17 @@ function DonacionDetalleModal({ donacion, onClose }) {
             </details>
           )}
         </div>
-        <footer className="adn-modal__foot">
+        <footer className="adn-modal__foot adn-modal__foot--end">
+          {donacion.estado === "APROBADO" && (
+            <button
+              type="button"
+              className="adn-btn adn-btn-ghost"
+              onClick={() => { onReenviarBoleta(donacion); onClose(); }}
+              title="Reenviar boleta"
+            >
+              <FaPaperPlane /> Reenviar boleta
+            </button>
+          )}
           <button type="button" className="adn-btn adn-btn-ghost" onClick={onClose}>Cerrar</button>
         </footer>
       </div>

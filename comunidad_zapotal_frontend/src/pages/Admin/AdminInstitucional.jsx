@@ -14,6 +14,7 @@ import {
   FaCheckCircle, FaSpinner, FaExternalLinkAlt,
   FaAlignLeft, FaTags,
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import api, { extractList } from "../../api";
 import AdminModal from "../../components/Admin/AdminModal";
 import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
@@ -1097,6 +1098,7 @@ function HitosTab() {
 }
 
 function GaleriaTab() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -1111,12 +1113,12 @@ function GaleriaTab() {
   if (loading) return <div className="admin-loading"><FaSpinner className="fa-spin" /> Cargando...</div>;
   return (
     <div>
-      <p className="text-mute" style={{ marginBottom: 12 }}>
-        Para agregar imagenes a la galeria, usa el panel admin de Django:{' '}
-        <a href="/admin/comunidad/galeriaimagen/" target="_blank" rel="noopener noreferrer">
-          /admin/comunidad/galeriaimagen/ <FaExternalLinkAlt />
-        </a>
-      </p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-mute">Ultimas imagenes de la galeria.</p>
+        <button className="admin-btn admin-btn-primary" onClick={() => navigate('/admin/galeria')}>
+          <FaImages /> Gestion completa de galeria
+        </button>
+      </div>
       <table className="admin-table">
         <thead><tr><th>Titulo</th><th>Categoria</th><th>Fecha</th><th>Imagen</th></tr></thead>
         <tbody>

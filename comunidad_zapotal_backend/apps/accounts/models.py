@@ -162,6 +162,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         INACTIVO = 'INACTIVO', 'INACTIVO'
         BLOQUEADO = 'BLOQUEADO', 'Bloqueado por admin'
         RECHAZADO = 'RECHAZADO', 'Rechazado por admin'
+        DE_BAJA = 'DE_BAJA', 'Cuenta dada de baja (permanente)'
 
     class CanalVerificacion(models.TextChoices):
         EMAIL = 'EMAIL', 'Email (Resend)'
@@ -210,6 +211,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     failed_login_attempts = models.PositiveIntegerField(default=0)
     failed_otp_attempts = models.PositiveIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
+    bloqueado_hasta = models.DateTimeField(null=True, blank=True, verbose_name='Bloqueo temporal hasta')
     last_password_change = models.DateTimeField(null=True, blank=True)
     password_reset_required = models.BooleanField(default=False)
 

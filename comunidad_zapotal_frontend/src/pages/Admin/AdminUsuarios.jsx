@@ -8,7 +8,7 @@ import { useConfirm } from "../../components/Admin/AdminConfirmDialog";
 import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
-const ESTADOS = ["ACTIVO", "INACTIVO", "BLOQUEADO", "RECHAZADO", "PENDIENTE_OTP", "PENDIENTE_APROBACION"];
+const ESTADOS = ["ACTIVO", "INACTIVO", "BLOQUEADO", "RECHAZADO", "DE_BAJA", "PENDIENTE_OTP", "PENDIENTE_APROBACION"];
 
 function colorEstado(estado) {
   if (estado === "ACTIVO") return "admin-badge--success";
@@ -16,6 +16,7 @@ function colorEstado(estado) {
   if (estado === "RECHAZADO") return "admin-badge--danger";
   if (estado === "PENDIENTE_APROBACION" || estado === "PENDIENTE_OTP") return "admin-badge--warning";
   if (estado === "INACTIVO") return "admin-badge--gray";
+  if (estado === "DE_BAJA") return "admin-badge--danger";
   return "admin-badge--gray";
 }
 
@@ -56,7 +57,7 @@ export default function AdminUsuarios() {
     setLoading(true);
     setError(""); setOk("");
     try {
-      const params = { page: filters.page };
+      const params = { page: filters.page, page_size: 15 };
       if (filters.estado) params.estado = filters.estado;
       if (filters.tipo_usuario) params.tipo_usuario = filters.tipo_usuario;
       if (debouncedSearch) params.search = debouncedSearch;
@@ -155,6 +156,7 @@ export default function AdminUsuarios() {
         rechazar: `/usuarios/${id}/rechazar/`,
         bloquear: `/usuarios/${id}/bloquear/`,
         desbloquear: `/usuarios/${id}/desbloquear/`,
+        dar_baja: `/usuarios/${id}/dar-baja/`,
       }[actionModal.accion];
       const body = (actionModal.accion === "rechazar" || actionModal.accion === "bloquear")
         ? { motivo }
@@ -165,6 +167,7 @@ export default function AdminUsuarios() {
         rechazar: "rechazado",
         bloquear: "bloqueado",
         desbloquear: "desbloqueado",
+        dar_baja: "dado de baja",
       };
       setOk(`Usuario ${actionModal.item.email} ${labels[actionModal.accion]}.`);
       cerrarAccion();
@@ -182,6 +185,7 @@ export default function AdminUsuarios() {
     rechazar: { title: "Rechazar usuario", label: "Motivo del rechazo", color: "admin-btn-danger", btn: "Confirmar rechazo" },
     bloquear: { title: "Bloquear usuario", label: "Motivo del bloqueo", color: "admin-btn-danger", btn: "Confirmar bloqueo" },
     desbloquear: { title: "Desbloquear usuario", label: "Notas (opcional)", color: "admin-btn-primary", btn: "Confirmar desbloqueo" },
+    dar_baja: { title: "Dar de baja usuario", label: "Motivo de la baja", color: "admin-btn-danger", btn: "Confirmar baja definitiva" },
   };
 
   // Chips de filtro rapido por estado.
@@ -192,6 +196,7 @@ export default function AdminUsuarios() {
     { key: "estado", value: "BLOQUEADO", label: "Bloqueados" },
     { key: "estado", value: "INACTIVO", label: "Inactivos" },
     { key: "estado", value: "RECHAZADO", label: "Rechazados" },
+    { key: "estado", value: "DE_BAJA", label: "De baja" },
   ];
   const chipsRol = [
     { key: "tipo_usuario", value: "", label: "Todos los roles" },
@@ -200,7 +205,7 @@ export default function AdminUsuarios() {
     { key: "tipo_usuario", value: "USUARIO", label: "Usuarios" },
   ];
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / 20));
+  const totalPages = Math.max(1, Math.ceil(totalItems / 15));
 
   return (
     <div>
@@ -296,13 +301,22 @@ export default function AdminUsuarios() {
                           </>
                         )}
                         {u.estado === "ACTIVO" && (
-                          <button
-                            className="admin-btn admin-btn-sm admin-btn-danger"
-                            onClick={() => abrirAccion(u, "bloquear")}
-                            title="Bloquear"
-                          >
-                            <FaLock /> Bloquear
-                          </button>
+                          <>
+                            <button
+                              className="admin-btn admin-btn-sm admin-btn-danger"
+                              onClick={() => abrirAccion(u, "bloquear")}
+                              title="Bloquear"
+                            >
+                              <FaLock /> Bloquear
+                            </button>
+                            <button
+                              className="admin-btn admin-btn-sm admin-btn-danger"
+                              onClick={() => abrirAccion(u, "dar_baja")}
+                              title="Dar de baja"
+                            >
+                              <FaUserSlash /> Dar de baja
+                            </button>
+                          </>
                         )}
                         {u.estado === "BLOQUEADO" && (
                           <button
@@ -443,6 +457,7 @@ export default function AdminUsuarios() {
           {actionModal.accion === "desbloquear" && "El usuario podra volver a iniciar sesion."}
           {actionModal.accion === "aprobar" && "El usuario recibira un correo de bienvenida."}
           {actionModal.accion === "rechazar" && "El usuario sera marcado como RECHAZADO y no podra iniciar sesion."}
+          {actionModal.accion === "dar_baja" && "ATENCION: Esta accion es permanente. El usuario sera marcado como DE_BAJA y no podra volver a iniciar sesion. Se revocaran todos sus tokens."}
         </p>
         <div className="admin-form-group">
           <label className="admin-form-group__label">

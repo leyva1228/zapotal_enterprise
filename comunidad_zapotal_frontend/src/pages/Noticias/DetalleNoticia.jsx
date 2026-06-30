@@ -15,7 +15,7 @@ import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import { RiSendPlaneFill, RiShareForwardLine } from "react-icons/ri";
 import api, { extractList } from "../../api";
 import { useAuth } from "../../context/AuthContext";
-import BotonFavorito from "../../components/BotonFavorito";
+import BotonFavorito from "../../components/common/BotonFavorito/BotonFavorito";
 import { useTaskLifecycle } from "../../context/LoaderContext";
 import RelacionadosSidebar from "../../components/common/RelacionadosSidebar/RelacionadosSidebar";
 import { useAnonymousId } from "../../hooks/useAnonymousId";

@@ -6,9 +6,9 @@ import {
   FaUserPlus, FaLeaf, FaShieldAlt, FaCheckCircle, FaRedo,
   FaArrowRight, FaCheck, FaTimes, FaKey, FaSpinner, FaExclamationTriangle,
 } from 'react-icons/fa';
-import Turnstile from '../../components/Turnstile';
-import OTPInput from '../../components/OTPInput';
-import { useToast } from '../../components/ToastCenter';
+import Turnstile from '../../components/auth/Turnstile/Turnstile';
+import OTPInput from '../../components/auth/OTPInput/OTPInput';
+import { useToast } from '../../components/common/ToastCenter/ToastCenter';
 import './Registro.css';
 
 const sanitize = (v) => v.replace(/[<>"'`;]/g, '').trimStart();

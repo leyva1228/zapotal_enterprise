@@ -266,7 +266,6 @@ class GaleriaImagenViewSet(viewsets.ModelViewSet):
     - con_evento=1: solo imagenes con FK a Evento no nulo.
     - activo: true/false.
     """
-    queryset = GaleriaImagen.objects.select_related('noticia', 'evento').filter(activo=True)
     serializer_class = GaleriaImagenSerializer
     permission_classes = [IsAdminOrReadOnly]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -274,7 +273,11 @@ class GaleriaImagenViewSet(viewsets.ModelViewSet):
     filterset_fields = ['categoria', 'activo']
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = GaleriaImagen.objects.select_related('noticia', 'evento')
+        request = self.request
+        # Admin: ve todo (activos e inactivos). Publico: solo activos.
+        if not (request.user and request.user.is_authenticated and request.user.is_staff):
+            qs = qs.filter(activo=True)
         cat = self.request.query_params.get('categoria')
         if cat:
             qs = qs.filter(categoria=cat)

@@ -12,6 +12,7 @@ from .views_auth import (
 )
 from .views_admin import (
     pending_users, approve_user, reject_user, block_user, unblock_user,
+    dar_baja_usuario,
 )
 
 router = DefaultRouter()
@@ -51,4 +52,5 @@ urlpatterns = [
     path('usuarios/<int:user_id>/rechazar/', reject_user, name='usuarios_rechazar'),
     path('usuarios/<int:user_id>/bloquear/', block_user, name='usuarios_bloquear'),
     path('usuarios/<int:user_id>/desbloquear/', unblock_user, name='usuarios_desbloquear'),
+    path('usuarios/<int:user_id>/dar-baja/', dar_baja_usuario, name='usuarios_dar_baja'),
 ] + router.urls

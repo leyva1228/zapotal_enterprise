@@ -10,7 +10,7 @@
  * - PATCH  /api/v1/galeria/{id}/             (actualizar)
  * - DELETE /api/v1/galeria/{id}/             (eliminar)
  */
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import {
   FaPlus, FaEdit, FaTrash, FaImages, FaCheck, FaTimes, FaSave,
   FaCalendarAlt, FaSortNumericDown, FaTag, FaToggleOn, FaToggleOff,
@@ -25,26 +25,18 @@ import { useUrlFilters, parseIntParam } from "../../hooks/useUrlFilters";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import useAdminRefresh from "../../hooks/useAdminRefresh";
 
-const CATEGORIAS = [
-  { value: "",                label: "Todas las categorias" },
-  { value: "COMUNIDAD",       label: "Comunidad" },
-  { value: "AUTORIDADES",     label: "Autoridades" },
-  { value: "FESTIVIDADES",    label: "Festividades" },
-  { value: "INFRAESTRUCTURA", label: "Infraestructura" },
-  { value: "NATURALEZA",      label: "Naturaleza" },
-  { value: "PATRIMONIO",      label: "Patrimonio Cultural" },
-  { value: "OTRO",            label: "Otro" },
+const CATEGORIA_COLORS = [
+  "bg-emerald-100 text-emerald-800",
+  "bg-amber-100 text-amber-800",
+  "bg-rose-100 text-rose-800",
+  "bg-sky-100 text-sky-800",
+  "bg-lime-100 text-lime-800",
+  "bg-violet-100 text-violet-800",
+  "bg-indigo-100 text-indigo-800",
+  "bg-teal-100 text-teal-800",
+  "bg-orange-100 text-orange-800",
+  "bg-cyan-100 text-cyan-800",
 ];
-
-const CATEGORIA_COLORS = {
-  COMUNIDAD:       "bg-emerald-100 text-emerald-800",
-  AUTORIDADES:     "bg-amber-100 text-amber-800",
-  FESTIVIDADES:    "bg-rose-100 text-rose-800",
-  INFRAESTRUCTURA: "bg-sky-100 text-sky-800",
-  NATURALEZA:      "bg-lime-100 text-lime-800",
-  PATRIMONIO:      "bg-violet-100 text-violet-800",
-  OTRO:            "bg-slate-100 text-slate-700",
-};
 
 const EMPTY = {
   titulo: "",
@@ -74,6 +66,7 @@ export default function AdminGaleria() {
   const [preview, setPreview] = useState(null);
   const [noticias, setNoticias] = useState([]);
   const [eventos, setEventos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
 
   const abortRef = useRef(null);
 
@@ -93,7 +86,7 @@ export default function AdminGaleria() {
     setError("");
     setOk("");
     try {
-      const params = { page: filters.page, page_size: 20 };
+      const params = { page: filters.page, page_size: 15 };
       if (filters.categoria) params.categoria = filters.categoria;
       if (debouncedSearch) params.search = debouncedSearch;
       const { data } = await api.get("/galeria/", { params, signal: controller.signal });
@@ -127,6 +120,19 @@ export default function AdminGaleria() {
         .catch(() => setEventos([])),
     ]);
   }, []);
+
+  // Cargar categorias desde la API.
+  useEffect(() => {
+    api.get('/galerias/categorias-admin/')
+      .then(r => setCategorias(extractList(r.data)))
+      .catch(() => setCategorias([]));
+  }, []);
+
+  const categoriaOptions = useMemo(() => {
+    const opts = categorias.map(c => ({ value: c.nombre, label: c.label }));
+    opts.unshift({ value: "", label: "Todas las categorias" });
+    return opts;
+  }, [categorias]);
 
   const abrirNuevo = () => {
     setEditItem(null);
@@ -219,7 +225,10 @@ export default function AdminGaleria() {
     }
   };
 
-  const getCategoriaColor = (cat) => CATEGORIA_COLORS[cat] || "bg-slate-100 text-slate-700";
+  const getCategoriaColor = (cat) => {
+    const idx = categorias.findIndex(c => c.nombre === cat);
+    return CATEGORIA_COLORS[idx >= 0 ? idx % CATEGORIA_COLORS.length : CATEGORIA_COLORS.length - 1];
+  };
 
   return (
     <div className="space-y-4">
@@ -246,7 +255,7 @@ export default function AdminGaleria() {
             filters={filters}
             setFilters={setFilters}
             clearFilters={clearFilters}
-            chips={CATEGORIAS.map((c) => ({
+            chips={categoriaOptions.map((c) => ({
               key: "categoria", value: c.value, label: c.label,
             }))}
             searchKey="search"
@@ -268,79 +277,80 @@ export default function AdminGaleria() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {items.map((it) => (
-                  <div
-                    key={it.id}
-                    className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative overflow-hidden">
-                      {it.imagen_url ? (
-                        <img
-                          src={it.imagen_url}
-                          alt={it.titulo}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        />
-                      ) : (
-                        <FaImages className="text-4xl text-gray-300" />
-                      )}
-                      {!it.activo && (
-                        <span className="absolute top-2 right-2 admin-badge admin-badge--gray text-[10px]">
-                          <FaToggleOff /> Oculto
-                        </span>
-                      )}
-                      {it.activo && (
-                        <span className="absolute top-2 right-2 admin-badge admin-badge--success text-[10px]">
-                          <FaToggleOn /> Visible
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-3 space-y-1">
-                      <div className="text-sm font-semibold text-gray-900 truncate" title={it.titulo}>
-                        {it.titulo}
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${getCategoriaColor(it.categoria)}`}>
-                          {it.categoria_display || it.categoria}
-                        </span>
-                        {it.fecha && (
-                          <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
-                            <FaCalendarAlt /> {new Date(it.fecha).toLocaleDateString("es-PE", { year: "numeric", month: "short" })}
+              <div className="overflow-x-auto">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 70 }}>Imagen</th>
+                      <th>Titulo</th>
+                      <th>Categoria</th>
+                      <th>Fecha</th>
+                      <th>Orden</th>
+                      <th>Estado</th>
+                      <th style={{ width: 90 }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((it) => (
+                      <tr key={it.id}>
+                        <td>
+                          {it.imagen_url ? (
+                            <img
+                              src={it.imagen_url}
+                              alt={it.titulo}
+                              className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <FaImages className="text-gray-300 text-lg" />
+                            </div>
+                          )}
+                        </td>
+                        <td className="font-semibold">{it.titulo}</td>
+                        <td>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${getCategoriaColor(it.categoria)}`}>
+                            {it.categoria_display || it.categoria}
                           </span>
-                        )}
-                      </div>
-                      {(it.noticia || it.evento) && (
-                      <div className="text-[10px] text-gray-500">
-                        {it.noticia && <span>Noticia #{it.noticia}</span>}
-                        {it.noticia && it.evento && ' · '}
-                        {it.evento && <span>Evento #{it.evento}</span>}
-                      </div>
-                    )}
-                    <div className="flex items-center justify-end gap-1 pt-1.5 border-t border-gray-100">
-                        <button
-                          className="admin-btn-icon admin-btn-icon--neutral"
-                          onClick={() => abrirEditar(it)}
-                          title="Editar"
-                          aria-label="Editar"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="admin-btn-icon admin-btn-icon--danger"
-                          onClick={() => eliminar(it)}
-                          title="Eliminar"
-                          aria-label="Eliminar"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                        </td>
+                        <td className="text-sm text-gray-600">
+                          {it.fecha ? new Date(it.fecha).toLocaleDateString("es-PE", { year: "numeric", month: "short" }) : "—"}
+                        </td>
+                        <td className="text-sm text-gray-600">{it.orden}</td>
+                        <td>
+                          {it.activo ? (
+                            <span className="admin-badge admin-badge--success text-xs"><FaToggleOn /> Visible</span>
+                          ) : (
+                            <span className="admin-badge admin-badge--gray text-xs"><FaToggleOff /> Oculto</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1">
+                            <button
+                              className="admin-btn-icon admin-btn-icon--neutral"
+                              onClick={() => abrirEditar(it)}
+                              title="Editar"
+                              aria-label="Editar"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              className="admin-btn-icon admin-btn-icon--danger"
+                              onClick={() => eliminar(it)}
+                              title="Eliminar"
+                              aria-label="Eliminar"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <Pagination
                 page={filters.page}
-                totalPages={Math.max(1, Math.ceil(totalItems / 20))}
+                totalPages={Math.max(1, Math.ceil(totalItems / 15))}
                 totalItems={totalItems}
                 onPageChange={(p) => setFilters({ page: p })}
               />
@@ -404,7 +414,7 @@ export default function AdminGaleria() {
                 value={form.categoria}
                 onChange={(e) => setForm({ ...form, categoria: e.target.value })}
               >
-                {CATEGORIAS.filter((c) => c.value).map((c) => (
+                {categoriaOptions.filter((c) => c.value).map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>

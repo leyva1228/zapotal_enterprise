@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { FaRegStar, FaStar } from "react-icons/fa";
-import api from "../api";
-import { useAuth } from "../context/AuthContext";
+import api from "../../../api";
+import { useAuth } from "../../../context/AuthContext";
 import "./BotonFavorito.css";
 
 function getCookie(name) {

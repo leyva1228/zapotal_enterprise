@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { FaArrowRight, FaShieldAlt } from 'react-icons/fa';
 
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import Breadcrumb from './components/Breadcrumb';
-import RequireAuth from './components/RequireAuth';
-import RequireAdmin from './components/RequireAdmin';
+import Navbar from './components/common/Navbar/Navbar';
+import Footer from './components/common/Footer/Footer';
+import Breadcrumb from './components/common/Breadcrumb/Breadcrumb';
+import RequireAuth from './components/auth/RequireAuth/RequireAuth';
+import RequireAdmin from './components/auth/RequireAdmin/RequireAdmin';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ToastProvider, useToast } from './components/ToastCenter';
+import { ToastProvider, useToast } from './components/common/ToastCenter/ToastCenter';
 import {
   LoaderProvider,
   useLoader,
@@ -37,7 +37,7 @@ import Login from './pages/Login/Login';
 import Perfil from './pages/Perfil/Perfil';
 import Registro from './pages/Registro/Registro';
 import RegistroPendiente from './pages/Registro/RegistroPendiente';
-import TwoFactorVerify from './components/TwoFactorVerify';
+import TwoFactorVerify from './components/auth/TwoFactorVerify/TwoFactorVerify';
 import SolicitarRecuperacion from './pages/RecuperarPassword/SolicitarRecuperacion';
 import ConfirmarRecuperacion from './pages/RecuperarPassword/ConfirmarRecuperacion';
 import CuentaBloqueada from './pages/Cuenta/Bloqueada';
@@ -233,6 +233,7 @@ function Layout() {
           <Route path="bajas" element={<AdminBajas />} />
           <Route path="cms" element={<AdminCms />} />
           <Route path="donaciones" element={<AdminDonaciones />} />
+          <Route path="galeria" element={<AdminGaleria />} />
           <Route path="institucional" element={<AdminInstitucional />} />
           <Route path="perfil" element={<AdminConfiguracion />} />
         </Route>
