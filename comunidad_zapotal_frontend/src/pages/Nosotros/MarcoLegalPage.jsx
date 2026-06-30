@@ -1,10 +1,9 @@
-import React from "react";
 import useMarcoLegal from "../../hooks/useMarcoLegal";
 import useConfiguracion from "../../hooks/useConfiguracion";
 import {
-  FaBalanceScale, FaSpinner, FaExclamationTriangle,
-  FaExternalLinkAlt, FaGavel, FaUserShield, FaUniversity,
-  FaShieldAlt, FaFileSignature,
+  FaSpinner, FaExclamationTriangle, FaExternalLinkAlt,
+  FaGavel, FaUserShield, FaUniversity, FaShieldAlt, FaFileSignature,
+  FaBalanceScale,
 } from "react-icons/fa";
 import "./MarcoLegalPage.css";
 
@@ -46,8 +45,8 @@ export default function MarcoLegalPage() {
   return (
     <main className="ml-page">
       <section className="ml-hero">
+        <div className="ml-hero__overlay" />
         <div className="ml-hero-content">
-          <FaBalanceScale className="ml-hero-icon" />
           <h1>{titulo}</h1>
           <p>{subtitulo}</p>
         </div>

@@ -1,11 +1,9 @@
-import React from "react";
 import usePaginaLegal from "../../hooks/usePaginaLegal";
-import { FaBalanceScale, FaSpinner, FaExclamationTriangle, FaCalendarAlt, FaCode } from "react-icons/fa";
+import { FaSpinner, FaExclamationTriangle, FaCalendarAlt, FaCode } from "react-icons/fa";
 import "./LegalPage.css";
 
-export default function LegalPage({ slug, icono }) {
+export default function LegalPage({ slug }) {
   const { data, loading, error } = usePaginaLegal(slug);
-  const Icon = icono || FaBalanceScale;
 
   if (loading) {
     return (
@@ -27,8 +25,8 @@ export default function LegalPage({ slug, icono }) {
   return (
     <main className="legal-page">
       <section className="legal-hero">
+        <div className="legal-hero__overlay" />
         <div className="legal-hero-content">
-          <Icon className="legal-hero-icon" />
           <h1>{data.titulo}</h1>
           {data.resumen_corto && <p>{data.resumen_corto}</p>}
           <div className="legal-hero-meta">
