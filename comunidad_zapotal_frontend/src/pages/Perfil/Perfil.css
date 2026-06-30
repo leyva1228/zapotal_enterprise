@@ -7,19 +7,19 @@
 
 /* ── Variables ── */
 :root {
-  --verde-oscuro:   #0a3d1f;
-  --verde-medio:    #0f5c2e;
-  --verde-claro:    #1a7a42;
-  --verde-suave:    #e8f4ec;
-  --verde-linea:    #c8dece;
-  --dorado:         #b8972a;
+  --verde-oscuro:   var(--nb-verde, #1a3209);
+  --verde-medio:    var(--nb-verde-med, #243f0f);
+  --verde-claro:    var(--nb-verde-claro, #3a6019);
+  --verde-suave:    #edefe6;
+  --verde-linea:    #d4d9cb;
+  --dorado:         var(--nb-dorado, #b8963e);
   --gris-fondo:     #f0f2f0;
   --gris-borde:     #dde3e0;
   --gris-texto:     #6b7c72;
   --texto-oscuro:   #1a2620;
   --blanco:         #ffffff;
-  --sombra-card:    0 8px 32px rgba(10,61,31,.12), 0 2px 8px rgba(10,61,31,.06);
-  --sombra-avatar:  0 8px 32px rgba(10,61,31,.20);
+  --sombra-card:    0 8px 32px rgba(26,50,9,.12), 0 2px 8px rgba(26,50,9,.06);
+  --sombra-avatar:  0 8px 32px rgba(26,50,9,.20);
   --radio:          14px;
   --transicion:     .22s ease;
 }
@@ -156,7 +156,7 @@
   justify-content: center;
   cursor: pointer;
   z-index: 20;
-  box-shadow: 0 4px 12px rgba(10,61,31,.28);
+  box-shadow: 0 4px 12px rgba(26,50,9,.28);
   transition: background var(--transicion);
 }
 .perfil-camera-btn svg { font-size: 14px; }
@@ -367,7 +367,7 @@
   background: var(--blanco);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(10,61,31,.24);
+  box-shadow: 0 24px 64px rgba(26,50,9,.24);
   border-top: 3px solid var(--verde-medio);
 }
 
@@ -648,11 +648,11 @@
   color: #1f2937;
 }
 .perfil-sidebar__link--active {
-  background: #0a3d1f;
+  background: var(--verde-oscuro);
   color: #fff;
 }
 .perfil-sidebar__link--active:hover {
-  background: #0a3d1f;
+  background: var(--verde-oscuro);
   color: #fff;
 }
 .perfil-sidebar__icon {
@@ -693,7 +693,7 @@
   font-size: 20px;
   font-weight: 700;
   color: #1f2937;
-  border-bottom: 2px solid #0a3d1f;
+  border-bottom: 2px solid var(--verde-oscuro);
   padding-bottom: 12px;
   display: inline-block;
 }
@@ -728,7 +728,7 @@
   .perfil-form-row { grid-template-columns: 1fr; }
 }
 .perfil-btn-primary {
-  background: #0a3d1f;
+  background: var(--verde-oscuro);
   color: #fff;
   border: 0;
   border-radius: 8px;
@@ -743,7 +743,7 @@
   margin-top: 8px;
   transition: background 0.15s;
 }
-.perfil-btn-primary:hover { background: #052e16; }
+.perfil-btn-primary:hover { background: #0d1f04; }
 .perfil-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .perfil-btn-secondary {
   background: #f3f4f6;
@@ -791,7 +791,7 @@
   right: 8px;
   background: transparent;
   border: 0;
-  color: #0a3d1f;
+  color: var(--verde-oscuro);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -844,13 +844,13 @@
   margin-right: 6px;
 }
 .perfil-pill--active {
-  background: #0a3d1f;
+  background: var(--verde-oscuro);
   color: #fff;
 }
 .perfil-link {
   background: none;
   border: 0;
-  color: #0a3d1f;
+  color: var(--verde-oscuro);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -860,7 +860,7 @@
   gap: 4px;
 }
 .perfil-link--danger { color: #b91c1c; }
-.perfil-link:hover { color: #d4a72c; }
+.perfil-link:hover { color: var(--nb-dorado-light, #d4ae5a); }
 .perfil-link--danger:hover { color: #ef4444; }
 .perfil-notif-filters {
   display: flex;
@@ -892,7 +892,7 @@
 .perfil-notif-item__icon {
   width: 40px;
   height: 40px;
-  background: #0a3d1f;
+  background: var(--verde-oscuro);
   color: #fff;
   border-radius: 50%;
   display: flex;
@@ -940,7 +940,7 @@
 }
 .perfil-novedad-item:hover {
   background: #fff;
-  border-color: #0a3d1f;
+  border-color: var(--verde-oscuro);
   transform: translateX(2px);
 }
 .perfil-novedad-badge {
@@ -996,7 +996,7 @@
 .perfil-fav-item__title {
   font-size: 14px;
   font-weight: 600;
-  color: #0a3d1f;
+  color: var(--verde-oscuro);
   text-decoration: none;
 }
 .perfil-fav-item__title:hover { text-decoration: underline; }
