@@ -717,53 +717,51 @@ export default function Perfil() {
       </section>
 
       <main className="perfil-container">
-        <section className="perfil-card-user">
-          <div className="perfil-card-top" />
-          <div className="perfil-avatar-box">
-            {usuario?.foto_perfil ? (
-              <img src={usuario.foto_perfil} alt="Foto de perfil" className="perfil-avatar" />
-            ) : (
-              <div className="perfil-avatar-icon"><FaUserCircle /></div>
-            )}
-            <button type="button" className="perfil-camera-btn" onClick={() => setModalFoto(true)} title="Cambiar foto">
-              <FaCamera />
+        <aside className="perfil-sidebar">
+          <div className="perfil-sidebar__profile">
+            <div className="perfil-sidebar__profile-top" />
+            <div className="perfil-avatar-box">
+              {usuario?.foto_perfil ? (
+                <img src={usuario.foto_perfil} alt="Foto de perfil" className="perfil-avatar" />
+              ) : (
+                <div className="perfil-avatar-icon"><FaUserCircle /></div>
+              )}
+              <button type="button" className="perfil-camera-btn" onClick={() => setModalFoto(true)} title="Cambiar foto">
+                <FaCamera />
+              </button>
+            </div>
+            <h2 className="perfil-sidebar__name">{nombreCompleto}</h2>
+            <span className="perfil-rol">{usuario?.tipo_usuario || 'Usuario'}</span>
+            <p className="perfil-meta">Miembro desde {fechaRegistro}</p>
+          </div>
+
+          <nav>
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                className={`perfil-sidebar__link ${tab === t.id ? 'perfil-sidebar__link--active' : ''}`}
+                onClick={() => cambiarTab(t.id)}
+              >
+                <span className="perfil-sidebar__icon">{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="perfil-sidebar__bottom">
+            <button
+              className="perfil-sidebar__logout"
+              onClick={cerrarSesion}
+              type="button"
+            >
+              <FaSignOutAlt /> Cerrar sesion
             </button>
           </div>
-          <h2>{nombreCompleto}</h2>
-          <span className="perfil-rol">{usuario?.tipo_usuario || 'Usuario'}</span>
-          <div className="perfil-line" />
-          <p className="perfil-meta">Miembro desde {fechaRegistro}</p>
+        </aside>
+
+        <section className="perfil-content">
           {msg.text && (
             <div className={`perfil-mensaje perfil-mensaje--${msg.type}`}>{msg.text}</div>
           )}
-        </section>
-
-        <div className="perfil-layout">
-          <aside className="perfil-sidebar">
-            <nav>
-              {TABS.map((t) => (
-                <button
-                  key={t.id}
-                  className={`perfil-sidebar__link ${tab === t.id ? 'perfil-sidebar__link--active' : ''}`}
-                  onClick={() => cambiarTab(t.id)}
-                >
-                  <span className="perfil-sidebar__icon">{t.icon}</span>
-                  <span>{t.label}</span>
-                </button>
-              ))}
-            </nav>
-            <div className="perfil-sidebar__bottom">
-              <button
-                className="perfil-sidebar__logout"
-                onClick={cerrarSesion}
-                type="button"
-              >
-                <FaSignOutAlt /> Cerrar sesion
-              </button>
-            </div>
-          </aside>
-
-          <section className="perfil-content">
             {tab === 'info' && (
               <div>
                 <h2 className="perfil-section-title">Informacion Personal</h2>
@@ -1451,7 +1449,6 @@ export default function Perfil() {
               </div>
             )}
           </section>
-        </div>
       </main>
 
       {modalFoto && (
