@@ -553,7 +553,8 @@ class TwoFAService:
             buf = io.BytesIO()
             img.save(buf, format='PNG')
             buf.seek(0)
-            return base64.b64encode(buf.read()).decode('ascii')
+            b64 = base64.b64encode(buf.read()).decode('ascii')
+            return f'data:image/png;base64,{b64}'
         except ImportError:
             logger.error('qrcode no instalado. pip install qrcode')
             return None
@@ -586,7 +587,7 @@ class TwoFAService:
         qr_b64 = cls.qr_code_base64(otpauth) if otpauth else None
         backup = cls.backup_codes_plain()
         return {
-            'secreto': secreto,
+            'secret': secreto,
             'otpauth_url': otpauth,
             'qr_code_base64': qr_b64,
             'backup_codes': backup,
