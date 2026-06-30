@@ -578,9 +578,9 @@ def password_reset_confirm(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def cambiar_password(request):
+def cambiar_password(request, user_id=None):
     """POST /api/v1/usuarios/{id}/cambiar-password/. Body: {password_actual, password_nueva}."""
-    user_id = request.data.get('usuario_id') or request.user.id
+    user_id = user_id or request.data.get('usuario_id') or request.user.id
     user = request.user if user_id == request.user.id else Usuario.objects.filter(id=user_id).first()
     if not user or user.id != request.user.id:
         return Response({'detail': 'No autorizado.'}, status=status.HTTP_403_FORBIDDEN)
