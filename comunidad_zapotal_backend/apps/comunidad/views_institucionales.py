@@ -258,7 +258,14 @@ class HitoHistoricoViewSet(viewsets.ModelViewSet):
 
 
 class GaleriaImagenViewSet(viewsets.ModelViewSet):
-    """Galeria de imagenes (publica lectura, admin escritura con upload)."""
+    """Galeria de imagenes (publica lectura, admin escritura con upload).
+
+    Filtros soportados:
+    - categoria: COMUNIDAD, AUTORIDADES, etc. (filtro por categoria tematica).
+    - con_noticia=1: solo imagenes con FK a Noticia no nulo.
+    - con_evento=1: solo imagenes con FK a Evento no nulo.
+    - activo: true/false.
+    """
     queryset = GaleriaImagen.objects.select_related('noticia', 'evento').filter(activo=True)
     serializer_class = GaleriaImagenSerializer
     permission_classes = [IsAdminOrReadOnly]
@@ -271,6 +278,11 @@ class GaleriaImagenViewSet(viewsets.ModelViewSet):
         cat = self.request.query_params.get('categoria')
         if cat:
             qs = qs.filter(categoria=cat)
+        # Filtros por asociacion a Noticia/Evento (usados por /nosotros/galeria).
+        if self.request.query_params.get('con_noticia') in ('1', 'true', 'True'):
+            qs = qs.filter(noticia__isnull=False)
+        if self.request.query_params.get('con_evento') in ('1', 'true', 'True'):
+            qs = qs.filter(evento__isnull=False)
         return qs
 
 

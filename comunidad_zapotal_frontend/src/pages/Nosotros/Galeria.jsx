@@ -1,71 +1,151 @@
-import React, { useState, useEffect } from "react";
-import { FaTimes, FaNewspaper, FaCalendarAlt } from "react-icons/fa";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { FaTimes, FaNewspaper, FaCalendarAlt, FaImages, FaFilter } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import useGaleria from "../../hooks/useGaleria";
-import { useCategoriasGaleria, useTextosSeccion } from "../../hooks/useTextosSeccion";
 import useConfiguracion from "../../hooks/useConfiguracion";
+import { useTextosSeccion } from "../../hooks/useTextosSeccion";
+import api from "../../api";
 import "./Galeria.css";
 
+/**
+ * /nosotros/galeria
+ *
+ * Pagina publica de la galeria de imagenes. Solo muestra cards de imagenes
+ * agrupadas por asociacion: "Noticias" (imagenes con FK a Noticia) y
+ * "Eventos" (imagenes con FK a Evento). Las imagenes sin asociacion no
+ * aparecen aca (la galeria interna del admin las mantiene).
+ *
+ * Hero: titulo y subtitulo editables desde el panel admin institucional
+ *       (campos galeria_titulo / galeria_subtitulo + seccion GALERIA_HERO).
+ *
+ * Las categorias tematicas (COMUNIDAD, FESTIVIDADES, etc.) siguen existiendo
+ * en el modelo GaleriaImagen.categoria, pero no se exponen al usuario publico.
+ */
+const FILTROS = [
+  { key: "TODOS",    label: "Todas",   icon: FaImages },
+  { key: "NOTICIAS", label: "Noticias", icon: FaNewspaper },
+  { key: "EVENTOS",  label: "Eventos",  icon: FaCalendarAlt },
+];
+
 export default function Galeria() {
-  const [categoria, setCategoria] = useState(null);
+  const [filtro, setFiltro] = useState("TODOS");
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [lightbox, setLightbox] = useState(null);
   const navigate = useNavigate();
 
-  // Antes: las categorias estaban hardcodeadas en este archivo. Ahora
-  // se sirven desde la BD via /api/v1/galerias/categorias/.
-  const { data: categorias } = useCategoriasGaleria();
+  // Textos editables: titulo y subtitulo del hero desde ConfiguracionComunidad
+  // y/o TextoSeccionInterna (seccion GALERIA_HERO).
   const { data: cfg } = useConfiguracion();
-  // Textos editables (titulo, subtitulo) desde ConfiguracionComunidad.
-  const { data: textosGaleria } = useTextosSeccion({ seccion: 'GALERIA_HERO' });
-  const titulo = cfg?.galeria_titulo || 'Galeria';
-  const subtitulo = textosGaleria.find(t => t.key === 'galeria.hero.subtitulo')?.contenido
-    || cfg?.galeria_subtitulo
-    || 'Imagenes de la comunidad, sus autoridades, festividades, infraestructura y patrimonio cultural.';
+  const { data: textosGaleria } = useTextosSeccion({ seccion: "GALERIA_HERO" });
+  const titulo = cfg?.galeria_titulo || "Galeria";
+  const subtitulo =
+    textosGaleria.find((t) => t.key === "galeria.hero.subtitulo")?.contenido ||
+    cfg?.galeria_subtitulo ||
+    "Imagenes de la comunidad, sus autoridades, festividades, infraestructura y patrimonio cultural.";
 
-  const { data: items, loading, error } = useGaleria(categoria);
+  // Carga desde el backend. Filtros:
+  //   TODOS    -> sin filtro extra
+  //   NOTICIAS -> con_noticia=1
+  //   EVENTOS  -> con_evento=1
+  const cargar = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const params = {};
+    if (filtro === "NOTICIAS") params.con_noticia = 1;
+    if (filtro === "EVENTOS")  params.con_evento = 1;
+    try {
+      const { data } = await api.get("/galeria/", { params });
+      setItems(data.results || data || []);
+    } catch (e) {
+      setError("No se pudieron cargar las imagenes.");
+    } finally {
+      setLoading(false);
+    }
+  }, [filtro]);
 
+  useEffect(() => { cargar(); }, [cargar]);
+
+  // Cierra el lightbox con Escape.
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') setLightbox(null); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [lightbox]);
+    const onKey = (e) => { if (e.key === "Escape") setLightbox(null); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Conteo por filtro para mostrar badges en los chips.
+  const counts = useMemo(() => {
+    const c = { TODOS: items.length, NOTICIAS: 0, EVENTOS: 0 };
+    items.forEach((it) => {
+      if (it.noticia) c.NOTICIAS += 1;
+      if (it.evento)  c.EVENTOS  += 1;
+    });
+    return c;
+  }, [items]);
+
+  // empty state contextual segun el filtro
+  const emptyText = {
+    TODOS:    "Aun no hay imagenes en la galeria.",
+    NOTICIAS: "No hay imagenes asociadas a noticias todavia.",
+    EVENTOS:  "No hay imagenes asociadas a eventos todavia.",
+  }[filtro];
 
   return (
     <main className="galeria-page">
+      {/* HERO: titulo en verde navbar, subtitulo blanco, etiqueta en dorado */}
       <section className="galeria-hero">
-        <div>
-          <h1>{titulo}</h1>
-          <p>{subtitulo}</p>
+        <div className="galeria-hero__overlay" />
+        <div className="galeria-hero__content">
+          <span className="galeria-hero__label">Nuestra galeria</span>
+          <h1 className="galeria-hero__title">{titulo}</h1>
+          <p className="galeria-hero__subtitle">{subtitulo}</p>
         </div>
       </section>
+
       <div className="galeria-container">
-        <div className="galeria-filtros">
-          {/* "Todas" siempre la primera opcion */}
-          <button
-            type="button"
-            className={categoria === null ? 'activo' : ''}
-            onClick={() => setCategoria(null)}
-          >
-            Todas
-          </button>
-          {/* Las demas categorias vienen de la BD */}
-          {categorias && categorias.map((c) => (
-            <button
-              key={c.nombre}
-              type="button"
-              className={categoria === c.nombre ? 'activo' : ''}
-              onClick={() => setCategoria(c.nombre)}
-            >
-              {c.label}
-            </button>
-          ))}
+        {/* Filtros: Todas / Noticias / Eventos */}
+        <div className="galeria-filtros" role="tablist" aria-label="Filtros de galeria">
+          <div className="galeria-filtros__icon" aria-hidden="true">
+            <FaFilter />
+          </div>
+          {FILTROS.map((f) => {
+            const Icon = f.icon;
+            const isActive = filtro === f.key;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`galeria-filtros__chip${isActive ? " galeria-filtros__chip--activo" : ""}`}
+                onClick={() => setFiltro(f.key)}
+              >
+                <Icon className="galeria-filtros__chip-icon" />
+                <span>{f.label}</span>
+                {counts[f.key] > 0 && (
+                  <span className="galeria-filtros__chip-count">{counts[f.key]}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
+
         {loading ? (
-          <div className="galeria-loading">Cargando imagenes...</div>
+          <div className="galeria-grid galeria-grid--skeleton" aria-busy="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="galeria-card galeria-card--skeleton">
+                <div className="galeria-card__skeleton-img" />
+                <div className="galeria-card__skeleton-line" />
+                <div className="galeria-card__skeleton-line galeria-card__skeleton-line--short" />
+              </div>
+            ))}
+          </div>
         ) : error ? (
-          <div className="galeria-empty">No se pudieron cargar las imagenes.</div>
+          <div className="galeria-empty" role="alert">
+            {error}
+          </div>
         ) : items.length === 0 ? (
-          <div className="galeria-empty">Aun no hay imagenes en esta categoria.</div>
+          <div className="galeria-empty">{emptyText}</div>
         ) : (
           <div className="galeria-grid">
             {items.map((it) => (
@@ -75,17 +155,24 @@ export default function Galeria() {
                 onClick={() => setLightbox(it)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter') setLightbox(it); }}
+                onKeyDown={(e) => { if (e.key === "Enter") setLightbox(it); }}
               >
-                {it.imagen_url ? (
-                  <img src={it.imagen_url} alt={it.titulo} loading="lazy" />
-                ) : (
-                  <div className="galeria-placeholder">{it.titulo}</div>
-                )}
-                <figcaption>
+                <div className="galeria-card__img-wrap">
+                  {it.imagen_url ? (
+                    <img src={it.imagen_url} alt={it.titulo} loading="lazy" />
+                  ) : (
+                    <div className="galeria-card__placeholder">{it.titulo}</div>
+                  )}
+                  {(it.noticia || it.evento) && (
+                    <div className="galeria-card__badge">
+                      {it.noticia ? <FaNewspaper /> : <FaCalendarAlt />}
+                    </div>
+                  )}
+                </div>
+                <div className="galeria-card__body">
                   <strong>{it.titulo}</strong>
                   {it.descripcion && <span>{it.descripcion}</span>}
-                </figcaption>
+                </div>
               </article>
             ))}
           </div>
@@ -93,12 +180,25 @@ export default function Galeria() {
       </div>
 
       {lightbox && (
-        <div className="galeria-lightbox" onClick={() => setLightbox(null)} role="dialog" aria-modal="true">
-          <button className="galeria-lightbox__close" onClick={() => setLightbox(null)} aria-label="Cerrar">
+        <div
+          className="galeria-lightbox"
+          onClick={() => setLightbox(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            className="galeria-lightbox__close"
+            onClick={() => setLightbox(null)}
+            aria-label="Cerrar"
+          >
             <FaTimes />
           </button>
           {lightbox.imagen_url && (
-            <img src={lightbox.imagen_url} alt={lightbox.titulo} className="galeria-lightbox__img" />
+            <img
+              src={lightbox.imagen_url}
+              alt={lightbox.titulo}
+              className="galeria-lightbox__img"
+            />
           )}
           {(lightbox.noticia || lightbox.evento) && (
             <div className="galeria-lightbox__action">
