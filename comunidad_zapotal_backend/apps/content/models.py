@@ -347,6 +347,7 @@ class Favorito(models.Model):
 class SolicitudBaja(models.Model):
     class EstadoSolicitud(models.TextChoices):
         PENDIENTE = 'PENDIENTE', 'Pendiente'
+        EN_REVISION = 'EN_REVISION', 'En revisión'
         APROBADA = 'APROBADA', 'Aprobada'
         RECHAZADA = 'RECHAZADA', 'Rechazada'
         CANCELADA = 'CANCELADA', 'Cancelada por el usuario'
@@ -359,7 +360,7 @@ class SolicitudBaja(models.Model):
     )
     motivo = models.TextField('Motivo')
     estado = models.CharField(
-        max_length=10,
+        max_length=12,
         choices=EstadoSolicitud.choices,
         default=EstadoSolicitud.PENDIENTE,
         db_index=True,

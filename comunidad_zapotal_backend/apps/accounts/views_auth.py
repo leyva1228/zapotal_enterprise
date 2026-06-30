@@ -342,6 +342,16 @@ def login_usuario_v2(request):
         )
         return Response({'detail': 'Credenciales invalidas.'}, status=status.HTTP_401_UNAUTHORIZED)
 
+    # --- Auto-desbloqueo si bloqueo temporal expiró ---
+    if user.estado == Usuario.EstadoUsuario.BLOQUEADO and user.bloqueado_hasta:
+        if timezone.now() >= user.bloqueado_hasta:
+            user.estado = Usuario.EstadoUsuario.ACTIVO
+            user.is_active = True
+            user.bloqueado_hasta = None
+            user.failed_login_attempts = 0
+            user.save(update_fields=['estado', 'is_active', 'bloqueado_hasta', 'failed_login_attempts'])
+            logger.info('Bloqueo temporal expirado para usuario %s', user.email)
+
     if user.estado == Usuario.EstadoUsuario.PENDIENTE_OTP:
         return Response(
             {'detail': 'Debes verificar el codigo de registro antes de iniciar sesion.',
@@ -353,11 +363,13 @@ def login_usuario_v2(request):
         Usuario.EstadoUsuario.BLOQUEADO,
         Usuario.EstadoUsuario.RECHAZADO,
         Usuario.EstadoUsuario.INACTIVO,
+        Usuario.EstadoUsuario.DE_BAJA,
     ):
         code_map = {
             Usuario.EstadoUsuario.BLOQUEADO: 'USER_BLOCKED',
             Usuario.EstadoUsuario.RECHAZADO: 'USER_REJECTED',
             Usuario.EstadoUsuario.INACTIVO: 'USER_INACTIVE',
+            Usuario.EstadoUsuario.DE_BAJA: 'USER_DE_BAJA',
         }
         return Response(
             {'detail': 'Cuenta no habilitada.', 'code': code_map.get(user.estado)},
@@ -473,6 +485,7 @@ def twofa_confirm(request):
         result = TwoFAService.confirmar_setup(user, secreto, codigo, get_client_ip(request))
     except ValidationError as exc:
         return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    EmailService.enviar_2fa_activado(user)
     return Response({
         'success': True,
         'two_factor_enabled': True,
@@ -595,4 +608,5 @@ def cambiar_password(request, user_id=None):
     user.last_password_change = timezone.now()
     user.password_reset_required = False
     user.save(update_fields=['password', 'last_password_change', 'password_reset_required'])
+    EmailService.enviar_cambio_password(user)
     return Response({'success': True})

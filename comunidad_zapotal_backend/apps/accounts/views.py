@@ -15,6 +15,7 @@ from django.utils import timezone
 from apps.core.permissions import IsAdminUser
 from apps.core.utils import get_client_ip, log_audit_event
 from .models import Usuario, Comunero
+from .services import AuthService
 from .serializers import (
     UsuarioSerializer, UsuarioEscrituraSerializer, LoginSerializer, ComuneroSerializer,
 )
@@ -258,22 +259,34 @@ def _build_usuario_payload(user, request=None):
 def login_usuario(request):
     """
     Login publico con emision de JWT.
-    Redirige a /api/v1/auth/login/ para el flujo 2FA-aware, pero se mantiene
-    este endpoint para compatibilidad y para el caso sin 2FA.
+    Si el usuario tiene 2FA activo, retorna requires_2fa + token_temp.
     """
     serializer = LoginSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     user = serializer.validated_data.get('user')
 
+    # --- Auto-desbloqueo si bloqueo temporal expiró ---
+    if user.estado == Usuario.EstadoUsuario.BLOQUEADO and user.bloqueado_hasta:
+        if timezone.now() >= user.bloqueado_hasta:
+            user.estado = Usuario.EstadoUsuario.ACTIVO
+            user.is_active = True
+            user.bloqueado_hasta = None
+            user.failed_login_attempts = 0
+            user.save(update_fields=['estado', 'is_active', 'bloqueado_hasta', 'failed_login_attempts'])
+            logger.info('Bloqueo temporal expirado para usuario %s', user.email)
+
+    # --- Estados que bloquean login ---
     if user.estado in (
         Usuario.EstadoUsuario.BLOQUEADO,
         Usuario.EstadoUsuario.RECHAZADO,
         Usuario.EstadoUsuario.INACTIVO,
+        Usuario.EstadoUsuario.DE_BAJA,
     ):
         code_map = {
             Usuario.EstadoUsuario.BLOQUEADO: 'USER_BLOCKED',
             Usuario.EstadoUsuario.RECHAZADO: 'USER_REJECTED',
             Usuario.EstadoUsuario.INACTIVO: 'USER_INACTIVE',
+            Usuario.EstadoUsuario.DE_BAJA: 'USER_DE_BAJA',
         }
         return Response(
             {'error': {
@@ -293,9 +306,12 @@ def login_usuario(request):
         )
 
     if user.two_factor_enabled:
-        # Delegamos al nuevo endpoint 2FA-aware via header
-        from .views_auth import login_usuario_v2
-        return login_usuario_v2(request)
+        token_temp = AuthService.issue_short_token(user)
+        return Response({
+            'requires_2fa': True,
+            'token_temp': token_temp,
+            'usuario_id': user.id,
+        }, status=status.HTTP_202_ACCEPTED)
 
     refresh = RefreshToken.for_user(user)
     log_audit_event(

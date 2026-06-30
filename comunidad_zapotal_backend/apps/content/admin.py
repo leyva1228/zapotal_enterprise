@@ -14,7 +14,7 @@ from django.utils import timezone
 from apps.core.admin_site import custom_admin_site
 from .models import (
     Categoria, Noticia, Evento, Multimedia,
-    Comentario, Reaccion,
+    Comentario, Reaccion, SolicitudBaja,
 )
 
 
@@ -159,3 +159,52 @@ class ReaccionAdmin(admin.ModelAdmin):
     search_fields = ['noticia__titulo', 'autor__email']
     raw_id_fields = ['noticia', 'autor']
     list_per_page = 50
+
+
+@admin.register(SolicitudBaja, site=custom_admin_site)
+class SolicitudBajaAdmin(admin.ModelAdmin):
+    list_display = ['usuario_email', 'estado', 'fecha_solicitud', 'fecha_revision', 'revisado_por']
+    list_filter = ['estado', 'fecha_solicitud']
+    list_editable = []
+    search_fields = ['usuario__email', 'motivo', 'notas_admin']
+    ordering = ['-fecha_solicitud']
+    readonly_fields = ['usuario', 'motivo', 'fecha_solicitud', 'fecha_revision', 'revisado_por']
+    raw_id_fields = ['usuario', 'revisado_por']
+    list_per_page = 25
+
+    fieldsets = (
+        (None, {'fields': ('usuario', 'estado')}),
+        ('Detalles', {'fields': ('motivo', 'notas_admin')}),
+        ('Fechas', {'fields': ('fecha_solicitud', 'fecha_revision', 'revisado_por')}),
+    )
+
+    actions = ['aprobar_solicitudes', 'rechazar_solicitudes']
+
+    def usuario_email(self, obj):
+        return obj.usuario.email
+    usuario_email.short_description = 'Usuario'
+    usuario_email.admin_order_field = 'usuario__email'
+
+    @admin.action(description='Aprobar solicitudes de baja seleccionadas')
+    def aprobar_solicitudes(self, request, queryset):
+        from apps.content.services_user import BajaService
+        count = 0
+        for s in queryset.filter(
+            estado__in=[SolicitudBaja.EstadoSolicitud.PENDIENTE, SolicitudBaja.EstadoSolicitud.EN_REVISION],
+        ):
+            solicitud, error = BajaService.aprobar_solicitud(s.id, request.user)
+            if solicitud:
+                count += 1
+        self.message_user(request, f'{count} solicitud(es) aprobada(s).')
+
+    @admin.action(description='Rechazar solicitudes de baja seleccionadas')
+    def rechazar_solicitudes(self, request, queryset):
+        from apps.content.services_user import BajaService
+        count = 0
+        for s in queryset.filter(
+            estado__in=[SolicitudBaja.EstadoSolicitud.PENDIENTE, SolicitudBaja.EstadoSolicitud.EN_REVISION],
+        ):
+            solicitud, error = BajaService.rechazar_solicitud(s.id, request.user)
+            if solicitud:
+                count += 1
+        self.message_user(request, f'{count} solicitud(es) rechazada(s).')

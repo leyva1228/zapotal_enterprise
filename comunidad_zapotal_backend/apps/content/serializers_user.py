@@ -29,16 +29,17 @@ class FavoritoSerializer(serializers.ModelSerializer):
 class SolicitudBajaSerializer(serializers.ModelSerializer):
     usuario_email = serializers.CharField(source='usuario.email', read_only=True)
     usuario_nombre = serializers.CharField(source='usuario.nombre_completo', read_only=True)
+    estado_label = serializers.CharField(source='get_estado_display', read_only=True)
 
     class Meta:
         model = SolicitudBaja
         fields = [
             'id', 'usuario', 'usuario_email', 'usuario_nombre',
-            'motivo', 'estado', 'fecha_solicitud', 'fecha_revision',
+            'motivo', 'estado', 'estado_label', 'fecha_solicitud', 'fecha_revision',
             'revisado_por', 'notas_admin',
         ]
         read_only_fields = [
-            'usuario', 'estado', 'fecha_solicitud', 'fecha_revision',
+            'usuario', 'estado', 'estado_label', 'fecha_solicitud', 'fecha_revision',
             'revisado_por',
         ]
 

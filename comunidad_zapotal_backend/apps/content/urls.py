@@ -7,8 +7,10 @@ from .views import (
 )
 from .views_user import (
     FavoritoViewSet,
+    verificar_estado_baja,
     solicitar_baja, cancelar_baja,
-    listar_solicitudes_baja, aprobar_baja, rechazar_baja,
+    listar_solicitudes_baja, total_solicitudes_baja,
+    asignar_en_revision, aprobar_baja, rechazar_baja,
     buscar_global,
     contador_no_leidas, marcar_todas_leidas,
 )
@@ -60,9 +62,12 @@ urlpatterns = router.urls + [
     path('evento/detalle/<int:pk>/incrementar_vistas/',        evento_detalle_incrementar_vistas,    name='evento-detalle-incrementar-vistas'),
 
     # ---- Cuenta / solicitudes / busqueda / notificaciones ----
+    path('mi-cuenta/estado-baja/', verificar_estado_baja, name='verificar_estado_baja'),
     path('mi-cuenta/solicitar-baja/', solicitar_baja, name='solicitar_baja'),
     path('mi-cuenta/cancelar-baja/', cancelar_baja, name='cancelar_baja'),
+    path('solicitudes-baja/totales/', total_solicitudes_baja, name='total_solicitudes_baja'),
     path('solicitudes-baja/', listar_solicitudes_baja, name='listar_solicitudes_baja'),
+    path('solicitudes-baja/<int:solicitud_id>/marcar-en-revision/', asignar_en_revision, name='asignar_en_revision'),
     path('solicitudes-baja/<int:solicitud_id>/aprobar/', aprobar_baja, name='aprobar_baja'),
     path('solicitudes-baja/<int:solicitud_id>/rechazar/', rechazar_baja, name='rechazar_baja'),
     path('buscar/', buscar_global, name='buscar_global'),

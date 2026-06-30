@@ -1,36 +1,33 @@
-"""Vistas para favoritos y solicitudes de baja."""
+"""Vistas para favoritos, solicitudes de baja y busqueda global."""
 import logging
-from django.db import transaction
 from django.utils import timezone
 from django.db.models import Q
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 
 from apps.accounts.models import Usuario
 from apps.core.permissions import IsAdminUser
 from apps.core.utils import get_client_ip, log_audit_event
 from apps.messaging.models import Notificacion
-from .models import (
-    Favorito, SolicitudBaja,
-    Noticia, Evento, Categoria,
-)
-from .serializers import (
-    NoticiaSerializer, EventoSerializer,
-)
+from .models import Favorito, SolicitudBaja, Noticia, Evento, Categoria
+from .serializers import NoticiaSerializer, EventoSerializer
+from .serializers_user import FavoritoSerializer, SolicitudBajaSerializer
+from .services_user import BajaService
+
 try:
     from apps.comunidad.serializers import AutoridadSerializer
 except ImportError:
     AutoridadSerializer = None
-from .serializers_user import (
-    FavoritoSerializer, SolicitudBajaSerializer,
-)
 
 logger = logging.getLogger(__name__)
 
 
-# ===================== FAVORITOS =====================
+# =====================================================================
+# FAVORITOS
+# =====================================================================
 
 class FavoritoViewSet(viewsets.ModelViewSet):
     serializer_class = FavoritoSerializer
@@ -68,7 +65,17 @@ class FavoritoViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
-# ===================== SOLICITUDES DE BAJA =====================
+# =====================================================================
+# SOLICITUDES DE BAJA (usuario)
+# =====================================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verificar_estado_baja(request):
+    """GET /api/v1/mi-cuenta/estado-baja/ -- historial de solicitudes del usuario."""
+    qs = SolicitudBaja.objects.filter(usuario=request.user).select_related('revisado_por')
+    return Response(SolicitudBajaSerializer(qs, many=True).data)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -76,16 +83,18 @@ def solicitar_baja(request):
     """POST /api/v1/mi-cuenta/solicitar-baja/"""
     serializer = SolicitudBajaSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
+
     usuario = request.user
-    if SolicitudBaja.objects.filter(usuario=usuario, estado=SolicitudBaja.EstadoSolicitud.PENDIENTE).exists():
+    if SolicitudBaja.objects.filter(
+        usuario=usuario, estado=SolicitudBaja.EstadoSolicitud.PENDIENTE,
+    ).exists():
         return Response(
             {'detail': 'Ya tienes una solicitud de baja pendiente.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    solicitud = SolicitudBaja.objects.create(
-        usuario=usuario,
-        motivo=serializer.validated_data['motivo'],
-    )
+
+    solicitud = BajaService.crear_solicitud(usuario, serializer.validated_data['motivo'])
+
     log_audit_event(
         usuario=usuario,
         accion='BAJA_REQUESTED',
@@ -95,22 +104,6 @@ def solicitar_baja(request):
         request=request,
         metadata={'motivo': solicitud.motivo},
     )
-    # Notificar a admins
-    admins = Usuario.objects.filter(
-        Q(is_superuser=True) | (Q(tipo_usuario='ADMIN') & Q(estado='ACTIVO')),
-    ).distinct()
-    Notificacion.objects.bulk_create([
-        Notificacion(
-            destinatario=a,
-            titulo=f'Solicitud de baja de {usuario.email}',
-            mensaje=f'Motivo: {solicitud.motivo}',
-            tipo=Notificacion.Tipo.NUEVA_SOLICITUD_BAJA,
-            url_destino='/admin/bajas',
-            referencia_tipo=Notificacion.ReferenciaTipo.SOLICITUD_BAJA,
-            referencia_id=solicitud.id,
-        )
-        for a in admins
-    ])
     return Response(SolicitudBajaSerializer(solicitud).data, status=status.HTTP_201_CREATED)
 
 
@@ -118,28 +111,31 @@ def solicitar_baja(request):
 @permission_classes([IsAuthenticated])
 def cancelar_baja(request):
     """POST /api/v1/mi-cuenta/cancelar-baja/"""
-    usuario = request.user
-    solicitud = SolicitudBaja.objects.filter(
-        usuario=usuario,
-        estado=SolicitudBaja.EstadoSolicitud.PENDIENTE,
-    ).first()
+    solicitud = BajaService.cancelar_solicitud(request.user)
     if not solicitud:
         return Response(
             {'detail': 'No tienes solicitudes de baja pendientes.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    solicitud.estado = SolicitudBaja.EstadoSolicitud.CANCELADA
-    solicitud.fecha_revision = timezone.now()
-    solicitud.save(update_fields=['estado', 'fecha_revision'])
     log_audit_event(
-        usuario=usuario,
+        usuario=request.user,
         accion='BAJA_CANCELLED',
         modelo_afectado='SolicitudBaja',
         objeto_id=str(solicitud.id),
-        descripcion=f'Usuario {usuario.email} cancelo su solicitud de baja',
+        descripcion=f'Usuario {request.user.email} cancelo su solicitud de baja',
         request=request,
     )
     return Response({'status': 'ok'})
+
+
+# =====================================================================
+# ADMIN: gestion de solicitudes de baja
+# =====================================================================
+
+class SolicitudBajaPagination(PageNumberPagination):
+    page_size = 25
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 @api_view(['GET'])
@@ -150,41 +146,56 @@ def listar_solicitudes_baja(request):
     estado = request.query_params.get('estado')
     if estado:
         qs = qs.filter(estado=estado)
+    qs = qs.order_by('-fecha_solicitud')
+
+    paginator = SolicitudBajaPagination()
+    page = paginator.paginate_queryset(qs, request)
+    if page is not None:
+        serializer = SolicitudBajaSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
     return Response(SolicitudBajaSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def total_solicitudes_baja(request):
+    """GET /api/v1/solicitudes-baja/totales/ -- conteo por estado."""
+    counts = {}
+    for estado, _ in SolicitudBaja.EstadoSolicitud.choices:
+        counts[estado] = SolicitudBaja.objects.filter(estado=estado).count()
+    counts['total'] = SolicitudBaja.objects.count()
+    return Response(counts)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def asignar_en_revision(request, solicitud_id):
+    """POST /api/v1/solicitudes-baja/{id}/marcar-en-revision/"""
+    solicitud, error = BajaService.asignar_en_revision(solicitud_id, request.user)
+    if error:
+        return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
+    log_audit_event(
+        usuario=request.user,
+        accion='BAJA_REVIEW_STARTED',
+        modelo_afectado='SolicitudBaja',
+        objeto_id=str(solicitud.id),
+        descripcion=f'Admin {request.user.email} empezo a revisar baja de {solicitud.usuario.email}',
+        request=request,
+    )
+    return Response(SolicitudBajaSerializer(solicitud).data)
 
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def aprobar_baja(request, solicitud_id):
     """POST /api/v1/solicitudes-baja/{id}/aprobar/"""
-    try:
-        solicitud = SolicitudBaja.objects.select_related('usuario').get(id=solicitud_id)
-    except SolicitudBaja.DoesNotExist:
-        return Response({'detail': 'Solicitud no encontrada.'}, status=404)
-    if solicitud.estado != SolicitudBaja.EstadoSolicitud.PENDIENTE:
-        return Response(
-            {'detail': f'Solicitud ya procesada (estado: {solicitud.estado}).'},
-            status=400,
-        )
-    notas = request.data.get('notas_admin', '')
-    with transaction.atomic():
-        solicitud.estado = SolicitudBaja.EstadoSolicitud.APROBADA
-        solicitud.fecha_revision = timezone.now()
-        solicitud.revisado_por = request.user
-        solicitud.notas_admin = notas
-        solicitud.save()
-        solicitud.usuario.estado = Usuario.EstadoUsuario.INACTIVO
-        solicitud.usuario.is_active = False
-        solicitud.usuario.save(update_fields=['estado', 'is_active'])
-    Notificacion.objects.create(
-        destinatario=solicitud.usuario,
-        titulo='Solicitud de baja aprobada',
-        mensaje='Tu cuenta ha sido desactivada conforme a tu solicitud.',
-        tipo=Notificacion.Tipo.SOLICITUD_BAJA_APROBADA,
-        url_destino='/cuenta/bloqueada',
-        referencia_tipo=Notificacion.ReferenciaTipo.SOLICITUD_BAJA,
-        referencia_id=solicitud.id,
+    solicitud, error = BajaService.aprobar_solicitud(
+        solicitud_id, request.user,
+        notas=request.data.get('notas_admin', ''),
     )
+    if error:
+        return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
     log_audit_event(
         usuario=request.user,
         accion='BAJA_APPROVED',
@@ -192,7 +203,7 @@ def aprobar_baja(request, solicitud_id):
         objeto_id=str(solicitud.usuario_id),
         descripcion=f'Baja aprobada para {solicitud.usuario.email}',
         request=request,
-        metadata={'solicitud_id': solicitud.id, 'notas': notas},
+        metadata={'solicitud_id': solicitud.id, 'notas': request.data.get('notas_admin', '')},
     )
     return Response({'status': 'ok', 'estado': solicitud.estado})
 
@@ -201,30 +212,12 @@ def aprobar_baja(request, solicitud_id):
 @permission_classes([IsAdminUser])
 def rechazar_baja(request, solicitud_id):
     """POST /api/v1/solicitudes-baja/{id}/rechazar/"""
-    try:
-        solicitud = SolicitudBaja.objects.select_related('usuario').get(id=solicitud_id)
-    except SolicitudBaja.DoesNotExist:
-        return Response({'detail': 'Solicitud no encontrada.'}, status=404)
-    if solicitud.estado != SolicitudBaja.EstadoSolicitud.PENDIENTE:
-        return Response(
-            {'detail': f'Solicitud ya procesada (estado: {solicitud.estado}).'},
-            status=400,
-        )
-    notas = request.data.get('notas_admin', '')
-    solicitud.estado = SolicitudBaja.EstadoSolicitud.RECHAZADA
-    solicitud.fecha_revision = timezone.now()
-    solicitud.revisado_por = request.user
-    solicitud.notas_admin = notas
-    solicitud.save()
-    Notificacion.objects.create(
-        destinatario=solicitud.usuario,
-        titulo='Solicitud de baja rechazada',
-        mensaje=f'Tu solicitud de baja fue rechazada. {("Motivo: " + notas) if notas else "Contacta al administrador para más información."}',
-        tipo=Notificacion.Tipo.SOLICITUD_BAJA_RECHAZADA,
-        url_destino='/perfil?tab=info',
-        referencia_tipo=Notificacion.ReferenciaTipo.SOLICITUD_BAJA,
-        referencia_id=solicitud.id,
+    solicitud, error = BajaService.rechazar_solicitud(
+        solicitud_id, request.user,
+        notas=request.data.get('notas_admin', ''),
     )
+    if error:
+        return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
     log_audit_event(
         usuario=request.user,
         accion='BAJA_REJECTED',
@@ -232,12 +225,14 @@ def rechazar_baja(request, solicitud_id):
         objeto_id=str(solicitud.id),
         descripcion=f'Baja rechazada para {solicitud.usuario.email}',
         request=request,
-        metadata={'notas': notas},
+        metadata={'notas': request.data.get('notas_admin', '')},
     )
     return Response({'status': 'ok', 'estado': solicitud.estado})
 
 
-# ===================== SEARCH GLOBAL =====================
+# =====================================================================
+# BUSQUEDA GLOBAL
+# =====================================================================
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -285,7 +280,9 @@ def buscar_global(request):
     })
 
 
-# ===================== NOTIFICACIONES (helpers) =====================
+# =====================================================================
+# NOTIFICACIONES (helpers)
+# =====================================================================
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
