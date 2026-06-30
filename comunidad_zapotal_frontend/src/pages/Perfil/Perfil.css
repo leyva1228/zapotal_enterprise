@@ -727,6 +727,20 @@
 @media (max-width: 600px) {
   .perfil-form-row { grid-template-columns: 1fr; }
 }
+.perfil-pwd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.perfil-pwd-grid__col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+@media (max-width: 768px) {
+  .perfil-pwd-grid { grid-template-columns: 1fr; }
+}
 .perfil-btn-primary {
   background: var(--verde-oscuro);
   color: #fff;

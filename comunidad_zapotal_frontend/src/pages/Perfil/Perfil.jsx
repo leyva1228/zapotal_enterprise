@@ -1067,87 +1067,93 @@ export default function Perfil() {
               <div>
                 <h2 className="perfil-section-title">Seguridad de la cuenta</h2>
                 <form onSubmit={cambiarPassword} className="perfil-form">
-                  <div className="admin-form-group">
-                    <label className="admin-form-group__label" htmlFor="perfil-pwd-actual">Contrasena actual</label>
-                    <div className="perfil-pwd-input">
-                      <input
-                        id="perfil-pwd-actual"
-                        name="password_actual"
-                        className="admin-input"
-                        type={showPwd.actual ? 'text' : 'password'}
-                        value={pwdForm.actual}
-                        onChange={(e) => setPwdForm({ ...pwdForm, actual: e.target.value })}
-                        required
-                        autoComplete="current-password"
-                      />
-                      <button
-                        type="button"
-                        className="perfil-eye"
-                        onClick={() => setShowPwd((p) => ({ ...p, actual: !p.actual }))}
-                      >
-                        {showPwd.actual ? 'Ocultar' : 'Mostrar'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="admin-form-group">
-                    <label className="admin-form-group__label" htmlFor="perfil-pwd-nueva">Nueva contrasena</label>
-                    <div className="perfil-pwd-input">
-                      <input
-                        id="perfil-pwd-nueva"
-                        name="password_nueva"
-                        className="admin-input"
-                        type={showPwd.nueva ? 'text' : 'password'}
-                        value={pwdForm.nueva}
-                        onChange={(e) => setPwdForm({ ...pwdForm, nueva: e.target.value })}
-                        required
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        className="perfil-eye"
-                        onClick={() => setShowPwd((p) => ({ ...p, nueva: !p.nueva }))}
-                      >
-                        {showPwd.nueva ? 'Ocultar' : 'Mostrar'}
-                      </button>
-                    </div>
-                    {pwdForm.nueva && (
-                      <div className="perfil-pwd-strength">
-                        <div className="perfil-pwd-strength__bar">
-                          {[1, 2, 3, 4, 5].map((i) => (
-                            <span
-                              key={i}
-                              className="perfil-pwd-strength__seg"
-                              style={{
-                                background: i <= fuerzaPassword(pwdForm.nueva) ? f.color : '#e5e7eb',
-                              }}
-                            />
-                          ))}
+                  <div className="perfil-pwd-grid">
+                    <div className="perfil-pwd-grid__col">
+                      <div className="admin-form-group">
+                        <label className="admin-form-group__label" htmlFor="perfil-pwd-actual">Contrasena actual</label>
+                        <div className="perfil-pwd-input">
+                          <input
+                            id="perfil-pwd-actual"
+                            name="password_actual"
+                            className="admin-input"
+                            type={showPwd.actual ? 'text' : 'password'}
+                            value={pwdForm.actual}
+                            onChange={(e) => setPwdForm({ ...pwdForm, actual: e.target.value })}
+                            required
+                            autoComplete="current-password"
+                          />
+                          <button
+                            type="button"
+                            className="perfil-eye"
+                            onClick={() => setShowPwd((p) => ({ ...p, actual: !p.actual }))}
+                          >
+                            {showPwd.actual ? 'Ocultar' : 'Mostrar'}
+                          </button>
                         </div>
-                        <span style={{ color: f.color }} className="text-xs">{f.label}</span>
                       </div>
-                    )}
-                    <div className="admin-form-hint">Minimo 8 caracteres, 1 mayuscula, 1 numero.</div>
-                  </div>
-                  <div className="admin-form-group">
-                    <label className="admin-form-group__label" htmlFor="perfil-pwd-confirmar">Confirmar nueva contrasena</label>
-                    <div className="perfil-pwd-input">
-                      <input
-                        id="perfil-pwd-confirmar"
-                        name="password_confirmar"
-                        className="admin-input"
-                        type={showPwd.confirmar ? 'text' : 'password'}
-                        value={pwdForm.confirmar}
-                        onChange={(e) => setPwdForm({ ...pwdForm, confirmar: e.target.value })}
-                        required
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        className="perfil-eye"
-                        onClick={() => setShowPwd((p) => ({ ...p, confirmar: !p.confirmar }))}
-                      >
-                        {showPwd.confirmar ? 'Ocultar' : 'Mostrar'}
-                      </button>
+                    </div>
+                    <div className="perfil-pwd-grid__col">
+                      <div className="admin-form-group">
+                        <label className="admin-form-group__label" htmlFor="perfil-pwd-nueva">Nueva contrasena</label>
+                        <div className="perfil-pwd-input">
+                          <input
+                            id="perfil-pwd-nueva"
+                            name="password_nueva"
+                            className="admin-input"
+                            type={showPwd.nueva ? 'text' : 'password'}
+                            value={pwdForm.nueva}
+                            onChange={(e) => setPwdForm({ ...pwdForm, nueva: e.target.value })}
+                            required
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            className="perfil-eye"
+                            onClick={() => setShowPwd((p) => ({ ...p, nueva: !p.nueva }))}
+                          >
+                            {showPwd.nueva ? 'Ocultar' : 'Mostrar'}
+                          </button>
+                        </div>
+                        {pwdForm.nueva && (
+                          <div className="perfil-pwd-strength">
+                            <div className="perfil-pwd-strength__bar">
+                              {[1, 2, 3, 4, 5].map((i) => (
+                                <span
+                                  key={i}
+                                  className="perfil-pwd-strength__seg"
+                                  style={{
+                                    background: i <= fuerzaPassword(pwdForm.nueva) ? f.color : '#e5e7eb',
+                                  }}
+                                />
+                              ))}
+                            </div>
+                            <span style={{ color: f.color }} className="text-xs">{f.label}</span>
+                          </div>
+                        )}
+                        <div className="admin-form-hint">Minimo 8 caracteres, 1 mayuscula, 1 numero.</div>
+                      </div>
+                      <div className="admin-form-group">
+                        <label className="admin-form-group__label" htmlFor="perfil-pwd-confirmar">Confirmar nueva contrasena</label>
+                        <div className="perfil-pwd-input">
+                          <input
+                            id="perfil-pwd-confirmar"
+                            name="password_confirmar"
+                            className="admin-input"
+                            type={showPwd.confirmar ? 'text' : 'password'}
+                            value={pwdForm.confirmar}
+                            onChange={(e) => setPwdForm({ ...pwdForm, confirmar: e.target.value })}
+                            required
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            className="perfil-eye"
+                            onClick={() => setShowPwd((p) => ({ ...p, confirmar: !p.confirmar }))}
+                          >
+                            {showPwd.confirmar ? 'Ocultar' : 'Mostrar'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   {pwdError && <div className="perfil-error">{pwdError}</div>}
