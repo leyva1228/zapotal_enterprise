@@ -70,14 +70,17 @@ export default function NotificationBell() {
   }, [open]);
 
   // Cuando el usuario hace click en una notificacion:
-  //   1) cerramos el dropdown inmediatamente para feedback visual
-  //   2) SIEMPRE navegamos al tab de notificaciones en /perfil.
+  //   1) Prevenimos la navegacion por defecto (Link) para que NO
+  //      nos saque del contexto de /perfil.
+  //   2) cerramos el dropdown inmediatamente para feedback visual
+  //   3) SIEMPRE navegamos al tab de notificaciones en /perfil.
   //      Alli el usuario abrira un modal de detalle que SI ofrece
   //      un boton para ir al destino (noticia, evento, donacion, etc).
   //      Asi evitamos que el usuario pierda el contexto de la campanita.
-  //   3) marcamos como leida en background (best-effort con
+  //   4) marcamos como leida en background (best-effort con
   //      skipAuthRedirect para no cerrar sesion si el token expiro).
-  const marcarLeida = async (n) => {
+  const marcarLeida = async (n, e) => {
+    if (e) e.preventDefault();
     setOpen(false);
     navigate('/perfil?tab=notificaciones');
     try {
@@ -161,7 +164,7 @@ export default function NotificationBell() {
                       key={n.id}
                       to={interno}
                       className="notif-bell__item"
-                      onClick={() => marcarLeida(n)}
+                      onClick={(e) => marcarLeida(n, e)}
                       role="menuitem"
                     >
                       {contenido}
@@ -172,10 +175,10 @@ export default function NotificationBell() {
                   <div
                     key={n.id}
                     className="notif-bell__item"
-                    onClick={() => marcarLeida(n)}
+                    onClick={(e) => marcarLeida(n, e)}
                     role="menuitem"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') marcarLeida(n); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') marcarLeida(n, e); }}
                   >
                     {contenido}
                   </div>
