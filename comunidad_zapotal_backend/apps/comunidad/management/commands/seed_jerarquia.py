@@ -17,8 +17,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Comunero para presidente
         presidente_comunero, _ = Comunero.objects.get_or_create(
-            dni='00000001',
-            defaults={'nombres': 'Presidente', 'apellidos': 'Inicial'},
+            dni='00000000',
+            defaults={'nombres': 'Admin', 'apellidos': 'Sistema'},
         )
 
         # Superuser admin (idempotente)

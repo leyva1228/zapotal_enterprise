@@ -8,7 +8,6 @@ Uso:
     # Requiere haber corrido antes: seed_categorias
 """
 from django.core.management.base import BaseCommand
-from apps.accounts.models import Usuario
 from apps.content.models import Categoria, Noticia
 
 
@@ -184,15 +183,6 @@ class Command(BaseCommand):
     help = 'Crea 10 noticias (8 publicadas + 2 borradores).'
 
     def handle(self, *args, **options):
-        # Buscar admin para usar como autor
-        try:
-            admin = Usuario.objects.get(email='admin@zapotal.com')
-        except Usuario.DoesNotExist:
-            self.stdout.write(self.style.WARNING(
-                '  Aviso: admin@zapotal.com no existe. Ejecuta seed_superusers primero.'
-            ))
-            admin = None
-
         creadas = 0
         existentes = 0
         for d in NOTICIAS:
@@ -206,7 +196,6 @@ class Command(BaseCommand):
                     'estado': d['estado'],
                     'vistas': d['vistas'],
                     'imagen_url': d.get('imagen_url', ''),
-                    'autor': admin,
                 },
             )
             if created:

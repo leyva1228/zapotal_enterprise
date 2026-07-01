@@ -23,7 +23,7 @@ Seeders ejecutados (en orden):
     9. seed_noticias            -> 10 noticias (8 publicadas + 2 borradores)
    10. seed_eventos             -> 6 eventos (pasados y futuros)
    11. seed_comentarios         -> comentarios y reacciones de prueba
-   12. seed_comites             -> comites especializados
+   12. seed_comites_comunales   -> comites especializados
    13. seed_contenido_estatico  -> contenido CMS (about, faq, etc)
 """
 import importlib
@@ -48,7 +48,7 @@ SEEDERS = [
     ('seed_noticias',           'apps.content.management.commands.seed_noticias'),
     ('seed_eventos',            'apps.content.management.commands.seed_eventos'),
     ('seed_comentarios',        'apps.content.management.commands.seed_comentarios'),
-    ('seed_comites',            'apps.comunidad.management.commands.seed_comites_comunales'),
+    ('seed_comites_comunales',  'apps.comunidad.management.commands.seed_comites_comunales'),
     ('seed_contenido_estatico', 'apps.cms.management.commands.seed_contenido_estatico'),
 ]
 
