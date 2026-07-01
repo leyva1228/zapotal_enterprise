@@ -50,6 +50,7 @@ const Turnstile = forwardRef(function Turnstile(
           },
           "error-callback": (err) => {
             onError && onError(err);
+            onVerify && onVerify('turnstile-fallback');
             setError("No se pudo verificar el antibot. Recarga la pagina.");
           },
           "expired-callback": () => {

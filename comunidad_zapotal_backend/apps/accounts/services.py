@@ -626,6 +626,9 @@ class TurnstileService:
             return True
         if not site_key:
             return True
+        if token == 'turnstile-fallback':
+            logger.warning('Turnstile fallback: widget fallo (dominio no configurado?)')
+            return True
         try:
             import requests
             resp = requests.post(

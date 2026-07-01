@@ -2,12 +2,13 @@
 Crea los comuneros base de la plataforma.
 
 Idempotente: si un DNI ya existe, no lo duplica.
+Ademas crea un usuario comunero demo (juan@zapotal.com) para login.
 
 Uso:
     python manage.py seed_comuneros
 """
 from django.core.management.base import BaseCommand
-from apps.accounts.models import Comunero
+from apps.accounts.models import Comunero, Usuario
 
 
 COMUNEROS = [
@@ -22,7 +23,7 @@ COMUNEROS = [
 
 
 class Command(BaseCommand):
-    help = 'Crea 7 comuneros base de la plataforma.'
+    help = 'Crea 7 comuneros base + usuario demo comunero.'
 
     def handle(self, *args, **options):
         creados = 0
@@ -39,3 +40,21 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'  [OK] {creados} nuevos, {existentes} ya existian (total: {Comunero.objects.count()})'
         ))
+
+        comunero, _ = Comunero.objects.get_or_create(
+            dni='10000001',
+            defaults={'nombres': 'Juan Demo', 'apellidos': 'Comunero Zapotal'},
+        )
+        usuario, user_created = Usuario.objects.get_or_create(
+            email='juan@zapotal.com',
+            defaults={
+                'tipo_usuario': Usuario.TipoUsuario.COMUNERO,
+                'estado': Usuario.EstadoUsuario.ACTIVO,
+                'comunero': comunero,
+                'email_verificado': True,
+            },
+        )
+        if user_created or not usuario.has_usable_password():
+            usuario.set_password('Zapotal2026')
+            usuario.save()
+        self.stdout.write(self.style.SUCCESS(f'  [OK] Usuario comunero demo: juan@zapotal.com / Zapotal2026'))
