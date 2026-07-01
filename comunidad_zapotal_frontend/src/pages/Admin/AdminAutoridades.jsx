@@ -257,9 +257,8 @@ export default function AdminAutoridades() {
       if (form.comunero) fd.append('comunero', form.comunero);
       if (form.usuario) fd.append('usuario', form.usuario);
       if (form.foto) fd.append('foto', form.foto);
-      const cfg = { headers: { 'Content-Type': 'multipart/form-data' } };
-      if (editItem) await api.patch(`/autoridades/${editItem.id}/`, fd, cfg);
-      else await api.post("/autoridades/", fd, cfg);
+      if (editItem) await api.patch(`/autoridades/${editItem.id}/`, fd);
+      else await api.post("/autoridades/", fd);
       setOk("Autoridad guardada.");
       cerrar(); cargar();
     } catch (err) {

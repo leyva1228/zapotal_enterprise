@@ -109,9 +109,8 @@ export default function AdminComitesComunales() {
       });
       fd.append("activo", form.activo ? "true" : "false");
       if (form.acta_pdf) fd.append("acta_pdf", form.acta_pdf);
-      const cfg = { headers: { "Content-Type": "multipart/form-data" } };
-      if (editItem) await api.patch(`/comites-comunales/${editItem.id}/`, fd, cfg);
-      else await api.post("/comites-comunales/", fd, cfg);
+      if (editItem) await api.patch(`/comites-comunales/${editItem.id}/`, fd);
+      else await api.post("/comites-comunales/", fd);
       setOk("Comite guardado.");
       cerrar(); cargar();
     } catch (err) {

@@ -97,7 +97,7 @@ export default function AdminNoticias() {
       data.append("estado", form.estado);
       if (form.categoria) data.append("categoria", form.categoria);
       if (form.imagen) data.append("imagen", form.imagen);
-      const cfg = { headers: { "Content-Type": "multipart/form-data" } };
+      const cfg = {};
       if (editItem) {
         await api.patch(`/noticias/${editItem.id}/`, data, cfg);
         setOk("Noticia actualizada correctamente.");

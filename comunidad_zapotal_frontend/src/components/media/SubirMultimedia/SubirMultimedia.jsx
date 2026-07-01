@@ -79,9 +79,7 @@ function SubirMultimedia({
       fd.append("archivo", item.file);
       fd.append("tipo", item.tipo);
       fd.append(itemType, itemId);
-      const { data } = await api.post("/multimedias/", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const { data } = await api.post("/multimedias/", fd);
       // Reemplaza el item temporal por el item guardado del backend.
       setFiles((prev) => {
         const replaced = prev.map((f) =>

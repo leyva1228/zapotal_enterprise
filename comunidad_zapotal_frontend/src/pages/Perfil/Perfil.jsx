@@ -639,9 +639,7 @@ export default function Perfil() {
     try {
       const fd = new FormData();
       fd.append('foto_perfil', archivoFoto);
-      const { data } = await api.patch(`/usuarios/${authUser.id}/`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data } = await api.patch(`/usuarios/${authUser.id}/`, fd);
       const fotoUrl = data.foto_perfil_url || data.foto_perfil || usuario.foto_perfil;
       setUsuario((u) => ({ ...u, foto_perfil: fotoUrl }));
       setAuth({ user: { ...authUser, foto_perfil: fotoUrl, foto_perfil_url: fotoUrl } });

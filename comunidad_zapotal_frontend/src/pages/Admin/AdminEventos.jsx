@@ -103,7 +103,7 @@ export default function AdminEventos() {
       data.append("lugar", form.lugar);
       if (form.fecha) data.append("fecha", new Date(form.fecha).toISOString());
       if (form.imagen) data.append("imagen", form.imagen);
-      const cfg = { headers: { "Content-Type": "multipart/form-data" } };
+      const cfg = {};
       if (editItem) {
         await api.patch(`/eventos/${editItem.id}/`, data, cfg);
         setOk("Evento actualizado.");

@@ -183,12 +183,11 @@ export default function AdminGaleria() {
       if (form.imagen_url_externa) data.append("imagen_url_externa", form.imagen_url_externa);
       if (form.noticia) data.append("noticia", form.noticia);
       if (form.evento) data.append("evento", form.evento);
-      const cfg = { headers: { "Content-Type": "multipart/form-data" } };
       if (editItem) {
-        await api.patch(`/galeria/${editItem.id}/`, data, cfg);
+        await api.patch(`/galeria/${editItem.id}/`, data);
         setOk("Imagen actualizada.");
       } else {
-        await api.post("/galeria/", data, cfg);
+        await api.post("/galeria/", data);
         setOk("Imagen agregada a la galeria.");
       }
       cerrar();

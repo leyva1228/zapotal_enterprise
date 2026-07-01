@@ -71,7 +71,6 @@ class MultimediaSerializer(serializers.ModelSerializer):
 
     def get_archivo_url(self, obj):
         request = self.context.get('request')
-        url_externa = (getattr(obj, "archivo_url", "") or "").strip() if False else ""
         try:
             archivo = getattr(obj, "archivo", None)
             nombre = getattr(archivo, "name", None) if archivo else None
@@ -183,6 +182,11 @@ class NoticiaEscrituraSerializer(serializers.ModelSerializer):
     (AdminNoticias.jsx) reciba la URL absoluta del archivo subido
     en la misma respuesta del POST/PATCH y pueda previsualizar
     sin tener que recargar la lista.
+
+    NOTA: `update` y `create` limpian `imagen_url` cuando se
+    proporciona una `imagen` nueva, para que la URL externa
+    pre-existente (ej. Unsplash del seed) no opaque el archivo
+    recien subido.
     """
     imagen_url = serializers.SerializerMethodField()
 
@@ -197,6 +201,16 @@ class NoticiaEscrituraSerializer(serializers.ModelSerializer):
     def get_imagen_url(self, obj):
         return _resolver_imagen_url(obj, self.context.get("request"))
 
+    def create(self, validated_data):
+        if validated_data.get('imagen'):
+            validated_data['imagen_url'] = ''
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if validated_data.get('imagen'):
+            validated_data['imagen_url'] = ''
+        return super().update(instance, validated_data)
+
 
 class EventoEscrituraSerializer(serializers.ModelSerializer):
     """Serializer para crear/actualizar eventos (sin nested).
@@ -204,6 +218,10 @@ class EventoEscrituraSerializer(serializers.ModelSerializer):
     Mismo patron que NoticiaEscrituraSerializer: incluye `imagen_url`
     en la respuesta del POST/PATCH para que el admin panel pueda
     mostrar la URL absoluta de la imagen recien subida.
+
+    NOTA: `update` y `create` limpian `imagen_url` cuando se
+    proporciona una `imagen` nueva (misma logica que
+    `NoticiaEscrituraSerializer`).
     """
     imagen_url = serializers.SerializerMethodField()
 
@@ -217,6 +235,16 @@ class EventoEscrituraSerializer(serializers.ModelSerializer):
 
     def get_imagen_url(self, obj):
         return _resolver_imagen_url(obj, self.context.get("request"))
+
+    def create(self, validated_data):
+        if validated_data.get('imagen'):
+            validated_data['imagen_url'] = ''
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if validated_data.get('imagen'):
+            validated_data['imagen_url'] = ''
+        return super().update(instance, validated_data)
 
 
 class EventoSerializer(serializers.ModelSerializer):
