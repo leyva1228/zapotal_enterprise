@@ -1,6 +1,7 @@
 """Vistas para favoritos, solicitudes de baja y busqueda global."""
 import logging
 from django.utils import timezone
+from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes
@@ -41,8 +42,9 @@ class FavoritoViewSet(viewsets.ModelViewSet):
         return qs.select_related('noticia', 'evento').order_by('-fecha_agregado')
 
     def perform_create(self, serializer):
-        favorito, created = serializer.save(usuario=self.request.user)
-        if not created:
+        try:
+            favorito = serializer.save(usuario=self.request.user)
+        except IntegrityError:
             raise Exception('El favorito ya existe.')
         log_audit_event(
             usuario=self.request.user,

@@ -5,6 +5,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError as DRFVa
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.auth import OptionalJWTAuthentication
 from apps.core.permissions import IsOwnerOrReadOnly
 from .models import Mensaje, Notificacion
 from .serializers import MensajeSerializer, NotificacionSerializer
@@ -77,6 +78,7 @@ class NotificacionViewSet(viewsets.ModelViewSet):
     - El PATCH sobre una notificacion ajena retorna 403.
     """
     serializer_class = NotificacionSerializer
+    authentication_classes = [OptionalJWTAuthentication]
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     filterset_fields = ['tipo', 'leido']
     ordering_fields = ['fecha', 'leido']

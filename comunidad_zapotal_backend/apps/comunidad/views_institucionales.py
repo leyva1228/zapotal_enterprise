@@ -9,6 +9,7 @@ from rest_framework.throttling import ScopedRateThrottle, SimpleRateThrottle
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
+from apps.core.auth import OptionalJWTAuthentication
 from apps.core.permissions import IsAdminOrReadOnly, IsAdminUser
 from .emails import notificar_admin_mensaje_contacto
 from .zerobounce import validar_email as zb_validar, obtener_creditos as zb_creditos
@@ -227,6 +228,7 @@ class PaginaLegalDetailView(generics.RetrieveUpdateAPIView):
     del admin via /paginas-legales/<pk>/).
     """
     lookup_field = 'slug'
+    authentication_classes = [OptionalJWTAuthentication]
     permission_classes = [IsAdminOrReadOnly]
     http_method_names = ['get', 'put', 'patch', 'head', 'options']
 
