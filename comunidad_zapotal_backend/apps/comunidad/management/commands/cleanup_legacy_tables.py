@@ -3,9 +3,6 @@ Elimina tablas huerfanas de modelos antiguos que fueron removidos del codigo.
 
 Loop V2.1: limpia `reports_contactomensaje`, relicto del modelo
 `ContactoMensaje` que fue eliminado en la primera ronda de esta seccion.
-
-Solo corre en MySQL (donde la tabla existe como relicto de migraciones
-previas). En SQLite (tests) la tabla nunca existio.
 """
 from django.core.management.base import BaseCommand
 from django.db import connection
@@ -14,6 +11,29 @@ from django.db import connection
 TABLAS_HUERFANAS = [
     'reports_contactomensaje',
 ]
+
+
+def _table_exists(cursor, nombre):
+    vendor = connection.vendor
+    if vendor == 'mysql':
+        cursor.execute(
+            "SELECT COUNT(*) FROM information_schema.tables "
+            "WHERE table_schema = DATABASE() AND table_name = %s",
+            [nombre],
+        )
+    elif vendor == 'postgresql':
+        cursor.execute(
+            "SELECT COUNT(*) FROM information_schema.tables "
+            "WHERE table_catalog = current_catalog AND table_name = %s",
+            [nombre],
+        )
+    else:
+        cursor.execute(
+            "SELECT COUNT(*) FROM information_schema.tables "
+            "WHERE table_name = %s",
+            [nombre],
+        )
+    return cursor.fetchone()[0] > 0
 
 
 class Command(BaseCommand):
@@ -29,12 +49,7 @@ class Command(BaseCommand):
         dry = options['dry_run']
         with connection.cursor() as cursor:
             for tabla in TABLAS_HUERFANAS:
-                cursor.execute(
-                    "SELECT COUNT(*) FROM information_schema.tables "
-                    "WHERE table_schema = DATABASE() AND table_name = %s",
-                    [tabla],
-                )
-                existe = cursor.fetchone()[0] > 0
+                existe = _table_exists(cursor, tabla)
                 if not existe:
                     self.stdout.write(f'  - {tabla}: no existe (skip).')
                     continue

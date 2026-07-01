@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from decouple import config, Csv
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -86,15 +87,23 @@ CSRF_TRUSTED_ORIGINS = config(
 )
 
 DATABASES = {
-    'default': {
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
+
+# Fallback a MySQL local si no hay DATABASE_URL (Render la inyecta automaticamente)
+if not DATABASES['default'].get('ENGINE'):
+    DATABASES['default'] = {
         'ENGINE': config('DB_ENGINE', default='django.db.backends.mysql'),
-        'NAME': config('DB_NAME', default='comunidad_zapotal_db_test'),
+        'NAME': config('DB_NAME', default='comunidad_db'),
         'USER': config('DB_USER', default='root'),
         'PASSWORD': config('DB_PASSWORD', default=''),
         'HOST': config('DB_HOST', default='127.0.0.1'),
         'PORT': config('DB_PORT', default='3306'),
     }
-}
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

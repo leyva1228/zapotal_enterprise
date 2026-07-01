@@ -5,43 +5,86 @@ from django.utils import timezone
 TABLE = 'reports_libroreclamacion'
 
 
-def _column_exists(cursor, column):
-    cursor.execute('SHOW COLUMNS FROM ' + TABLE)
-    return column in {r[0] for r in cursor.fetchall()}
+def _is_mysql(connection):
+    return connection.vendor == 'mysql'
 
 
-def _constraint_exists(cursor, name):
-    cursor.execute("""
-        SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
-        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND CONSTRAINT_NAME = %s
-    """, [TABLE, name])
+def _is_postgres(connection):
+    return connection.vendor == 'postgresql'
+
+
+def _column_exists(cursor, connection, column):
+    if _is_mysql(connection):
+        cursor.execute('SHOW COLUMNS FROM ' + TABLE)
+        return column in {r[0] for r in cursor.fetchall()}
+    cursor.execute(
+        "SELECT column_name FROM information_schema.columns "
+        "WHERE table_name = %s AND column_name = %s",
+        [TABLE, column]
+    )
+    return cursor.fetchone() is not None
+
+
+def _constraint_exists(cursor, connection, name):
+    if _is_mysql(connection):
+        cursor.execute("""
+            SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND CONSTRAINT_NAME = %s
+        """, [TABLE, name])
+    else:
+        cursor.execute("""
+            SELECT COUNT(*) FROM information_schema.table_constraints
+            WHERE constraint_catalog = current_catalog
+              AND table_name = %s AND constraint_name = %s
+        """, [TABLE, name])
     return cursor.fetchone()[0] > 0
 
 
-def _index_exists(cursor, name):
-    cursor.execute('SHOW INDEX FROM ' + TABLE)
-    return name in {r[2] for r in cursor.fetchall()}
+def _index_exists(cursor, connection, name):
+    if _is_mysql(connection):
+        cursor.execute('SHOW INDEX FROM ' + TABLE)
+        return name in {r[2] for r in cursor.fetchall()}
+    cursor.execute(
+        "SELECT indexname FROM pg_indexes "
+        "WHERE tablename = %s AND indexname = %s",
+        [TABLE, name]
+    )
+    return cursor.fetchone() is not None
+
+
+def _col_type(connection, mysql_type):
+    if mysql_type == 'DATETIME(6)' and _is_postgres(connection):
+        return 'TIMESTAMP WITH TIME ZONE'
+    if mysql_type == 'LONGTEXT' and _is_postgres(connection):
+        return 'TEXT'
+    return mysql_type
+
+
+def _col_specs(connection):
+    return [
+        ('numero_reclamo', f'ADD COLUMN numero_reclamo VARCHAR(20) NOT NULL DEFAULT \'\''),
+        ('plazo_respuesta', 'ADD COLUMN plazo_respuesta DATE NULL'),
+        ('prioridad', f'ADD COLUMN prioridad VARCHAR(10) NOT NULL DEFAULT \'MEDIA\''),
+        ('respondido_at', f'ADD COLUMN respondido_at {_col_type(connection, "DATETIME(6)")} NULL'),
+        ('respondido_por_id', 'ADD COLUMN respondido_por_id BIGINT NULL'),
+        ('respuesta_admin', f'ADD COLUMN respuesta_admin {_col_type(connection, "LONGTEXT")} NULL'),
+    ]
 
 
 def add_missing_columns(apps, schema_editor):
-    with schema_editor.connection.cursor() as cursor:
-        for col, stmt in [
-            ('numero_reclamo', 'ADD COLUMN numero_reclamo VARCHAR(20) NOT NULL DEFAULT \'\''),
-            ('plazo_respuesta', 'ADD COLUMN plazo_respuesta DATE NULL'),
-            ('prioridad', 'ADD COLUMN prioridad VARCHAR(10) NOT NULL DEFAULT \'MEDIA\''),
-            ('respondido_at', 'ADD COLUMN respondido_at DATETIME(6) NULL'),
-            ('respondido_por_id', 'ADD COLUMN respondido_por_id BIGINT NULL'),
-            ('respuesta_admin', 'ADD COLUMN respuesta_admin LONGTEXT NULL'),
-        ]:
-            if not _column_exists(cursor, col):
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
+        for col, stmt in _col_specs(connection):
+            if not _column_exists(cursor, connection, col):
                 cursor.execute(f'ALTER TABLE {TABLE} {stmt}')
 
 
 def reverse_add_columns(apps, schema_editor):
-    with schema_editor.connection.cursor() as cursor:
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
         for col in ['respuesta_admin', 'respondido_por_id', 'respondido_at',
                      'prioridad', 'plazo_respuesta', 'numero_reclamo']:
-            if _column_exists(cursor, col):
+            if _column_exists(cursor, connection, col):
                 cursor.execute(f'ALTER TABLE {TABLE} DROP COLUMN {col}')
 
 
@@ -77,13 +120,14 @@ def backfill_plazo_respuesta(apps, schema_editor):
 
 
 def add_missing_constraints(apps, schema_editor):
-    with schema_editor.connection.cursor() as cursor:
-        if not _constraint_exists(cursor, 'reports_libroreclamacion_numero_reclamo_uniq'):
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
+        if not _constraint_exists(cursor, connection, 'reports_libroreclamacion_numero_reclamo_uniq'):
             cursor.execute(f"""
                 ALTER TABLE {TABLE}
                 ADD CONSTRAINT reports_libroreclamacion_numero_reclamo_uniq UNIQUE (numero_reclamo);
             """)
-        if not _constraint_exists(cursor, 'reports_libroreclamacion_respondido_por_id_fk'):
+        if not _constraint_exists(cursor, connection, 'reports_libroreclamacion_respondido_por_id_fk'):
             cursor.execute(f"""
                 ALTER TABLE {TABLE}
                 ADD CONSTRAINT reports_libroreclamacion_respondido_por_id_fk
@@ -92,15 +136,23 @@ def add_missing_constraints(apps, schema_editor):
 
 
 def reverse_constraints(apps, schema_editor):
-    with schema_editor.connection.cursor() as cursor:
-        if _constraint_exists(cursor, 'reports_libroreclamacion_respondido_por_id_fk'):
-            cursor.execute(f'ALTER TABLE {TABLE} DROP FOREIGN KEY reports_libroreclamacion_respondido_por_id_fk')
-        if _constraint_exists(cursor, 'reports_libroreclamacion_numero_reclamo_uniq'):
-            cursor.execute(f'ALTER TABLE {TABLE} DROP INDEX reports_libroreclamacion_numero_reclamo_uniq')
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
+        if _constraint_exists(cursor, connection, 'reports_libroreclamacion_respondido_por_id_fk'):
+            if _is_mysql(connection):
+                cursor.execute(f'ALTER TABLE {TABLE} DROP FOREIGN KEY reports_libroreclamacion_respondido_por_id_fk')
+            else:
+                cursor.execute(f'ALTER TABLE {TABLE} DROP CONSTRAINT reports_libroreclamacion_respondido_por_id_fk')
+        if _constraint_exists(cursor, connection, 'reports_libroreclamacion_numero_reclamo_uniq'):
+            if _is_mysql(connection):
+                cursor.execute(f'ALTER TABLE {TABLE} DROP INDEX reports_libroreclamacion_numero_reclamo_uniq')
+            else:
+                cursor.execute(f'ALTER TABLE {TABLE} DROP CONSTRAINT reports_libroreclamacion_numero_reclamo_uniq')
 
 
 def add_missing_indexes(apps, schema_editor):
-    with schema_editor.connection.cursor() as cursor:
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
         expected = {
             'reports_lib_estado_f13c01_idx': (
                 f'CREATE INDEX reports_lib_estado_f13c01_idx '
@@ -116,17 +168,21 @@ def add_missing_indexes(apps, schema_editor):
             ),
         }
         for name, sql in expected.items():
-            if not _index_exists(cursor, name):
+            if not _index_exists(cursor, connection, name):
                 cursor.execute(sql)
 
 
 def reverse_indexes(apps, schema_editor):
-    with schema_editor.connection.cursor() as cursor:
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
         for idx in ['reports_lib_priorid_2bcd94_idx',
                      'reports_lib_leido_dbe915_idx',
                      'reports_lib_estado_f13c01_idx']:
-            if _index_exists(cursor, idx):
-                cursor.execute(f'DROP INDEX {idx} ON {TABLE}')
+            if _index_exists(cursor, connection, idx):
+                if _is_mysql(connection):
+                    cursor.execute(f'DROP INDEX {idx} ON {TABLE}')
+                else:
+                    cursor.execute(f'DROP INDEX {idx}')
 
 
 class Migration(migrations.Migration):

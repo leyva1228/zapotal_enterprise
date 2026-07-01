@@ -23,8 +23,10 @@ django-anymail[resend]==15.0
 # === Static files (whiteNoise para producción) ===
 whitenoise==6.12.0
 
-# === Database (MySQL) ===
+# === Database (MySQL local / PostgreSQL produccion) ===
 mysqlclient==2.2.8
+psycopg2-binary==2.9.12
+dj-database-url==3.1.2
 
 # === Image handling (ImageField) ===
 pillow==12.2.0

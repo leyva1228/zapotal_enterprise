@@ -1,14 +1,17 @@
 # ============================================================================
-# Render Blueprint - Comunidad Zapotal
+# Render Blueprint - Comunidad Zapotal (Backend)
 # ============================================================================
 # Arquitectura:
 #   - zapotal-backend  (Web Service Django + gunicorn, plan starter)
-#   - zapotal-pdf-worker (Microservicio Spring Boot para PDFs async, Docker)
-#   - zapotal-db       (Postgres database, plan starter)
+#   - comunidad_zapotal_db (Postgres database, plan basic-256mb)
+#
+# NOTA: El PDF worker (Spring Boot) se agregara mas adelante cuando
+# este listo el directorio spring-services/pdf-worker/.
 #
 # Para deployar: en el dashboard de Render, "New > Blueprint",
 # apuntar al repo leyva1228/zapotal_enterprise, branch master.
-# Render detectara este render.yaml automaticamente.
+#  > OJO: el blueprint usa la rama default del repo (master).
+#  > Si se omite branch: Render usa la default automaticamente.
 # ============================================================================
 
 services:
@@ -18,16 +21,16 @@ services:
     runtime: python
     plan: starter
     region: oregon
-    branch: main
-    # rootDir indica a Render donde esta el codigo Django dentro del monorepo.
+    # Sin branch: Render usa la rama default del repo (master).
     rootDir: comunidad_zapotal_backend
     buildCommand: |
       pip install --upgrade pip &&
       pip install -r requirements.txt &&
-      python manage.py collectstatic --noinput &&
+      python manage.py collectstatic --noinput
+    preDeployCommand: |
       python manage.py migrate
     startCommand: |
-      gunicorn zapotal_config.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 60 --access-logfile - --error-logfile -
+      gunicorn zapotal_config.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --access-logfile - --error-logfile -
     healthCheckPath: /health/
     autoDeploy: true
     envVars:
@@ -49,25 +52,19 @@ services:
         value: "True"
       - key: CSRF_COOKIE_SECURE
         value: "True"
-      - key: SECURE_PROXY_SSL_HEADER
-        value: "True"
-      - key: WHITENOISE_USE_FINDERS_NORMALIZE
-        value: "True"
+      # SECURE_PROXY_SSL_HEADER ya esta hardcodeado en settings.py.
+      # No se puede setear via env var porque Django espera una tuple.
 
       - key: DJANGO_SETTINGS_MODULE
         value: zapotal_config.settings
 
       # URL de conexion a la base de datos Postgres de Render.
-      # fromDatabase: referencia a la base de datos definida en el array
-      # 'databases' mas abajo. property: connectionString es la URL
-      # completa postgresql://user:pass@host:port/db.
       - key: DATABASE_URL
         fromDatabase:
-          name: zapotal-db
+          name: comunidad_zapotal_db
           property: connectionString
 
-      # Las siguientes variables son SECRETAS. Render las pedira
-      # en el dashboard al crear el Blueprint. NO hardcodear en este archivo.
+      # Secretos: Render pedira estos valores al crear el Blueprint.
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: MERCADO_PAGO_ACCESS_TOKEN
@@ -85,89 +82,46 @@ services:
       - key: TURNSTILE_SECRET_KEY
         sync: false
 
-      # Microservicio PDF worker (Spring Boot). Django le delega la
-      # generacion del PDF + email via HTTP. Si no esta accesible,
-      # hace fallback local con xhtml2pdf.
+      # PDF worker aun no desplegado. Django hara fallback local.
       - key: INTERNAL_API_KEY
-        sync: false  # mismo valor que el PDF worker
-      - key: PDF_WORKER_URL
-        value: "https://zapotal-pdf-worker.onrender.com"
-
-  # ---------- PDF worker (Spring Boot, Docker) ----------
-  # Microservicio async que genera boletas de donacion en PDF y las envia
-  # por email. Django lo invoca en background con X-Internal-API-Key.
-  # Docker detecta el Dockerfile en spring-services/pdf-worker/ automaticamente.
-  - type: web
-    name: zapotal-pdf-worker
-    runtime: docker
-    plan: starter
-    region: oregon
-    branch: main
-    rootDir: spring-services/pdf-worker
-    dockerfilePath: Dockerfile
-    healthCheckPath: /api/v1/internal/health
-    autoDeploy: true
-    envVars:
-      - key: PORT
-        value: "8081"
-      - key: INTERNAL_API_KEY
-        sync: false  # Render pedira el valor; debe coincidir con el de Django
-      - key: SMTP_HOST
-        value: "smtp.resend.com"
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USER
-        value: "resend"
-      - key: SMTP_PASSWORD
         sync: false
-      - key: EMAIL_FROM
-        value: "Comunidad Zapotal <noreply@comunidadzapotal.org>"
+      - key: PDF_WORKER_URL
+        value: "http://localhost:8081"
 
 # ---------- Databases: Render Postgres ----------
 databases:
-  - name: zapotal-db
+  - name: comunidad_zapotal_db
     plan: basic-256mb
     region: oregon
-    # No ipAllowList: por defecto permite todas las conexiones autenticadas.
-    # La seguridad viene del usuario/contrasena de la DATABASE_URL.
 
 # ============================================================================
 # NOTAS DE USO
 # ============================================================================
 #
-# 1. El backend se construye desde la subcarpeta 'comunidad_zapotal_backend/'
-#    gracias a 'rootDir: comunidad_zapotal_backend' en el servicio web.
+# 1. El backend se construye desde 'comunidad_zapotal_backend/' gracias a
+#    'rootDir: comunidad_zapotal_backend'.
 #
-# 2. El PDF worker (Spring Boot) se construye desde spring-services/pdf-worker/
-#    usando el Dockerfile multi-stage incluido. Render detecta Docker
-#    automaticamente por runtime: docker + dockerfilePath.
+# 2. NO se especifica 'branch:' porque Render usa la rama default del
+#    repositorio (master). Si se dejo 'branch: main' antes, eso causaba
+#    el error "branch main could not be found".
 #
-# 3. Al crear el Blueprint, Render pedira el valor de INTERNAL_API_KEY
-#    DOS veces (una para el backend, otra para el PDF worker). Setear
-#    el MISMO valor en ambos.
+# 3. Las migraciones corren en 'preDeployCommand' (NO en buildCommand).
+#    Esto asegura que la DB ya exista cuando se ejecuten. preDeployCommand
+#    esta disponible en planes pagos (starter+).
 #
-# 4. Para popular la base de datos con datos de demo, abrir el Shell de Render
-#    en el dashboard y correr:
+# 4. El PDF worker (Spring Boot) se agrega cuando el directorio
+#    spring-services/pdf-worker/ este listo. Por ahora Django hara
+#    fallback local con xhtml2pdf.
+#
+# 5. Para popular la DB con datos demo, abrir el Shell de Render y correr:
 #        python manage.py seed_all
-#    Esto ejecuta 13 seeders en orden (idempotente). Tarda ~1-2 min.
 #
-# 5. Para crear solo el superuser admin sin popular mas datos:
+# 6. Para crear solo el superuser:
 #        python manage.py seed_superusers --admin-password=MiclaveSegura
 #
-# 6. Para saltar seeders especificos (ej. no cargar eventos):
-#        python manage.py seed_all --skip seed_eventos
+# 7. Variables sync:false: Render las pedira al crear el Blueprint.
 #
-# 7. Para ejecutar solo un subconjunto (ej. solo configuracion + superuser):
-#        python manage.py seed_all --only seed_superusers seed_configuracion
-#
-# 8. El DATABASE_URL lo inyecta Render automaticamente desde la DB
-#    definida en el array 'databases'. No es necesario setearlo manual.
-#
-# 9. Variables secretas (con sync: false): Render las pedira en el
-#    dashboard al crear el Blueprint. Despues se editan desde
-#    Environment > Environment Variables del servicio.
-#
-# 10. El PDF worker usa el dominio por defecto de Render
-#     (https://zapotal-pdf-worker.onrender.com). Si quieres un dominio
-#     custom, edita PDF_WORKER_URL en el backend tras el primer deploy.
+# 8. ⚠️  ANTES DEL PRIMER DEPLOY: la migracion 000X_contenido_xxx.py
+#    contiene SQL crudo de MariaDB y ROMPERA en PostgreSQL. Hay que
+#    comentarla temporalmente o hacerla condicional. Ver README.
 # ============================================================================
