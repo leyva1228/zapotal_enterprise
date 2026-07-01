@@ -19,9 +19,9 @@ Seeders ejecutados (en orden):
     5. seed_marco_legal         -> 6 items del marco legal
     6. seed_hitos_historicos    -> timeline de la comunidad
     7. seed_jerarquia           -> organigrama y cargos
-    8. seed_categorias          -> 6 categorias de contenido
-    9. seed_noticias            -> 10 noticias (8 publicadas + 2 borradores)
-   10. seed_eventos             -> 6 eventos (pasados y futuros)
+     8. seed_categorias          -> 12 categorias de contenido
+     9. seed_noticias            -> 12 noticias peruanas reales (10 publicadas + 2 borradores, fechas mixtas)
+    10. seed_eventos             -> 8 eventos peruanos reales (4 pasados + 4 futuros, todos los campos)
    11. seed_comentarios         -> comentarios y reacciones de prueba
    12. seed_comites_comunales   -> comites especializados
    13. seed_contenido_estatico  -> contenido CMS (about, faq, etc)
