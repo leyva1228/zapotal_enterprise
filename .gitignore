@@ -60,3 +60,6 @@ docs/
 comunidad_zapotal_mobilebff_and_mobile_old/
 .playwright-mcp/
 .swarm/
+
+.vercel
+agents-workflow/
