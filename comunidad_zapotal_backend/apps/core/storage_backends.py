@@ -74,19 +74,34 @@ class CloudflareR2Storage(S3Boto3Storage):
             base_url=settings.MEDIA_URL,
         )
 
-    def _save(self, name, content):
+    def exists(self, name):
         """
-        Guarda el archivo en R2. Si falla, loguea y cae a disco local.
+        Verifica si un archivo existe en R2.
 
-        Esto asegura que el upload de imagenes en Eventos/Noticias nunca
-        genere un HTTP 500 aunque R2 no este disponible. El archivo se
-        guarda en el disco local del servidor como plan B.
+        R2 devuelve 403 (Forbidden) en vez de 404 (Not Found) cuando el
+        objeto no existe y el token no tiene permiso HeadObject. Tratamos
+        cualquier excepcion como "archivo no existe" para evitar 500.
         """
         try:
-            return super()._save(name, content)
+            return super().exists(name)
         except Exception:  # noqa: BLE001
-            logger.exception('R2Storage._save fallo para "%s", usando fallback local', name)
-            return self._fallback_storage()._save(name, content)
+            logger.warning('R2Storage.exists fallo para "%s", asumiendo que no existe', name)
+            return False
+
+    def save(self, name, content, max_length=None):
+        """
+        Guarda el archivo en R2. Si falla en cualquier punto
+        (get_available_name, _save, etc.), loguea y cae a disco local.
+
+        Django llama a get_available_name() ANTES de _save(), por lo que
+        un try/except en _save no cubre errores de HeadObject (R2 403).
+        Sobreescribimos save() para atrapar el error en toda la cadena.
+        """
+        try:
+            return super().save(name, content, max_length)
+        except Exception:  # noqa: BLE001
+            logger.exception('R2Storage.save fallo para "%s", usando fallback local', name)
+            return self._fallback_storage().save(name, content, max_length)
 
     def _open(self, name, mode='rb'):
         """
