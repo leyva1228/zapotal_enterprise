@@ -88,7 +88,7 @@ CSRF_TRUSTED_ORIGINS = config(
 DATABASES = {
     'default': {
         'ENGINE': config('DB_ENGINE', default='django.db.backends.mysql'),
-        'NAME': config('DB_NAME', default='comunidad_db'),
+        'NAME': config('DB_NAME', default='comunidad_zapotal_db_test'),
         'USER': config('DB_USER', default='root'),
         'PASSWORD': config('DB_PASSWORD', default=''),
         'HOST': config('DB_HOST', default='127.0.0.1'),

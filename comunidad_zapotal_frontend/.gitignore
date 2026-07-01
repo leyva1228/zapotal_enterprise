@@ -22,8 +22,10 @@ Thumbs.db
 .idea/
 .vscode/
 
-# ─── Reportes de mejora (IA) ───
-improve/
 
 # ─── Docs de implementación ───
 docs/
+graphify/
+
+AGENTS.md
+AUTOCOMPLETADO_PAGOS.md
