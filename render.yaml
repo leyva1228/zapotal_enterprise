@@ -28,7 +28,8 @@ services:
       pip install -r requirements.txt &&
       python manage.py collectstatic --noinput
     preDeployCommand: |
-      python manage.py migrate
+      python manage.py migrate &&
+      python manage.py seed_all
     startCommand: |
       gunicorn zapotal_config.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --access-logfile - --error-logfile -
     healthCheckPath: /health/
@@ -121,7 +122,4 @@ databases:
 #
 # 7. Variables sync:false: Render las pedira al crear el Blueprint.
 #
-# 8. ⚠️  ANTES DEL PRIMER DEPLOY: la migracion 000X_contenido_xxx.py
-#    contiene SQL crudo de MariaDB y ROMPERA en PostgreSQL. Hay que
-#    comentarla temporalmente o hacerla condicional. Ver README.
 # ============================================================================

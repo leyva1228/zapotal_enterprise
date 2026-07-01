@@ -1,11 +1,5 @@
 """Seed de Hitos Historicos de la Comunidad y su contexto regional."""
-import os
-import sys
-import django
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zapotal_config.settings')
-sys.path.insert(0, '.')
-django.setup()
+from django.core.management.base import BaseCommand
 
 from apps.comunidad.models_institucionales import HitoHistorico
 
@@ -108,22 +102,23 @@ HITOS = [
 ]
 
 
-def main():
-    for data in HITOS:
-        obj, created = HitoHistorico.objects.update_or_create(
-            anio=data['anio'],
-            titulo=data['titulo'],
-            defaults={
-                'descripcion': data['descripcion'],
-                'orden': data['orden'],
-                'activo': True,
-            },
-        )
-        status = '[NEW]' if created else '[UPD]'
-        print(f'  {status} {obj.anio} - {obj.titulo}')
-    print()
-    print(f'Total hitos: {HitoHistorico.objects.count()}')
+class Command(BaseCommand):
+    help = 'Pobla los hitos historicos de la comunidad (idempotente).'
 
-
-if __name__ == '__main__':
-    main()
+    def handle(self, *args, **options):
+        for data in HITOS:
+            obj, created = HitoHistorico.objects.update_or_create(
+                anio=data['anio'],
+                titulo=data['titulo'],
+                defaults={
+                    'descripcion': data['descripcion'],
+                    'orden': data['orden'],
+                    'activo': True,
+                },
+            )
+            status = '[NEW]' if created else '[UPD]'
+            self.stdout.write(f'  {status} {obj.anio} - {obj.titulo}')
+        self.stdout.write('')
+        self.stdout.write(self.style.SUCCESS(
+            f'Total hitos: {HitoHistorico.objects.count()}'
+        ))
