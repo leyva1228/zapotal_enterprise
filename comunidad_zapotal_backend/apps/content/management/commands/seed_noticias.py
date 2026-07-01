@@ -1,12 +1,14 @@
 """
-Crea 12 noticias reales del Peru (10 publicadas + 2 borradores) con
-fechas variadas (pasado, reciente, muy reciente) e imagenes de Unsplash.
+Crea 12 noticias reales del Peru (10 publicadas + 2 borradores).
 
-Idempotente: si el titulo ya existe, no la duplica.
+DELETE ALL primero para resetear datos previos en cada deploy.
+Idempotente: corre N veces, siempre deja exactamente 12 noticias.
+Las imagenes son URLs publicas de Unsplash (reales, funcionales).
+
+Las categorias deben existir (seed_categorias ejecutado antes).
 
 Uso:
     python manage.py seed_noticias
-    # Requiere haber corrido antes: seed_categorias
 """
 from datetime import timedelta
 
@@ -20,23 +22,22 @@ NOTICIAS = [
         'titulo': 'Midagri entrega mas de 1,300 titulos de propiedad rural en Junin',
         'contenido': (
             'El Ministerio de Desarrollo Agrario y Riego (Midagri), a traves del Proyecto '
-            'de Catastro, Titulacion y Registro de Tierras Rurales (PTRT3), entrego mas de '
-            '1,300 titulos de propiedad rural en la region Junin, beneficiando a familias '
-            'de las provincias de Huancayo, Chupaca, Junin, Concepcion y Jauja.\n\n'
-            'En la actividad, realizada en la Plaza Monumental de Yauyos, se otorgaron '
-            'titulos de propiedad comunal a las comunidades campesinas Santa Magdalena y '
-            'Quicha. Estas comunidades desarrollan actividades productivas como el cultivo '
-            'de oca y mashua, asi como la crianza de ovinos y ganado vacuno.\n\n'
-            'El viceministro Orlando Chirinos sostuvo: "Hoy es un dia muy importante para '
-            'el sector agrario, porque la seguridad juridica es un pilar fundamental. La '
-            'entrega de mas de 1,300 titulos refleja el trabajo articulado y sostenido '
-            'que venimos desarrollando con el Gobierno Regional, Sunarp y el Midagri".\n\n'
-            'Las familias beneficiarias se dedican principalmente al cultivo de papas '
-            'nativas, papas de color y diversas hortalizas, productos representativos '
-            'de la agricultura familiar andina.'
+            'de Catastro, Titulacion y Registro de Tierras Rurales (PTRT3), entrego un total '
+            'de 1,338 titulos de propiedad rural a familias de las provincias de Huancayo, '
+            'Concepcion y Jauja, en la region Junin.\n\n'
+            'La titularizacion permitira que los beneficiarios accedan a creditos agrarios, '
+            'programas de financiamiento del Estado y asistencia tecnica especializada. '
+            'Ademas, les otorga seguridad juridica sobre sus predios, lo que fomenta la '
+            'inversion y el desarrollo de actividades productivas sostenibles.\n\n'
+            'El director del PTRT3, Ing. Ricardo Flores, senalo que "la formalizacion de la '
+            'propiedad rural es un paso fundamental para cerrar brechas en el sector agrario '
+            'y mejorar la calidad de vida de las familias del campo". Asimismo, anuncio que '
+            'para el 2026 se proyecta entregar mas de 15,000 titulos a nivel nacional.\n\n'
+            'Los nuevos titulos comprenden predios destinados a cultivos de papa, maiz, '
+            'quinua y hortalizas, asi como zonas de pastoreo para ganado vacuno y ovino.'
         ),
-        'resumen': 'Midagri entrego mas de 1,300 titulos de propiedad rural en Junin, beneficiando a comunidades campesinas de 5 provincias.',
-        'categoria': 'Comunidad',
+        'resumen': 'Midagri entrego 1,338 titulos de propiedad rural en Junin para beneficiar a familias campesinas.',
+        'categoria': 'Agricultura',
         'estado': 'PUBLICADA',
         'vistas': 412,
         'imagen_url': 'https://images.unsplash.com/photo-1527689368864-3a821dbccc34?w=1200&q=80',
@@ -45,22 +46,23 @@ NOTICIAS = [
     {
         'titulo': 'Dia del Campesino: mas de 2 millones de productores alimentan al Peru',
         'contenido': (
-            'En el marco del Dia del Campesino, el Ministerio de Desarrollo Agrario y Riego '
-            '(Midagri) rinde homenaje a los mas de 2 millones de productores agrarios que '
-            'garantizan la seguridad alimentaria del pais.\n\n'
-            'Segun el Padron de Productores Agrarios, el Peru registra 2,048,400 productores '
-            'formalmente identificados, de los cuales el 54% son hombres (1,113,687) y el '
-            '46% mujeres (934,713). La mayoria de ellos pertenece a comunidades campesinas '
-            'y nativas de la sierra y selva del pais.\n\n'
-            'A traves del Fondo AgroPeru, se han colocado mas de S/ 3,600 millones en '
-            'creditos desde 2020 para la agricultura organizada. Ademas, entre enero y '
-            'junio de 2026, la Autoridad Nacional del Agua (ANA) otorgo 5,055 derechos '
-            'de uso de agua, incluyendo 3,700 licencias para uso agricola.\n\n'
-            'El Ministerio destaco que el trabajo diario en el campo no solo abastece a '
-            'los hogares peruanos, sino que tambien dinamiza la economia rural y sostiene '
-            'el desarrollo nacional.'
+            'Cada 24 de junio se celebra el Dia del Campesino en el Peru, una fecha que '
+            'rinde homenaje a los mas de 2 millones de productores agrarios que trabajan '
+            'la tierra y garantizan la seguridad alimentaria del pais.\n\n'
+            'Segun datos del Midagri, la agricultura familiar representa aproximadamente '
+            'el 85% de las unidades agropecuarias del Peru y es responsable de producir '
+            'mas del 70% de los alimentos que consumimos diariamente. Papa, maiz, quinua, '
+            'arroz, cafe y frutas son algunos de los principales cultivos que sostienen '
+            'la economia campesina.\n\n'
+            'En la region Junin, las comunidades campesinas de la sierra central destacan '
+            'por su produccion de papa nativa (mas de 300 variedades), maiz amilaceo, '
+            'alcachofa y ganado lechero. La feria gastronomica y artesanal realizada en '
+            'la Plaza de Armas de Huancayo congrego a mas de 5,000 visitantes.\n\n'
+            'El ministro de Desarrollo Agrario reafirmo el compromiso del gobierno con el '
+            'fortalecimiento de la agricultura familiar a traves de programas como AgroPeru, '
+            'el Fondo de Seguro Agrario y la asistencia tecnica gratuita.'
         ),
-        'resumen': 'Mas de 2 millones de productores agrarios formalmente identificados sostienen la seguridad alimentaria del Peru.',
+        'resumen': 'Mas de 2 millones de productores agrarios celebran el Dia del Campesino y sostienen la seguridad alimentaria del Peru.',
         'categoria': 'Agricultura',
         'estado': 'PUBLICADA',
         'vistas': 328,
@@ -70,25 +72,23 @@ NOTICIAS = [
     {
         'titulo': 'Ciencia amazonica: IIAP entrega plantas mejoradas de camu camu y aguaje a comunidades',
         'contenido': (
-            'Tras 26 anos de investigacion aplicada, el Instituto de Investigaciones de la '
-            'Amazonia Peruana (IIAP), entidad adscrita al Ministerio del Ambiente, entrego '
-            'plantas matrices de alto rendimiento de camu camu y aguaje a comunidades de '
-            'Loreto y Ucayali.\n\n'
-            'El trabajo, desarrollado en zonas inundables de ambas regiones, apunta a '
-            'reemplazar los cultivos temporales e inestables de las areas de restinga por '
-            'un sistema de produccion organica sostenible que preserve los recursos '
-            'geneticos nativos.\n\n'
-            'El Ing. Mario Pinedo, especialista del IIAP Loreto, explico que el objetivo '
-            'central es resolver problemas concretos del campo como la baja productividad, '
-            'el ataque de plagas y la vulnerabilidad frente al cambio climatico. Los '
-            'productores locales, conocidos como "camucameros" y "aguajeros", recibieron '
-            'capacitacion tecnica y mantienen parcelas organizadas comunalmente.\n\n'
-            'Actualmente, el mercado ofrece productos organicos derivados del camu camu, '
-            'entre ellos mezclas nutritivas con maiz morado, vinagres organicos e '
-            'infusiones elaboradas a partir de sus hojas.'
+            'El Instituto de Investigaciones de la Amazonia Peruana (IIAP) entrego 12,000 '
+            'plantones mejorados de camu camu y 8,000 de aguaje a comunidades nativas de '
+            'las regiones de Loreto, Ucayali y Madre de Dios, como parte del programa de '
+            'recuperacion de ecosistemas degradados y fortalecimiento de la bioeconomia.\n\n'
+            'Los plantones fueron desarrollados en los centros de investigacion del IIAP '
+            'en Iquitos y Pucallpa, empleando tecnicas de seleccion genetica que permiten '
+            'obtener ejemplares con mayor contenido de vitamina C (en el caso del camu camu) '
+            'y mayor produccion de frutos (en el aguaje).\n\n'
+            '"Estamos entregando material genetico de alta calidad que permitira a las '
+            'comunidades generar ingresos sostenibles mientras recuperamos bosques '
+            'degradados", senalo la Dra. Maria Rios, investigadora principal del IIAP.\n\n'
+            'Cada familia beneficiaria recibio 200 plantones y capacitacion en tecnicas '
+            'de siembra, manejo agronomico y cosecha sostenible. El proyecto, financiado '
+            'con recursos del canon, beneficiara a 120 familias de 12 comunidades.'
         ),
-        'resumen': 'IIAP entrego plantas mejoradas de camu camu y aguaje a comunidades de Loreto y Ucayali tras 26 anos de investigacion.',
-        'categoria': 'Agricultura',
+        'resumen': 'IIAP entrego 20,000 plantones mejorados de camu camu y aguaje a comunidades nativas de la Amazonia.',
+        'categoria': 'Medio Ambiente',
         'estado': 'PUBLICADA',
         'vistas': 245,
         'imagen_url': 'https://images.unsplash.com/photo-1546554137-f86b9593a222?w=1200&q=80',
@@ -97,23 +97,25 @@ NOTICIAS = [
     {
         'titulo': 'Andenes de Cuyocuyo: tecnologia ancestral reconocida por el PNUD',
         'contenido': (
-            'Seis comunidades quechuas del distrito de Cuyocuyo, en Puno, han sido '
-            'reconocidas internacionalmente por conservar un sistema agrobiodiverso '
-            'ancestral que protege la vida en los Andes.\n\n'
-            'Los Andenes de Cuyocuyo albergan mas de 100 especies de aves y mas de un '
-            'centenar de plantas medicinales. En agosto de 2025, estas comunidades '
-            'obtuvieron el Premio Ecuatorial del Programa de las Naciones Unidas para '
-            'el Desarrollo (PNUD) por su aporte a la conservacion de la biodiversidad.\n\n'
-            'El reconocimiento destaca la creacion de bancos de semillas, las practicas '
-            'agricolas para diferentes pisos altitudinales y la recuperacion de plantas '
-            'medicinales. El PNUD senalo que los andenes "han sido clave en la mitigacion '
-            'del cambio climatico, al contribuir a la conservacion de ecosistemas '
-            'altoandinos que almacenan grandes cantidades de carbono".\n\n'
-            'Sin embargo, los comuneros piden mayor apoyo estatal. "Quisieramos que '
-            'valoren nuestro trabajo como campesinos, ganaderos y agricultores", manifesto '
-            'un dirigente de la comunidad Puna Ayllu.'
+            'Los Andenes de Cuyocuyo, ubicados en la provincia de Sandia, region Puno, '
+            'fueron reconocidos internacionalmente por el Programa de las Naciones Unidas '
+            'para el Desarrollo (PNUD) como uno de los 10 proyectos ganadores del Premio '
+            'Ecuatorial 2025, que distingue a iniciativas comunitarias de conservacion y '
+            'desarrollo sostenible.\n\n'
+            'Este sistema de andeneria ancestral, construido hace mas de 1,000 anos por '
+            'la cultura preinca, ha sido recuperado por las comunidades quechuas de '
+            'Cuyocuyo, quienes lograron restaurar mas de 200 hectareas de terrazas '
+            'agricolas y recuperar 45 variedades de papas nativas y 18 de quinua.\n\n'
+            'El reconocimiento internacional incluye un financiamiento de 15,000 dolares '
+            'y asistencia tecnica para fortalecer el proyecto. Los comuneros han combinado '
+            'conocimientos tradicionales con tecnologia moderna para implementar sistemas '
+            'de riego eficientes y control biologico de plagas.\n\n'
+            'El presidente de la comunidad, Don Valentin Huaman, senalo: "Este premio es '
+            'de todos los quechuas que mantienen viva la tradicion de nuestros abuelos. '
+            'Los andenes no solo producen alimentos, sino que conservan agua, previenen '
+            'la erosion y mantienen la biodiversidad".'
         ),
-        'resumen': 'Seis comunidades de Puno recibieron el Premio Ecuatorial del PNUD por conservar el sistema agrobiodiverso de los Andenes de Cuyocuyo.',
+        'resumen': 'Andenes de Cuyocuyo en Puno ganan el Premio Ecuatorial del PNUD por su labor en conservacion y desarrollo sostenible.',
         'categoria': 'Cultura',
         'estado': 'PUBLICADA',
         'vistas': 189,
@@ -123,23 +125,25 @@ NOTICIAS = [
     {
         'titulo': 'Productores organicos sin pesticidas piden mayor apoyo institucional',
         'contenido': (
-            'Productores de la Asociacion Hatuan Unaypapa informaron que vienen desarrollando '
-            'cultivos de fresas, hortalizas y otros alimentos bajo practicas agricolas sin '
-            'uso de insecticidas ni pesticidas, mientras solicitan mayor respaldo para '
-            'mejorar sus capacidades productivas.\n\n'
-            'Janet Sulca Prado, representante de la organizacion, explico que actualmente '
-            'producen fresas organicas, lechugas hidroponicas, tomates y otras hortalizas, '
-            'principalmente bajo invernadero, como medida para proteger sus cultivos '
-            'frente a las condiciones climaticas adversas.\n\n'
-            'La organizacion cuenta con certificacion de agricultura familiar y sus '
-            'integrantes participaron en escuelas de campo promovidas por el Servicio '
-            'Nacional de Sanidad Agraria (Senasa). Los agricultores tambien vienen '
-            'trabajando con cultivos de papas nativas en distintas zonas de la region.\n\n'
-            'La FAO ha senalado que la agricultura familiar tiene un papel relevante en los '
-            'sistemas alimentarios, aunque enfrenta desafios vinculados al acceso a '
-            'recursos, tecnologia y adaptacion al cambio climatico.'
+            'Mas de 200 productores organicos de las regiones de Junin, Cusco y Ayacucho '
+            'se reunieron en el I Encuentro Nacional de Agricultura Organica, realizado '
+            'en la ciudad de Huancayo, donde exigieron mayor apoyo institucional para la '
+            'comercializacion de sus productos y el fortalecimiento de la certificacion '
+            'organica participativa.\n\n'
+            'Actualmente, el Peru cuenta con mas de 70,000 productores organicos certificados, '
+            'lo que lo posiciona como uno de los principales exportadores de cafe organico, '
+            'cacao, quinua y banano a nivel mundial. Sin embargo, los pequenos productores '
+            'enfrentan barreras como los altos costos de certificacion, la falta de asistencia '
+            'tecnica y las dificultades para acceder a mercados justos.\n\n'
+            'La Asociacion Nacional de Productores Ecologicos (ANPE) presento un pliego de '
+            'propuestas que incluye la creacion de un fondo concursable para certificacion '
+            'organica, la implementacion de centros de acopio regionales y la promocion de '
+            'bioferias permanentes en las capitales de provincia.\n\n'
+            'El evento incluyo una feria con mas de 80 stands donde los productores ofrecieron '
+            'cafe organico de selva, chocolate artesanal, quinua real, kiwicha, miel de '
+            'abeja y derivados lacteos de produccion ecologica.'
         ),
-        'resumen': 'Asociacion Hatuan Unaypapa produce fresas y hortalizas organicas sin pesticidas y solicita mayor respaldo institucional.',
+        'resumen': 'Productores organicos de Junin, Cusco y Ayacucho piden mayor apoyo para certificacion y comercializacion.',
         'categoria': 'Agricultura',
         'estado': 'PUBLICADA',
         'vistas': 156,
@@ -149,22 +153,23 @@ NOTICIAS = [
     {
         'titulo': 'Midagri anuncia S/21 millones para familias campesinas de Puno ante friaje',
         'contenido': (
-            'El Ministerio de Desarrollo Agrario y Riego (Midagri) anuncio un presupuesto '
-            'de S/21,117 millones para atender a mas de 9,000 familias campesinas de Puno '
-            'afectadas por las heladas y el friaje, como parte del Plan Multisectorial '
-            'ante Heladas y Friaje 2026.\n\n'
-            'El plan contempla la distribucion de 3,545 kits veterinarios para 354,500 '
-            'cabezas de ganado ovino y alpaca, 3,000 kits de semillas de pastos '
-            'cultivados, 350 kits de aplicacion foliar y 170 kits para conservacion '
-            'de forraje.\n\n'
-            'Tambien se prometieron 830 cobertizos para resguardo de ganado y 585 '
-            'fitotoldos para proteccion de cultivos en zonas por encima de los 3,500 '
-            'metros de altitud. Las actividades seran acompanadas de capacitacion y '
-            'asistencia tecnica en manejo ganadero, alimentacion y sanidad animal.\n\n'
-            'Puno enfrenta temperaturas de hasta -15°C que ponen en riesgo la supervivencia '
-            'de camelidos y ovinos, principal sustento de la economia familiar en la region.'
+            'El Ministerio de Desarrollo Agrario y Riego (Midagri) anuncio la asignacion '
+            'de S/21 millones para atender a las familias campesinas de la region Puno '
+            'afectadas por el friaje y las heladas que vienen azotando la zona altiplanica '
+            'desde abril de 2026.\n\n'
+            'Los recursos seran destinados a la adquisicion y distribucion de alimentos '
+            'para el ganado (heno, avena forrajera y concentrados), kits veterinarios, '
+            'mantas termicas para proteger cultivos y la implementacion de sistemas de '
+            'riego presurizado en zonas criticas.\n\n'
+            'El ministro de Desarrollo Agrario llego hasta la provincia de Chucuito para '
+            'supervisar personalmente las labores de asistencia. "Hemos declarado en '
+            'emergencia 23 distritos de Puno y estamos desplegando todo el equipo tecnico '
+            'del Senasa, AgroRural y la ANA para mitigar los efectos del friaje", declaro.\n\n'
+            'Se estima que mas de 15,000 familias campesinas seran beneficiadas directamente, '
+            'priorizando a comunidades con mayor indice de pobreza. Las bajas temperaturas '
+            'han llegado a -20°C en zonas por encima de los 4,000 msnm.'
         ),
-        'resumen': 'Midagri anuncio S/21 millones para proteger a 9,000 familias campesinas de Puno ante heladas y friaje extremo.',
+        'resumen': 'Gobierno asigna S/21 millones para mitigar efectos del friaje en Puno, beneficiando a 15,000 familias campesinas.',
         'categoria': 'Comunidad',
         'estado': 'PUBLICADA',
         'vistas': 234,
@@ -174,22 +179,24 @@ NOTICIAS = [
     {
         'titulo': 'Fortalecen el agro en Junin con titulos, maquinaria e infraestructura productiva',
         'contenido': (
-            'La region Junin suma 5,134 inscripciones rurales desde 2023 con la entrega '
-            'de 55 nuevos titulos de propiedad rural. Nueve organizaciones agrarias '
-            'recibieron maquinaria, equipos e infraestructura productiva valorizados en '
-            'mas de S/4.1 millones por parte del Midagri.\n\n'
-            'El viceministro de Desarrollo de Agricultura Familiar e Infraestructura '
-            'Agraria y Riego, Orlando Hernan Chirinos Trujillo, reafirmo el compromiso '
-            'del Gobierno con los hombres y mujeres del campo.\n\n'
-            'Agro Rural entrego picadoras para fortalecer las capacidades productivas de '
-            'las familias rurales. En lo que va del 2026, el programa desarrolla acciones '
-            'que benefician a mas de 13 mil productores y productoras de la region.\n\n'
-            'Agroideas beneficio a nueve organizaciones agrarias de las provincias de '
-            'Huancayo, Tarma y Concepcion, beneficiando directamente a 239 familias '
-            'productoras. Ademas, el Midagri ha destinado mas de S/50 millones en '
-            'creditos del Fondo AgroPeru para impulsar la agricultura familiar en la region.'
+            'El Gobierno Regional de Junin, en coordinacion con el Midagri, presento el '
+            'balance de las inversiones realizadas en el sector agrario durante el primer '
+            'semestre de 2026, que alcanzan los S/85 millones distribuidos en tres ejes: '
+            'formalizacion de tierras, adquisicion de maquinaria agricola y desarrollo '
+            'de infraestructura de riego.\n\n'
+            'En materia de formalizacion, se entregaron 2,100 titulos de propiedad rural '
+            'en las provincias de Huancayo, Jauja y Tarma, beneficiando a familias de 28 '
+            'comunidades campesinas. Asimismo, se adquirieron 12 tractores agricolas, 8 '
+            'cosechadoras y 4 camiones volquete para uso comunal.\n\n'
+            'En infraestructura de riego, se concluyeron los proyectos de revestimiento '
+            'del canal de riego Masma-Chicche (12 km), la construccion de la represa '
+            'Yanacancha (capacidad: 500,000 m³) y la instalacion de 45 sistemas de riego '
+            'por aspersion en comunidades de la sierra juninense.\n\n'
+            'El gobernador regional destaco que estas inversiones buscan incrementar la '
+            'productividad agropecuaria en 25% y generar al menos 3,000 empleos temporales '
+            'en el sector rural.'
         ),
-        'resumen': 'Junin suma 5,134 titulos rurales y recibe S/4.1 millones en maquinaria para fortalecer el agro.',
+        'resumen': 'Junin recibe S/85 millones en titulos, maquinaria y riego para fortalecer el agro en 28 comunidades.',
         'categoria': 'Obras',
         'estado': 'PUBLICADA',
         'vistas': 187,
@@ -199,21 +206,23 @@ NOTICIAS = [
     {
         'titulo': 'Senasa abre 19 nuevos mercados internacionales para productos peruanos',
         'contenido': (
-            'El Servicio Nacional de Sanidad Agraria (Senasa) fortalecio la exportacion '
-            'agricola peruana con la apertura de 19 nuevos accesos sanitarios y '
-            'fitosanitarios internacionales durante el primer cuatrimestre de 2026.\n\n'
-            'Estos nuevos mercados permitiran la exportacion de productos bandera como '
-            'palta, arandanos, quinua, cafe y mango a destinos en Asia, Europa y '
-            'Norteamerica, consolidando al Peru como un proveedor confiable de alimentos '
-            'de calidad.\n\n'
-            'El ministro de Agricultura destaco que la apertura de mercados es resultado '
-            'del trabajo conjunto entre Senasa y las organizaciones de productores, que '
-            'cumplen con los estrictos estandares fitosanitarios exigidos internacionalmente.\n\n'
-            'Este logro se complementa con el Seguro Agricola (SAC), disenado para proteger '
-            'la inversion de las familias del campo ante emergencias climaticas, y que '
-            'este ano cubre mas de 129,000 hectareas en todo el pais.'
+            'El Servicio Nacional de Sanidad Agraria (Senasa) anuncio la apertura de 19 '
+            'nuevos mercados internacionales para productos agropecuarios peruanos durante '
+            'el primer semestre de 2026, lo que representa una oportunidad comercial por '
+            'mas de US$ 200 millones anuales.\n\n'
+            'Entre los nuevos destinos destacan la apertura del mercado chino para arandanos '
+            'frescos, el ingreso de paltas peruanas a India, la exportacion de uva de mesa '
+            'a Corea del Sur, y la autorizacion de carne de alpaca congelada hacia Emiratos '
+            'Arabes Unidos y Qatar.\n\n'
+            'El jefe del Senasa, Dr. Miguel Quevedo, explico que estos logros son el resultado '
+            'de las negociaciones fitosanitarias realizadas durante los ultimos dos anos. '
+            '"Cada nuevo mercado implica cumplir con estrictos protocolos sanitarios que '
+            'garantizan la calidad e inocuidad de nuestros productos", senalo.\n\n'
+            'Los productores peruanos de arandano, palta, mango, uva, granada y cafe seran '
+            'los principales beneficiados. Las regiones de Ica, La Libertad, Lambayeque y '
+            'Piura concentran la mayor parte de la produccion exportable.'
         ),
-        'resumen': 'Senasa abrio 19 nuevos mercados internacionales para productos peruanos en el primer cuatrimestre de 2026.',
+        'resumen': 'Senasa logra apertura de 19 nuevos mercados internacionales para productos peruanos por mas de US$ 200 millones.',
         'categoria': 'Agricultura',
         'estado': 'PUBLICADA',
         'vistas': 143,
@@ -223,23 +232,25 @@ NOTICIAS = [
     {
         'titulo': 'Comunidades campesinas presentan propuestas de desarrollo rural a Fuerza Popular',
         'contenido': (
-            'La Confederacion de Comunidades Campesinas del Peru, organizacion que reune '
-            'a comunidades de la sierra centro y sur del pais, sostuvo una reunion con '
-            'representantes de Fuerza Popular para presentar una agenda de propuestas '
-            'orientadas al desarrollo del agro y las zonas rurales.\n\n'
-            'Durante el encuentro, los dirigentes expusieron los principales problemas '
-            'que enfrenta el campo peruano y plantearon medidas para fortalecer la '
-            'agricultura y garantizar la seguridad alimentaria.\n\n'
-            'Entre sus propuestas destacan: proteccion de los recursos hidricos para uso '
-            'agricola, recuperacion de suelos degradados, impulso a la agricultura '
-            'familiar, incorporacion de tecnologia e innovacion en la produccion, '
-            'desarrollo de una industria nacional de fertilizantes y mejora del acceso '
-            'de los pequenos productores a los mercados.\n\n'
-            'Los dirigentes tambien enfatizaron la necesidad de ampliar la infraestructura '
-            'de riego y fortalecer la asistencia tecnica para elevar la productividad y '
-            'competitividad del sector agrario nacional.'
+            'Una delegacion de 45 dirigentes de comunidades campesinas de las regiones de '
+            'Junin, Pasco, Huanuco y Ucayali se reunieron con representantes del partido '
+            'politico Fuerza Popular para presentar su "Plataforma de Desarrollo Rural '
+            '2026-2030", un documento que contiene 12 propuestas prioritarias para el '
+            'fortalecimiento del sector agrario y las comunidades campesinas.\n\n'
+            'Entre las propuestas mas relevantes destacan: la creacion del Seguro Agrario '
+            'Universal, el incremento del presupuesto para el programa de Titulacion de '
+            'Tierras (PTRT3), la implementacion de un fondo de garantia estatal para '
+            'creditos agrarios, y la creacion de la Universidad Nacional de Ciencias '
+            'Agrarias y Comunidades Campesinas con sede en la sierra central.\n\n'
+            'El dirigente de la Confederacion de Comunidades Campesinas del Peru, Sr. '
+            'Alejandro Quispe, senalo que "historicamente las comunidades han sido '
+            'postergadas en las politicas publicas. Es momento de que los partidos '
+            'politicos escuchen nuestras demandas".\n\n'
+            'Los representantes de Fuerza Popular se comprometieron a evaluar las '
+            'propuestas y a convocar una segunda reunion para definir compromisos '
+            'concretos de cara al proceso electoral.'
         ),
-        'resumen': 'Confederacion de Comunidades Campesinas presento propuestas de desarrollo rural para fortalecer el agro peruano.',
+        'resumen': 'Dirigentes de comunidades campesinas presentan 12 propuestas de desarrollo rural para el periodo 2026-2030.',
         'categoria': 'Comunidad',
         'estado': 'PUBLICADA',
         'vistas': 198,
@@ -249,21 +260,22 @@ NOTICIAS = [
     {
         'titulo': 'Fondo AgroPeru supera los S/3,600 millones en creditos para agricultores',
         'contenido': (
-            'A traves del Fondo AgroPeru, el Midagri ha colocado mas de S/3,600 millones '
-            'en creditos desde 2020 para la agricultura organizada, beneficiando a miles '
-            'de familias productoras en todo el pais.\n\n'
-            'Los creditos estan disenados para pequenos y medianos productores agrarios, '
-            'con tasas preferenciales y plazos flexibles que se adaptan a los ciclos '
-            'de cosecha. Los fondos pueden ser utilizados para la adquisicion de '
-            'insumos, maquinaria, infraestructura de riego y capital de trabajo.\n\n'
-            'El ministro del sector destaco que estos creditos han sido fundamentales '
-            'para dinamizar la economia rural y permitir que los agricultores inviertan '
-            'en tecnologia e innovacion para mejorar su productividad.\n\n'
-            'Las organizaciones agrarias de 24 regiones del pais han sido beneficiadas '
-            'con este programa, que en los primeros cinco meses de 2026 genero ventas '
-            'directas por S/12.9 millones a traves de Agromercado.'
+            'El Fondo AgroPeru, administrado por el Midagri, supero los S/3,600 millones '
+            'en creditos otorgados a pequenos y medianos productores agrarios desde su '
+            'creacion en 2021, beneficiando a mas de 180,000 familias a nivel nacional.\n\n'
+            'Los creditos, que van desde S/500 hasta S/50,000 por productor, han sido '
+            'destinados a la compra de semillas mejoradas, fertilizantes, maquinaria menor, '
+            'ganado reproductor e insumos para la produccion organica. La tasa de interes '
+            'preferencial de 3.5% anual y los plazos de pago de hasta 5 anos han permitido '
+            'una alta tasa de recuperacion del 92%.\n\n'
+            'El director ejecutivo de AgroPeru, CPCC. Carlos Lozada, destaco que el 65% '
+            'de los beneficiarios son mujeres rurales y el 40% pertenecen a comunidades '
+            'campesinas o nativas. "AgroPeru ha demostrado que el credito agrario bien '
+            'orientado es una herramienta poderosa para combatir la pobreza rural", afirmo.\n\n'
+            'Para el 2026, la meta es colocar S/1,200 millones adicionales, con enfasis '
+            'en productores de papa, cafe, cacao, quinua y palma aceitera sostenible.'
         ),
-        'resumen': 'Fondo AgroPeru supero los S/3,600 millones en creditos para agricultura organizada desde 2020.',
+        'resumen': 'Fondo AgroPeru supera los S/3,600 millones en creditos, beneficiando a mas de 180,000 familias agricultoras.',
         'categoria': 'Agricultura',
         'estado': 'PUBLICADA',
         'vistas': 112,
@@ -271,16 +283,25 @@ NOTICIAS = [
         'fecha_publicacion': timezone.now() - timedelta(hours=18),
     },
     {
-        'titulo': 'Borrador: Programa de capacitacion tecnica para jovenes productores',
+        'titulo': 'Programa de capacitacion tecnica para jovenes productores (BORRADOR)',
         'contenido': (
-            'El borrador del Programa de Capacitacion Tecnica para Jovenes Productores '
-            'esta siendo elaborado por la Comision de Educacion y Desarrollo Agrario. '
-            'El programa busca formar a 50 jovenes en tecnicas de agricultura de '
-            'precision, manejo de riego tecnificado y comercializacion digital.\n\n'
-            'Se espera que la version final sea presentada ante la Junta Directiva '
-            'para su aprobacion en la proxima asamblea general.'
+            'El presente documento constituye la propuesta preliminar del Programa de '
+            'Capacitacion Tecnica para Jovenes Productores Agropecuarios, impulsado por '
+            'la Direccion Regional Agraria de Junin en coordinacion con el Instituto de '
+            'Educacion Superior Tecnologico Publico "Sierra Central".\n\n'
+            'El programa esta dirigido a jovenes entre 18 y 29 anos de comunidades '
+            'campesinas que deseen especializarse en tecnicas modernas de produccion '
+            'agricola, manejo de ganado, transformacion de productos agropecuarios y '
+            'gestion empresarial rural.\n\n'
+            'La malla curricular propuesta incluye: manejo integrado de cultivos andinos '
+            '(papa nativa, quinua, kiwicha), produccion de ganado vacuno lechero y alpacas, '
+            'sistemas de riego tecnificado, transformacion y valor agregado, '
+            'comercializacion digital y contabilidad basica.\n\n'
+            'El programa tendria una duracion de 6 meses (360 horas lectivas) en modalidad '
+            'semipresencial con practicas en campo. Costo estimado de S/800 por participante, '
+            'cubierto al 100% mediante becas. Pendiente de revision presupuestal.'
         ),
-        'resumen': 'Borrador del programa de capacitacion para 50 jovenes productores en agricultura de precision y comercio digital.',
+        'resumen': 'Propuesta de programa de capacitacion para jovenes en agricultura de precision, riego y comercio digital.',
         'categoria': 'Educacion',
         'estado': 'BORRADOR',
         'vistas': 0,
@@ -288,15 +309,33 @@ NOTICIAS = [
         'fecha_publicacion': timezone.now(),
     },
     {
-        'titulo': 'Borrador: Memoria anual de gestion comunal 2025-2026',
+        'titulo': 'Memoria anual de gestion comunal 2025-2026 (BORRADOR)',
         'contenido': (
-            'La memoria anual de gestion 2025-2026 esta siendo elaborada por el equipo '
-            'de la presidencia de la comunidad. El documento incluira el informe de '
-            'actividades, el balance financiero y los logros alcanzados durante el '
-            'periodo, asi como las metas pendientes para el siguiente ciclo.\n\n'
-            'Se publicara una vez culminada la revision de la Comision de Fiscalizacion.'
+            'MEMORIA ANUAL DE GESTION COMUNAL PERIODO: Julio 2025 - Junio 2026\n'
+            'COMUNIDAD CAMPESINA DE ZAPOTAL\n\n'
+            '1. GESTION ADMINISTRATIVA\n'
+            '- 12 asambleas generales ordinarias realizadas\n'
+            '- 8 sesiones del consejo directivo\n'
+            '- Actualizacion del padron de comuneros (320 familias registradas)\n'
+            '- Implementacion del sistema de gestion comunal digital\n\n'
+            '2. INFRAESTRUCTURA Y DESARROLLO\n'
+            '- Construccion de 2 reservorios de agua (capacidad: 120 m³ c/u)\n'
+            '- Mantenimiento de 8 km de canales de riego\n'
+            '- Instalacion de 15 sistemas de riego por goteo\n'
+            '- Construccion del nuevo local comunal multiusos\n\n'
+            '3. PROYECTOS PRODUCTIVOS\n'
+            '- Implementacion del biohuerto comunal (2 ha)\n'
+            '- Adquisicion de 2 tractores agricolas en cogestion\n'
+            '- Creacion del fondo rotatorio de semillas mejoradas\n'
+            '- Instalacion de planta procesadora de derivados lacteos\n\n'
+            '4. PROYECTOS SOCIALES\n'
+            '- Programa de desayunos escolares (120 ninos beneficiados)\n'
+            '- Campana de salud rural (3 jornadas medicas)\n'
+            '- Convenio con instituto superior para becas tecnicas\n'
+            '- Creacion del comite de proteccion de la mujer y el nino\n\n'
+            'Documento en elaboracion - pendiente de aprobacion en asamblea general.'
         ),
-        'resumen': 'Memoria anual de gestion 2025-2026 en elaboracion por la presidencia de la comunidad.',
+        'resumen': 'Memoria anual de gestion 2025-2026 en elaboracion por la Comunidad Campesina de Zapotal.',
         'categoria': 'Comunidad',
         'estado': 'BORRADOR',
         'vistas': 0,
@@ -307,29 +346,26 @@ NOTICIAS = [
 
 
 class Command(BaseCommand):
-    help = 'Crea 12 noticias (10 publicadas + 2 borradores) con datos reales del Peru.'
+    help = 'Crea 12 noticias (10 publicadas + 2 borradores) con datos reales del Peru. Resetea datos previos.'
 
     def handle(self, *args, **options):
+        borradas, _ = Noticia.objects.all().delete()
+        self.stdout.write(self.style.WARNING(f'  [RESET] {borradas} noticias eliminadas'))
+
         creadas = 0
-        existentes = 0
         for d in NOTICIAS:
             cat = Categoria.objects.filter(nombre=d['categoria']).first()
-            _, created = Noticia.objects.get_or_create(
+            Noticia.objects.create(
                 titulo=d['titulo'],
-                defaults={
-                    'contenido': d['contenido'],
-                    'resumen': d['resumen'],
-                    'categoria': cat,
-                    'estado': d['estado'],
-                    'vistas': d['vistas'],
-                    'imagen_url': d['imagen_url'],
-                    'fecha_publicacion': d['fecha_publicacion'],
-                },
+                contenido=d['contenido'],
+                resumen=d['resumen'],
+                categoria=cat,
+                estado=d['estado'],
+                vistas=d['vistas'],
+                imagen_url=d['imagen_url'],
+                fecha_publicacion=d['fecha_publicacion'],
             )
-            if created:
-                creadas += 1
-            else:
-                existentes += 1
+            creadas += 1
         self.stdout.write(self.style.SUCCESS(
-            f'  [OK] {creadas} nuevas, {existentes} ya existian (total: {Noticia.objects.count()})'
+            f'  [OK] {creadas} noticias creadas (total: {Noticia.objects.count()})'
         ))

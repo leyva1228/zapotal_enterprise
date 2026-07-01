@@ -14,17 +14,21 @@ Uso:
 Seeders ejecutados (en orden):
     1. seed_superusers          -> superuser admin@zapotal.com
     2. seed_configuracion       -> datos de la comunidad (nombre, ubicacion)
-    3. seed_comuneros           -> 7 comuneros base
-    4. seed_autoridades         -> 6 autoridades con usuario y cargo
-    5. seed_marco_legal         -> 6 items del marco legal
-    6. seed_hitos_historicos    -> timeline de la comunidad
-    7. seed_jerarquia           -> organigrama y cargos
-     8. seed_categorias          -> 12 categorias de contenido
-     9. seed_noticias            -> 12 noticias peruanas reales (10 publicadas + 2 borradores, fechas mixtas)
-    10. seed_eventos             -> 8 eventos peruanos reales (4 pasados + 4 futuros, todos los campos)
-   11. seed_comentarios         -> comentarios y reacciones de prueba
-   12. seed_comites_comunales   -> comites especializados
-   13. seed_contenido_estatico  -> contenido CMS (about, faq, etc)
+    3. seed_textos_internos     -> textos institucionales
+    4. seed_contenido_institucional -> contenido institucional
+    5. seed_categorias_galeria  -> categorias de galeria
+    6. seed_paginas_legales     -> paginas legales
+    7. seed_comuneros           -> comuneros base
+    8. seed_autoridades         -> autoridades con usuario y cargo
+    9. seed_marco_legal         -> items del marco legal
+   10. seed_hitos_historicos    -> timeline de la comunidad
+   11. seed_jerarquia           -> organigrama y cargos
+   12. seed_categorias          -> 6 categorias de contenido
+   13. seed_noticias            -> 12 noticias (reset previo, datos reales Peru, imagenes Unsplash)
+   14. seed_eventos             -> 8 eventos (reset previo, datos reales Peru, imagenes Unsplash)
+   15. seed_comentarios         -> comentarios y reacciones de prueba
+   16. seed_comites_comunales   -> comites especializados
+   17. seed_contenido_estatico  -> contenido CMS (about, faq, etc)
 """
 import importlib
 

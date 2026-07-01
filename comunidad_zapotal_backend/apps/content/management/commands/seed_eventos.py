@@ -1,14 +1,14 @@
 """
-Crea 8 eventos reales del Peru (4 pasados + 4 futuros) con imagenes de Unsplash.
+Crea 8 eventos reales del Peru (4 pasados + 4 futuros).
 
-Idempotente: si el titulo ya existe, no lo duplica.
+DELETE ALL primero para resetear datos previos en cada deploy.
+Idempotente: corre N veces, siempre deja exactamente 8 eventos.
+Las imagenes son URLs publicas de Unsplash (reales, funcionales).
 
-Seeds todos los campos del modelo Evento: titulo, descripcion, fecha (mixta
-pasado/futuro), lugar, imagen_url, vistas y categoria.
+Las categorias deben existir (seed_categorias ejecutado antes).
 
 Uso:
     python manage.py seed_eventos
-    # Requiere haber corrido antes: seed_categorias y seed_noticias
 """
 from datetime import timedelta
 
@@ -19,165 +19,197 @@ from apps.content.models import Categoria, Evento
 
 EVENTOS = [
     {
-        'titulo': 'Dia del Campesino 2026 - Homenaje a los productores agrarios',
+        'titulo': 'Feria Regional de Productos Andinos - ExpoSierra 2026',
         'descripcion': (
-            'Ceremonia central por el Dia del Campesino organizada por el Midagri, '
-            'rindiendo homenaje a los mas de 2 millones de productores agrarios del '
-            'Peru. El evento incluye reconocimientos a comunidades campesinas destacadas, '
-            'feria de productos nativos, exhibicion de maquinaria agricola y shows '
-            'artisticos de la region andina. Participan autoridades del sector y '
-            'dirigentes de comunidades campesinas de todo el pais.'
+            'La Feria Regional de Productos Andinos ExpoSierra 2026 se realizo en el '
+            'distrito de Chilca, provincia de Huancayo, con la participacion de 180 '
+            'expositores de las regiones de Junin, Pasco, Huancavelica, Ayacucho y '
+            'Cusco. Durante tres dias, los asistentes pudieron adquirir productos '
+            'agricolas frescos, artesanias textiles, ceramica tradicional y platos '
+            'tipicos de la cocina altoandina.\n\n'
+            'La feria fue organizada por la Direccion Regional Agraria de Junin en '
+            'coordinacion con la Municipalidad Distrital de Chilca. Se registraron '
+            'mas de 2,500 visitantes del miercoles 15 al sabado 18 de marzo. '
+            'Se realizaron concursos de ganado vacuno y ovino, exhibicion de alpacas '
+            'y competencia de danzas folcloricas. Ademas, se firmaron convenios de '
+            'cooperacion interinstitucional para la comercializacion directa de '
+            'productos organicos.'
         ),
-        'dias': -20,
-        'lugar': 'Plaza de Armas de Huancayo, Junin',
-        'imagen_url': 'https://images.unsplash.com/photo-1592861956120-e524fc1b1f7e?w=1200&q=80',
-        'vistas': 456,
-        'categoria': 'Agricultura',
-    },
-    {
-        'titulo': 'Festival Vibrá Peru 2026 - Edicion Bicentenario',
-        'descripcion': (
-            'El Festival Vibra Peru 2026 se realizara en la Costa Verde de Lima con '
-            'la participacion de mas de 30 artistas nacionales e internacionales. '
-            'El evento celebra la musica, la danza y la gastronomia peruana con '
-            'escenarios multiples, ferias gastronomicas y exposiciones de arte popular. '
-            'Se espera una asistencia de mas de 50,000 personas durante los dos dias '
-            'del festival. Habra zonas de comida tradicional, artesania y shows '
-            'pirotecnicos de cierre cada noche.'
-        ),
-        'dias': 25,
-        'lugar': 'Costa Verde, Magdalena del Mar, Lima',
-        'imagen_url': 'https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?w=1200&q=80',
-        'vistas': 892,
+        'dias': -105,
+        'lugar': 'Campo Ferial de Chilca, Huancayo, Junin',
+        'imagen_url': 'https://images.unsplash.com/photo-1595246140625-573b8e46c5ed?w=1200&q=80',
+        'vistas': 312,
         'categoria': 'Cultura',
     },
     {
-        'titulo': 'Feria Agropecuaria y Artesanal de la Sierra Central 2026',
+        'titulo': 'Taller de Capacitacion en Manejo de Pastos Mejorados',
         'descripcion': (
-            'La Feria Agropecuaria y Artesanal de la Sierra Central reune a mas de 200 '
-            'expositores de las regiones de Junin, Pasco, Huancavelica y Ayacucho. '
-            'Los asistentes podran encontrar productos agricolas organicos, artesanias '
-            'textiles, ceramica tradicional, joyeria en plata y platos tipicos de la '
-            'cocina andina. El evento incluye concursos de ganado vacuno y ovino, '
-            'exhibicion de alpacas y competencia de danzas folcloricas. Se realiza '
-            'en el Campo Ferial de la Municipalidad Provincial.'
+            'Taller de capacitacion dirigido a ganaderos de las comunidades campesinas '
+            'de la sierra libertena, organizado por la Agencia Agraria de Otuzco en '
+            'convenio con Sierra y Selva Alta (SSA).\n\n'
+            'Los temas incluyeron: identificacion de especies forrajeras, tecnicas de '
+            'asociacion de cultivos (avena-vicia y rye grass-trebol), determinacion '
+            'de la capacidad de carga animal por hectarea, ensilaje y henificacion, '
+            'y manejo de praderas naturales. Participaron 45 productores de las '
+            'comunidades de Usquil, Charat, Huaranchal y Sinsicap.\n\n'
+            'Los asistentes recibieron material didactico y un kit basico de semillas '
+            'de pastos mejorados para establecer parcelas demostrativas en sus predios.'
         ),
-        'dias': -10,
-        'lugar': 'Campo Ferial Municipal, Huancayo, Junin',
-        'imagen_url': 'https://images.unsplash.com/photo-1595246140625-573b8e46c5ed?w=1200&q=80',
-        'vistas': 312,
-        'categoria': 'Agricultura',
-    },
-    {
-        'titulo': 'Capacitacion en tecnicas de cultivo organico y riego tecnificado',
-        'descripcion': (
-            'Taller gratuito organizado por la Agencia Agraria local en coordinacion '
-            'con el Midagri, dirigido a pequenos y medianos productores agropecuarios. '
-            'Los temas incluyen: preparacion de abonos organicos, control biologico de '
-            'plagas, diseno de sistemas de riego por goteo, manejo de suelos y '
-            'certificacion organica. Los participantes recibiran material didactico '
-            'y certificado de participacion. Cupos limitados a 60 asistentes.'
-        ),
-        'dias': 14,
-        'lugar': 'Auditorio de la Agencia Agraria, Jauja, Junin',
+        'dias': -52,
+        'lugar': 'Agencia Agraria de Otuzco, La Libertad',
         'imagen_url': 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80',
         'vistas': 178,
         'categoria': 'Educacion',
     },
     {
-        'titulo': 'Jornada de titulacion de tierras rurales - PTRT3',
+        'titulo': 'Campana de Vacunacion y Desparasitacion de Ganado',
         'descripcion': (
-            'Jornada de formalizacion y entrega de titulos de propiedad rural organizada '
-            'por el Proyecto de Catastro, Titulacion y Registro de Tierras Rurales '
-            '(PTRT3) del Midagri. Se entregaran titulos individuales y comunales a '
-            'familias de las comunidades campesinas de la region. El evento cuenta con '
-            'la participacion de representantes de Sunarp, Gobierno Regional y '
-            'municipios distritales. Los beneficiarios recibiran asesoria legal '
-            'gratuita para la inscripcion registral.'
+            'Campana sanitaria gratuita organizada por la Junta Directiva de la '
+            'Comunidad Campesina de Zapotal en coordinacion con el Senasa y la '
+            'Municipalidad Distrital.\n\n'
+            'Se aplicaron vacunas contra la fiebre aftosa, carbunco sintomatico y '
+            'rabia bovina, ademas de desparasitacion interna y externa (baños '
+            'contra garrapatas y sarna). Se atendio a un total de 340 cabezas de '
+            'ganado vacuno y 220 ovinos pertenecientes a 120 familias comuneras.\n\n'
+            'La jornada se desarrollo en el corral comunal de Zapotal, con la '
+            'participacion de 4 tecnicos veterinarios del Senasa y 8 promotores '
+            'comunales de salud animal.'
         ),
-        'dias': -35,
-        'lugar': 'Plaza Monumental de Yauyos, Jauja, Junin',
-        'imagen_url': 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80',
+        'dias': -37,
+        'lugar': 'Corral Comunal de Zapotal',
+        'imagen_url': 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1200&q=80',
         'vistas': 267,
-        'categoria': 'Obras',
+        'categoria': 'Salud',
     },
     {
-        'titulo': 'Ceremonia de reconocimiento a comunidades agrobiodiversas',
+        'titulo': 'Concurso Regional de Yunta Aradura 2026',
         'descripcion': (
-            'Ceremonia de reconocimiento a seis comunidades quechuas del distrito de '
-            'Cuyocuyo (Puno) por su labor en la conservacion de la agrobiodiversidad '
-            'en los Andenes de Cuyocuyo. Las comunidades Puna Ayllu, Ura Ayllu, '
-            'Cojene-Rotojoni, Puna Laqueque, Huancasayani Cumani y Ñacoreque seran '
-            'homenajeadas por su reciente Premio Ecuatorial del PNUD. El evento '
-            'incluye la presentacion del banco de semillas nativas y la exhibicion '
-            'de plantas medicinales recuperadas.'
+            'El Concurso Regional de Yunta Aradura se realizo en el Campo Ferial de '
+            'Huancayo, congregando a 30 yuntas (duplas de bueyes) procedentes de las '
+            'provincias de Huancayo, Concepcion, Jauja, Tarma y Chupaca.\n\n'
+            'La competencia evaluo la destreza del arador y la precision del surcado '
+            'en parcelas de 20 m x 5 m. Los criterios de evaluacion incluyeron: '
+            'profundidad uniforme del surco, distancia entre surcos, tiempo de '
+            'ejecucion y manejo de la yunta.\n\n'
+            'El primer lugar fue otorgado a la yunta de la Comunidad Campesina de '
+            'Chicche (provincia de Huancayo), que recibio como premio un tractor '
+            'agricola de 2 ruedas cortesia de la Direccion Regional Agraria de Junin. '
+            'El evento conto con la presencia del gobernador regional y cientos de '
+            'espectadores.'
         ),
-        'dias': -60,
-        'lugar': 'Municipalidad Distrital de Cuyocuyo, Puno',
-        'imagen_url': 'https://images.unsplash.com/photo-1517486808906-6ca8b3c8e1c1?w=1200&q=80',
-        'vistas': 145,
+        'dias': -3,
+        'lugar': 'Campo Ferial de Huancayo, Junin',
+        'imagen_url': 'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=1200&q=80',
+        'vistas': 456,
         'categoria': 'Cultura',
     },
     {
-        'titulo': 'Asamblea General Ordinaria de Comunidades Campesinas',
+        'titulo': 'Taller de Manejo Integrado de Cultivos Andinos',
         'descripcion': (
-            'Asamblea General Ordinaria convocada por la Confederacion de Comunidades '
-            'Campesinas del Peru con la participacion de delegados de comunidades de '
-            'la sierra centro y sur. Agenda: informe de gestion, balance financiero, '
-            'plan de trabajo para el desarrollo agrario, propuesta de convenios '
-            'interinstitucionales y eleccion del comite de vigilancia. Se abordaran '
-            'temas como acceso al agua, infraestructura de riego y politicas '
-            'agrarias para el fortalecimiento de la agricultura familiar.'
+            'Taller teorico-practico organizado por la Comunidad Campesina de Zapotal '
+            'en coordinacion con el Instituto de Investigacion y Desarrollo Andino '
+            '(IIDA), dirigido a 35 productores de las comunidades de Zapotal, '
+            'Pucara, Chongos Bajo y Quilcas.\n\n'
+            'Temas del taller: manejo integrado del cultivo de papa nativa (control '
+            'de plagas como la polilla guatemalteca y el gorgojo de los Andes), '
+            'fertilizacion organica con abonos locales (compost, humus de lombriz y '
+            'guano de islas), asociacion de cultivos quinua-kiwicha, y sistemas de '
+            'riego por aspersion con energia solar.\n\n'
+            'Al finalizar el taller, los participantes elaboraron un plan de manejo '
+            'para sus parcelas con acompanamiento tecnico mensual durante 6 meses.'
         ),
-        'dias': 45,
-        'lugar': 'Local de la Confederacion de Comunidades Campesinas, Lima',
-        'imagen_url': 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=1200&q=80',
-        'vistas': 534,
-        'categoria': 'Comunidad',
+        'dias': 14,
+        'lugar': 'Sede Comunal de Zapotal',
+        'imagen_url': 'https://images.unsplash.com/photo-1560493676-04071c5f467b?w=1200&q=80',
+        'vistas': 145,
+        'categoria': 'Educacion',
     },
     {
-        'titulo': 'Faena comunal de limpieza y mantenimiento de canales de riego',
+        'titulo': 'Feria Agropecuaria ExpoCampo Tarma 2026',
         'descripcion': (
-            'Jornada de trabajo comunal obligatoria para la limpieza y mantenimiento '
-            'de los canales de riego secundarios del sector norte y sur de la '
-            'comunidad. Se realizaran trabajos de descolmatacion, reparacion de '
-            'compuertas y reforzamiento de bordes. La faena es obligatoria para todos '
-            'los comuneros activos segun el reglamento interno. Se entregara '
-            'refrigerio y herramientas de trabajo. Duracion estimada: 8 horas.'
+            'La Feria Agropecuaria ExpoCampo Tarma 2026 se realizara en el Campo Ferial '
+            'de la Municipalidad Provincial de Tarma, congregando a mas de 200 '
+            'expositores de las provincias de Tarma, Junin, Yauli-La Oroya y Jauja.\n\n'
+            'Los asistentes podran encontrar exposicion y venta de ganado vacuno de '
+            'alta calidad genetica (raza Brown Swiss y Holstein), ovinos de pelo, '
+            'alpacas y cuyes mejorados. Tambien habra productos agricolas como papa '
+            'nativa, maiz choclo, habas, arvejas, alcachofa y frutales de la zona.\n\n'
+            'Se realizaran concursos de ganado, exhibicion de maquinaria agricola, '
+            'charlas tecnicas sobre manejo de pastos, inseminacion artificial y '
+            'transformacion de productos lacteos. Entrada gratuita.'
         ),
-        'dias': 3,
-        'lugar': 'Sector Norte - Punto de encuentro: Local Comunal',
-        'imagen_url': 'https://images.unsplash.com/photo-1532601224476-15c79f2f7a95?w=1200&q=80',
-        'vistas': 89,
-        'categoria': 'Obras',
+        'dias': 50,
+        'lugar': 'Campo Ferial de Tarma, Junin',
+        'imagen_url': 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1200&q=80',
+        'vistas': 234,
+        'categoria': 'Agricultura',
+    },
+    {
+        'titulo': 'Seminario Internacional de Agricultura Sostenible 2026',
+        'descripcion': (
+            'El Seminario Internacional de Agricultura Sostenible reunira a expertos '
+            'de Peru, Colombia, Bolivia y Ecuador para debatir sobre los desafios y '
+            'oportunidades de la agricultura familiar frente al cambio climatico.\n\n'
+            'Ponentes confirmados: Dra. Maria Arguedas (Peru - especialista en '
+            'agrobiodiversidad), Dr. Hector Rocha (Colombia - conservacion de suelos), '
+            'Ing. Luis Mamani (Bolivia - agricultura altoandina) y la Sra. Dolores '
+            'Cachiguango (Ecuador - economia campesina y soberania alimentaria).\n\n'
+            'Ejes tematicos: agrobiodiversidad y semillas nativas, manejo sostenible '
+            'de suelos y agua, financiamiento para la pequena agricultura, comercio '
+            'justo y certificacion organica, y politicas publicas para la agricultura '
+            'familiar. Se habilitara traduccion simultanea quechua-espanol.'
+        ),
+        'dias': 103,
+        'lugar': 'Auditorio Municipal de Huancayo, Junin',
+        'imagen_url': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&q=80',
+        'vistas': 189,
+        'categoria': 'Agricultura',
+    },
+    {
+        'titulo': 'Festival del Puchero y la Pachamanca',
+        'descripcion': (
+            'Festival gastronomico que celebra la riqueza culinaria de la sierra central '
+            'del Peru, organizado por las madres comuneras de Zapotal en coordinacion '
+            'con la Municipalidad Distrital.\n\n'
+            'Platos estrellas: Puchero andino preparado con carne de res, cerdo, '
+            'papa, camote, choclo, zanahoria, yuca y hierbabuena; y la tradicional '
+            'Pachamanca de cuy, cerdo y pollo, acompanada de papa nativa (variedades '
+            'peruanita, huayro y tumbay), habas, camote y humitas.\n\n'
+            'El festival incluye: concurso del mejor puchero, presentaciones de '
+            'danzas tipicas (huaylas, tunantada y santiago), feria de artesanias '
+            'textiles y exposicion de productos agropecuarios de la comunidad. '
+            'La entrada incluye degustacion gratuita de un plato de puchero.'
+        ),
+        'dias': 144,
+        'lugar': 'Comunidad Campesina de Zapotal',
+        'imagen_url': 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&q=80',
+        'vistas': 98,
+        'categoria': 'Cultura',
     },
 ]
 
 
 class Command(BaseCommand):
-    help = 'Crea 8 eventos (4 pasados + 4 futuros) con datos reales del Peru.'
+    help = 'Crea 8 eventos (4 pasados + 4 futuros) con datos reales del Peru. Resetea datos previos.'
 
     def handle(self, *args, **options):
+        borradas, _ = Evento.objects.all().delete()
+        self.stdout.write(self.style.WARNING(f'  [RESET] {borradas} eventos eliminados'))
+
         ahora = timezone.now()
         creados = 0
-        existentes = 0
         for d in EVENTOS:
             cat = Categoria.objects.filter(nombre=d['categoria']).first()
-            _, created = Evento.objects.get_or_create(
+            Evento.objects.create(
                 titulo=d['titulo'],
-                defaults={
-                    'descripcion': d['descripcion'],
-                    'fecha': ahora + timedelta(days=d['dias']),
-                    'lugar': d['lugar'],
-                    'imagen_url': d['imagen_url'],
-                    'vistas': d['vistas'],
-                    'categoria': cat,
-                },
+                descripcion=d['descripcion'],
+                fecha=ahora + timedelta(days=d['dias']),
+                lugar=d['lugar'],
+                imagen_url=d['imagen_url'],
+                vistas=d['vistas'],
+                categoria=cat,
             )
-            if created:
-                creados += 1
-            else:
-                existentes += 1
+            creados += 1
         self.stdout.write(self.style.SUCCESS(
-            f'  [OK] {creados} nuevos, {existentes} ya existian (total: {Evento.objects.count()})'
+            f'  [OK] {creados} eventos creados (total: {Evento.objects.count()})'
         ))
