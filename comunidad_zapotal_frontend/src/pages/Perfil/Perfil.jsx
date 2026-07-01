@@ -621,7 +621,7 @@ export default function Perfil() {
         setFotoSubiendo(true);
         await api.patch(`/usuarios/${authUser.id}/`, { foto_perfil: null });
         setUsuario((u) => ({ ...u, foto_perfil: '' }));
-        setAuth({ user: { ...authUser, foto_perfil: '' } });
+        setAuth({ user: { ...authUser, foto_perfil: '', foto_perfil_url: '' } });
         mostrarMensaje('Avatar predeterminado aplicado.');
         cerrarModalFoto();
       } catch (e) {
@@ -644,7 +644,7 @@ export default function Perfil() {
       });
       const fotoUrl = data.foto_perfil_url || data.foto_perfil || usuario.foto_perfil;
       setUsuario((u) => ({ ...u, foto_perfil: fotoUrl }));
-      setAuth({ user: { ...authUser, foto_perfil: fotoUrl } });
+      setAuth({ user: { ...authUser, foto_perfil: fotoUrl, foto_perfil_url: fotoUrl } });
       mostrarMensaje('Foto de perfil actualizada correctamente.');
       cerrarModalFoto();
     } catch (e) {

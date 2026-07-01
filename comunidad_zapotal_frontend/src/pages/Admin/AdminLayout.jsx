@@ -11,12 +11,12 @@
  * - Header blanco minimalista: titulo al centro + 3 iconos a la derecha.
  * - Sin pill de usuario (vive en el sidebar).
  */
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FaTachometerAlt, FaUsers, FaNewspaper, FaCalendarAlt, FaCommentDots,
   FaEnvelope, FaLandmark, FaHandHoldingHeart, FaListAlt, FaCog, FaUserCircle,
-  FaSignOutAlt, FaHome, FaSync, FaBell,
+  FaSignOutAlt, FaHome, FaSync, FaBell, FaBars,
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
@@ -137,11 +137,23 @@ export default function AdminLayout() {
   const [searchParams] = useSearchParams();
   const { user, clearAuth } = useAuth();
 
-  // Sidebar de ancho FIJO. No arrastrable, no colapsable.
   const SIDEBAR_WIDTH = 260;
+  const SIDEBAR_COLLAPSED_WIDTH = 92;
 
-  // Badge de notificaciones no leidas.
   const [notifNoLeidas, setNotifNoLeidas] = useState(0);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [profileFloatOpen, setProfileFloatOpen] = useState(false);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 900) {
+        setMobileNavOpen(false);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -176,6 +188,35 @@ export default function AdminLayout() {
     window.dispatchEvent(new CustomEvent('admin:refresh'));
   };
 
+  const toggleSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+      setMobileNavOpen((prev) => !prev);
+      return;
+    }
+    setSidebarCollapsed((prev) => !prev);
+  };
+
+  const closeMobileNav = () => {
+    setMobileNavOpen(false);
+  };
+
+  const profileFloatRef = useRef(null);
+  const profileTriggerRef = useRef(null);
+
+  useEffect(() => {
+    if (!profileFloatOpen) return;
+    const handleClick = (e) => {
+      if (
+        profileFloatRef.current && !profileFloatRef.current.contains(e.target) &&
+        profileTriggerRef.current && !profileTriggerRef.current.contains(e.target)
+      ) {
+        setProfileFloatOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [profileFloatOpen]);
+
   const { titulo, subseccion } = useMemo(
     () => getTituloYSubseccion(location.pathname, searchParams),
     [location.pathname, searchParams],
@@ -183,18 +224,49 @@ export default function AdminLayout() {
 
   return (
     <div
-      className="admin-shell"
-      style={{ '--sidebar-width': `${SIDEBAR_WIDTH}px` }}
+      className={[
+        'admin-shell',
+        sidebarCollapsed ? 'admin-shell--collapsed' : '',
+        mobileNavOpen ? 'admin-shell--nav-open' : '',
+      ].filter(Boolean).join(' ')}
+      style={{
+        '--sidebar-width': `${SIDEBAR_WIDTH}px`,
+        '--sidebar-collapsed-width': `${SIDEBAR_COLLAPSED_WIDTH}px`,
+      }}
     >
+      <button
+        type="button"
+        className={mobileNavOpen ? 'admin-sidebar__backdrop admin-sidebar__backdrop--visible' : 'admin-sidebar__backdrop'}
+        aria-label="Cerrar menu lateral"
+        onClick={closeMobileNav}
+      />
+
       {/* ===== SIDEBAR FIJO (no arrastrable) ===== */}
       <aside
         className="admin-sidebar"
-        style={{ width: SIDEBAR_WIDTH, flexShrink: 0 }}
+        style={{
+          width: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
+          flexShrink: 0,
+        }}
       >
+        <div className="admin-sidebar__ambient" aria-hidden="true" />
         {/* Header del sidebar */}
         <div className="admin-sidebar__header">
-          <div className="admin-sidebar__logo">Z</div>
+          <button
+            type="button"
+            className="admin-sidebar__logo-btn"
+            onClick={toggleSidebar}
+            aria-label={sidebarCollapsed || mobileNavOpen ? 'Expandir menu lateral' : 'Contraer menu lateral'}
+            title={sidebarCollapsed || mobileNavOpen ? 'Expandir menu lateral' : 'Contraer menu lateral'}
+          >
+            <img
+              className="admin-sidebar__logo-img"
+              src="/img/Logo-comunidad/Logo-principal.png"
+              alt="Logo Comunidad Zapotal"
+            />
+          </button>
           <div className="admin-sidebar__header-text">
+            <div className="admin-sidebar__eyebrow">Panel administrativo</div>
             <div className="admin-sidebar__title-line1">COMUNIDAD</div>
             <div className="admin-sidebar__title-line2">ZAPOTAL</div>
           </div>
@@ -207,6 +279,7 @@ export default function AdminLayout() {
               key={item.to}
               to={item.to}
               end={item.to === '/admin'}
+              onClick={closeMobileNav}
               className={({ isActive }) =>
                 'admin-sidebar__item' + (isActive ? ' admin-sidebar__item--active' : '')
               }
@@ -251,6 +324,67 @@ export default function AdminLayout() {
             {getStatusLabel(user)}
           </div>
         </div>
+
+        {/* Trigger circulo del perfil cuando sidebar esta colapsado */}
+        <button
+          type="button"
+          ref={profileTriggerRef}
+          className={'admin-profile-card__trigger' + (profileFloatOpen ? ' admin-profile-card__trigger--open' : '')}
+          onClick={() => setProfileFloatOpen(v => !v)}
+          aria-label="Abrir perfil"
+          title="Abrir perfil"
+        >
+          {user?.foto_perfil_url ? (
+            <img src={user.foto_perfil_url} alt="Foto de perfil" />
+          ) : (
+            <FaUserCircle />
+          )}
+        </button>
+
+        {/* Card flotante de perfil al hacer click en trigger */}
+        {profileFloatOpen && (
+          <div className="admin-profile-card__float" ref={profileFloatRef}>
+            <button
+              type="button"
+              className="admin-profile-card__float-close"
+              onClick={() => setProfileFloatOpen(false)}
+              aria-label="Cerrar perfil"
+            >
+              &times;
+            </button>
+            <button
+              type="button"
+              className="admin-profile-card__float-logout"
+              onClick={handleLogout}
+              title="Cerrar sesion"
+              aria-label="Cerrar sesion"
+            >
+              <FaSignOutAlt />
+            </button>
+            <div className="admin-profile-card__float-photo">
+              {user?.foto_perfil_url ? (
+                <img src={user.foto_perfil_url} alt="Foto de perfil" />
+              ) : (
+                <FaUserCircle />
+              )}
+            </div>
+            <div className="admin-profile-card__float-name">
+              {user?.nombre_completo || user?.email || 'Usuario'}
+            </div>
+            <div className="admin-profile-card__float-role">
+              {getRoleLabel(user)}
+            </div>
+            <div className="admin-profile-card__float-status">
+              <span
+                className={
+                  'admin-profile-card__float-status-dot'
+                  + (user?.estado === 'ACTIVO' ? ' admin-profile-card__float-status-dot--ok' : '')
+                }
+              />
+              {getStatusLabel(user)}
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* ===== MAIN ===== */}
@@ -258,12 +392,27 @@ export default function AdminLayout() {
         {/* Header blanco */}
         <header className="admin-topbar">
           <div className="admin-topbar__center">
-            <h1 className="admin-topbar__title">
-              {titulo}
+            <button
+              type="button"
+              className="admin-topbar__logo-toggle"
+              onClick={toggleSidebar}
+              aria-label="Mostrar u ocultar menu lateral"
+              title="Mostrar u ocultar menu lateral"
+            >
+              <FaBars className="admin-topbar__hamburger" />
+              <img
+                className="admin-topbar__logo-toggle-img"
+                src="/img/Logo-comunidad/Logo-principal.png"
+                alt="Logo Comunidad Zapotal"
+              />
+            </button>
+            <div className="admin-topbar__heading">
+              <span className="admin-topbar__eyebrow">Centro de control</span>
+              <h1 className="admin-topbar__title">{titulo}</h1>
               {subseccion && (
-                <span className="admin-topbar__subtitle"> - {subseccion}</span>
+                <span className="admin-topbar__subtitle">{subseccion}</span>
               )}
-            </h1>
+            </div>
           </div>
           <div className="admin-topbar__right">
             <Link
@@ -300,7 +449,9 @@ export default function AdminLayout() {
 
         {/* Contenido */}
         <main className="admin-content">
-          <Outlet />
+          <div className="admin-content__inner">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
