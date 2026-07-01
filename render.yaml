@@ -5,9 +5,6 @@
 #   - zapotal-backend  (Web Service Django + gunicorn, plan starter)
 #   - comunidad_zapotal_db (Postgres database, plan basic-256mb)
 #
-# NOTA: El PDF worker (Spring Boot) se agregara mas adelante cuando
-# este listo el directorio spring-services/pdf-worker/.
-#
 # Para deployar: en el dashboard de Render, "New > Blueprint",
 # apuntar al repo leyva1228/zapotal_enterprise, branch master.
 #  > OJO: el blueprint usa la rama default del repo (master).
@@ -83,11 +80,7 @@ services:
       - key: TURNSTILE_SECRET_KEY
         sync: false
 
-      # PDF worker aun no desplegado. Django hara fallback local.
-      - key: INTERNAL_API_KEY
-        sync: false
-      - key: PDF_WORKER_URL
-        value: "http://localhost:8081"
+      # Por ahora Django usa xhtml2pdf como fallback local.
 
 # ---------- Databases: Render Postgres ----------
 databases:
@@ -109,10 +102,6 @@ databases:
 # 3. Las migraciones corren en 'preDeployCommand' (NO en buildCommand).
 #    Esto asegura que la DB ya exista cuando se ejecuten. preDeployCommand
 #    esta disponible en planes pagos (starter+).
-#
-# 4. El PDF worker (Spring Boot) se agrega cuando el directorio
-#    spring-services/pdf-worker/ este listo. Por ahora Django hara
-#    fallback local con xhtml2pdf.
 #
 # 5. Para popular la DB con datos demo, abrir el Shell de Render y correr:
 #        python manage.py seed_all
