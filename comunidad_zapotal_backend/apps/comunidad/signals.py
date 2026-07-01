@@ -51,16 +51,18 @@ def _sincronizar_galeria_para_noticia(noticia):
     if not _imagen_presente(noticia):
         GI.objects.filter(noticia=noticia).delete()
         return
+    defaults = {
+        'titulo': noticia.titulo,
+        'imagen_url_externa': noticia.imagen_url,
+        'categoria': _categoria_galeria_desde(noticia),
+        'fecha': noticia.fecha_publicacion.date(),
+        'activo': True,
+    }
+    if noticia.imagen:
+        defaults['imagen'] = noticia.imagen
     gi, created = GI.objects.update_or_create(
         noticia=noticia,
-        defaults={
-            'titulo': noticia.titulo,
-            'imagen': noticia.imagen,
-            'imagen_url_externa': noticia.imagen_url,
-            'categoria': _categoria_galeria_desde(noticia),
-            'fecha': noticia.fecha_publicacion.date(),
-            'activo': True,
-        },
+        defaults=defaults,
     )
     _asignar_orden_si_nuevo(gi, created)
 
@@ -71,16 +73,18 @@ def _sincronizar_galeria_para_evento(evento):
     if not _imagen_presente(evento):
         GI.objects.filter(evento=evento).delete()
         return
+    defaults = {
+        'titulo': evento.titulo,
+        'imagen_url_externa': evento.imagen_url,
+        'categoria': _categoria_galeria_desde(evento),
+        'fecha': evento.fecha.date(),
+        'activo': True,
+    }
+    if evento.imagen:
+        defaults['imagen'] = evento.imagen
     gi, created = GI.objects.update_or_create(
         evento=evento,
-        defaults={
-            'titulo': evento.titulo,
-            'imagen': evento.imagen,
-            'imagen_url_externa': evento.imagen_url,
-            'categoria': _categoria_galeria_desde(evento),
-            'fecha': evento.fecha.date(),
-            'activo': True,
-        },
+        defaults=defaults,
     )
     _asignar_orden_si_nuevo(gi, created)
 

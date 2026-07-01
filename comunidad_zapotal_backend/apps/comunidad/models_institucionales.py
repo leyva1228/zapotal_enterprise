@@ -313,7 +313,7 @@ class GaleriaImagen(models.Model):
 
     titulo = models.CharField('Titulo', max_length=200)
     descripcion = models.TextField('Descripcion', blank=True, default='')
-    imagen = models.ImageField('Imagen', upload_to='galeria/')
+    imagen = models.ImageField('Imagen', upload_to='galeria/', blank=True, null=True)
     imagen_url_externa = models.URLField(
         'Imagen URL externa', blank=True, default='',
         help_text='URL externa (ej. R2/CDN). Si esta vacia, se usa el ImageField local.',
