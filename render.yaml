@@ -36,7 +36,7 @@ services:
         value: "False"
 
       - key: DJANGO_ALLOWED_HOSTS
-        value: "api.comunidadzapotal.org,comunidadzapotal.org,www.comunidadzapotal.org,localhost,127.0.0.1"
+        value: "api.comunidadzapotal.org,comunidadzapotal.org,www.comunidadzapotal.org,localhost,127.0.0.1,.onrender.com"
 
       - key: CORS_ALLOWED_ORIGINS
         value: "https://comunidadzapotal.org,https://www.comunidadzapotal.org,http://localhost:5173"

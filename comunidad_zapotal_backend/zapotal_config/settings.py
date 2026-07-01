@@ -12,11 +12,7 @@ DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config(
     'DJANGO_ALLOWED_HOSTS',
-    # Por defecto incluye el dominio de produccion y el subdominio de la API.
-    # En Render, setear DJANGO_ALLOWED_HOSTS=api.comunidadzapotal.org,comunidadzapotal.org,localhost,127.0.0.1
-    # El subdominio api es donde corre el backend; el apex es donde corre el
-    # frontend (Pages) y desde donde se hacen las requests.
-    default='api.comunidadzapotal.org,comunidadzapotal.org,www.comunidadzapotal.org,localhost,127.0.0.1',
+    default='api.comunidadzapotal.org,comunidadzapotal.org,www.comunidadzapotal.org,localhost,127.0.0.1,.onrender.com',
     cast=Csv(),
 )
 
