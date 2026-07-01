@@ -49,7 +49,6 @@ staticfiles/
 *.pot
 
 # ─── Logs ───
-logs/
 *.log
 
 # ─── Scripts temporales ───

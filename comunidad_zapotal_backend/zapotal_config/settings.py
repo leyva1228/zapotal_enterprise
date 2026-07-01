@@ -281,6 +281,9 @@ if DEBUG:
     SECURE_HSTS_SECONDS = 0
 
 # Logging
+_log_dir = BASE_DIR / 'logs'
+_has_log_dir = _log_dir.exists()
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -300,46 +303,51 @@ LOGGING = {
             'formatter': 'simple',
             'level': 'INFO',
         },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'maxBytes': 1024 * 1024 * 10,  # 10 MB
-            'backupCount': 5,
-            'formatter': 'verbose',
-            'level': 'INFO',
-        },
-        'security_file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'security.log',
-            'maxBytes': 1024 * 1024 * 10,  # 10 MB
-            'backupCount': 5,
-            'formatter': 'verbose',
-            'level': 'WARNING',
-        },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,
         },
         'django.security': {
-            'handlers': ['security_file', 'console'],
+            'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,
         },
         'apps': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
     },
 }
+
+if _has_log_dir:
+    LOGGING['handlers']['file'] = {
+        'class': 'logging.handlers.RotatingFileHandler',
+        'filename': _log_dir / 'django.log',
+        'maxBytes': 1024 * 1024 * 10,
+        'backupCount': 5,
+        'formatter': 'verbose',
+        'level': 'INFO',
+    }
+    LOGGING['handlers']['security_file'] = {
+        'class': 'logging.handlers.RotatingFileHandler',
+        'filename': _log_dir / 'security.log',
+        'maxBytes': 1024 * 1024 * 10,
+        'backupCount': 5,
+        'formatter': 'verbose',
+        'level': 'WARNING',
+    }
+    for logger_name in ('django', 'django.request', 'apps'):
+        LOGGING['loggers'][logger_name]['handlers'].append('file')
+    LOGGING['loggers']['django.security']['handlers'].insert(0, 'security_file')
 
 AUTH_USER_MODEL = 'accounts.Usuario'
 
