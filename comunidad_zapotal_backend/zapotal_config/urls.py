@@ -1,13 +1,16 @@
-from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import include, path, re_path
 from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
 from apps.core.admin_site import custom_admin_site
 from apps.core.health import health_check, liveness_check, readiness_check
+from apps.core.views import api_root
 
 urlpatterns = [
     path('backend/', include(custom_admin_site.urls[:2])),
+    path('api/v1/', api_root, name='api-root'),
     path('api/v1/', include('apps.accounts.urls')),
     path('api/v1/', include('apps.content.urls')),
     path('api/v1/', include('apps.comunidad.urls')),
