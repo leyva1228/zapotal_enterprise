@@ -18,7 +18,6 @@ Historia:
         PUT/PATCH -> cualquier pagina (admin puede editar inactivas)
 """
 import pytest
-from django.urls import reverse
 
 
 @pytest.mark.django_db
@@ -229,3 +228,62 @@ class TestPaginaLegalDetailView:
         api_client.force_authenticate(user=admin_user)
         response = api_client.delete('/api/v1/paginas-legales/cookies/')
         assert response.status_code == 405
+
+
+# ============================================================================
+# Tests de helpers de DNI (apps.comunidad.dni_utils)
+# ============================================================================
+
+@pytest.mark.django_db
+class TestDniUtils:
+    """Tests unitarios del helper mask_dni() y can_view_full_dni()."""
+
+    def test_mask_dni_with_full_dni(self):
+        from apps.comunidad.dni_utils import mask_dni
+        assert mask_dni('86615615') == '86****15'
+
+    def test_mask_dni_with_short_dni(self):
+        from apps.comunidad.dni_utils import mask_dni
+        assert mask_dni('12') == '**'
+
+    def test_mask_dni_with_empty_string(self):
+        from apps.comunidad.dni_utils import mask_dni
+        assert mask_dni('') == ''
+
+    def test_mask_dni_with_none(self):
+        from apps.comunidad.dni_utils import mask_dni
+        assert mask_dni(None) == ''
+
+    def test_mask_dni_preserves_length_visibility(self):
+        from apps.comunidad.dni_utils import mask_dni
+        # 8 digitos: 2 visibles + 4 asteriscos + 2 visibles = '12****34'
+        result = mask_dni('12345678')
+        assert result.startswith('12')
+        assert result.endswith('78')
+        assert '****' in result
+        assert len(result) == 8
+
+    def test_can_view_full_dni_anonymous(self):
+        from django.contrib.auth.models import AnonymousUser
+
+        from apps.comunidad.dni_utils import can_view_full_dni
+        assert can_view_full_dni(AnonymousUser()) is False
+        assert can_view_full_dni(None) is False
+
+    def test_can_view_full_dni_admin(self):
+        from apps.accounts.factories import AdminFactory
+        from apps.comunidad.dni_utils import can_view_full_dni
+        admin = AdminFactory()
+        try:
+            assert can_view_full_dni(admin) is True
+        finally:
+            admin.delete()
+
+    def test_can_view_full_dni_comunero(self):
+        from apps.accounts.factories import ComuneroUserFactory
+        from apps.comunidad.dni_utils import can_view_full_dni
+        user = ComuneroUserFactory()
+        try:
+            assert can_view_full_dni(user) is False
+        finally:
+            user.delete()
