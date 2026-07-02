@@ -750,7 +750,7 @@ export default function Perfil() {
               </button>
             </div>
             <h2 className="perfil-sidebar__name">{nombreCompleto}</h2>
-            <span className="perfil-rol">{usuario?.tipo_usuario || 'Usuario'}</span>
+            <span className="perfil-rol">{usuario?.tipo_usuario || 'Comunero'}</span>
             <p className="perfil-meta">Miembro desde {fechaRegistro}</p>
           </div>
 

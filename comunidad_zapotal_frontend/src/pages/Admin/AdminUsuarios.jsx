@@ -202,7 +202,6 @@ export default function AdminUsuarios() {
     { key: "tipo_usuario", value: "", label: "Todos los roles" },
     { key: "tipo_usuario", value: "ADMIN", label: "Admins" },
     { key: "tipo_usuario", value: "COMUNERO", label: "Comuneros" },
-    { key: "tipo_usuario", value: "USUARIO", label: "Usuarios" },
   ];
 
   const totalPages = Math.max(1, Math.ceil(totalItems / 15));
@@ -401,7 +400,6 @@ export default function AdminUsuarios() {
               >
                 <option value="COMUNERO">COMUNERO</option>
                 <option value="ADMIN">ADMIN</option>
-                <option value="USUARIO">USUARIO</option>
               </select>
             </div>
             <div className="admin-form-group">

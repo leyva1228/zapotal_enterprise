@@ -116,7 +116,7 @@ function getRoleLabel(user) {
   if (!user) return '';
   if (user.tipo_usuario === 'ADMIN') return 'Administrador';
   if (user.tipo_usuario === 'COMUNERO') return 'Comunero';
-  return user.tipo_usuario;
+  return 'Comunero';
 }
 
 function getStatusLabel(user) {
