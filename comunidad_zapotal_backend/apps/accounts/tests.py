@@ -78,10 +78,10 @@ class TestUsuarioService:
         user = UsuarioService.create_user_with_comunero(
             email='nuevo@zapotal.pe',
             password='pass1234',
-            tipo_usuario='USUARIO',
+            tipo_usuario='ADMIN',
         )
         assert user.email == 'nuevo@zapotal.pe'
-        assert user.tipo_usuario == 'USUARIO'
+        assert user.tipo_usuario == 'ADMIN'
         assert user.check_password('pass1234')
 
     def test_create_comunero_requires_comunero_data(self):

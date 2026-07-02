@@ -1,10 +1,9 @@
 import hashlib
 import re
-from django.db import models
-from django.core.exceptions import ValidationError
-from django.contrib.auth.hashers import make_password, check_password
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
 
 
 class Comunero(models.Model):
@@ -153,7 +152,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     class TipoUsuario(models.TextChoices):
         ADMIN = 'ADMIN', 'ADMIN'
         COMUNERO = 'COMUNERO', 'COMUNERO'
-        USUARIO = 'USUARIO', 'USUARIO'
 
     class EstadoUsuario(models.TextChoices):
         PENDIENTE_OTP = 'PENDIENTE_OTP', 'Pendiente verificacion OTP'
@@ -266,8 +264,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     def get_autoridad_vigente(self):
         """Devuelve la Autoridad vigente y con es_admin=True (si la tiene)."""
-        from apps.comunidad.models import Autoridad
         from django.utils import timezone
+
+        from apps.comunidad.models import Autoridad
         hoy = timezone.now().date()
         autoridades = Autoridad.objects.filter(
             usuario=self, activo=True, es_admin=True,

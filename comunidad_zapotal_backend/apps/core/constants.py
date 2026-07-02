@@ -18,11 +18,9 @@ class EstadoUsuario:
 class TipoUsuario:
     ADMIN = 'ADMIN'
     COMUNERO = 'COMUNERO'
-    USUARIO = 'USUARIO'
     CHOICES = [
         (ADMIN, _('Administrador')),
         (COMUNERO, _('Comunero')),
-        (USUARIO, _('Usuario')),
     ]
 
 
@@ -111,7 +109,6 @@ class ThrottleRates:
 class Roles:
     ADMIN = 'ADMIN'
     COMUNERO = 'COMUNERO'
-    USUARIO = 'USUARIO'
     ADMIN_OR_COMUNERO = [ADMIN, COMUNERO]
 
 

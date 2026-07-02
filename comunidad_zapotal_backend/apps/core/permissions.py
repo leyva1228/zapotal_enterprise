@@ -12,7 +12,7 @@ def _is_active_user(user):
     if not user or not getattr(user, 'is_authenticated', False):
         return False
     return getattr(user, 'estado', None) == 'ACTIVO' and \
-        getattr(user, 'tipo_usuario', None) in ('ADMIN', 'COMUNERO', 'USUARIO')
+        getattr(user, 'tipo_usuario', None) in ('ADMIN', 'COMUNERO')
 
 
 class IsAdminUser(permissions.BasePermission):

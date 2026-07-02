@@ -9,8 +9,8 @@ Uso:
 import factory
 from factory.django import DjangoModelFactory
 
-from apps.accounts.models import Usuario, Comunero
-from apps.content.models import Noticia, Categoria, Evento, Comentario, Reaccion
+from apps.accounts.models import Comunero, Usuario
+from apps.content.models import Categoria, Comentario, Evento, Noticia, Reaccion
 from apps.messaging.models import Mensaje, Notificacion
 from apps.reports.models import LibroReclamacion
 
@@ -21,7 +21,7 @@ class UsuarioFactory(DjangoModelFactory):
         django_get_or_create = ('email',)
 
     email = factory.Sequence(lambda n: f'user{n}@zapotal.pe')
-    tipo_usuario = Usuario.TipoUsuario.USUARIO
+    tipo_usuario = Usuario.TipoUsuario.COMUNERO
     estado = Usuario.EstadoUsuario.ACTIVO
     is_active = True
     password = factory.PostGenerationMethodCall(
