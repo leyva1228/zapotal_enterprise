@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Autoridad, ComiteComunal
+from .dni_utils import mask_dni, can_view_full_dni
 
 
 class AutoridadSerializer(serializers.ModelSerializer):
@@ -14,6 +15,7 @@ class AutoridadSerializer(serializers.ModelSerializer):
     tiempo_restante  = serializers.SerializerMethodField()
     proxima_eleccion = serializers.SerializerMethodField()
     nombre_completo  = serializers.SerializerMethodField()
+    dni              = serializers.SerializerMethodField()
 
     class Meta:
         model = Autoridad
@@ -51,6 +53,15 @@ class AutoridadSerializer(serializers.ModelSerializer):
         if obj.dni:
             return f'(DNI {obj.dni})'
         return 'N/A'
+
+    def get_dni(self, obj):
+        if not obj.dni:
+            return ''
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        if can_view_full_dni(user):
+            return obj.dni
+        return mask_dni(obj.dni)
 
     def get_foto_url(self, obj):
         request = self.context.get('request')
@@ -104,11 +115,14 @@ class ComiteComunalSerializer(serializers.ModelSerializer):
         a = getattr(obj, attr)
         if not a:
             return None
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        full = can_view_full_dni(user)
         return {
             'id': a.id,
             'cargo': a.cargo,
             'nombre_completo': a.nombre_completo if hasattr(a, 'nombre_completo') else None,
-            'dni': a.dni,
+            'dni': a.dni if full else mask_dni(a.dni or ''),
         }
 
     def get_presidente_info(self, obj):
